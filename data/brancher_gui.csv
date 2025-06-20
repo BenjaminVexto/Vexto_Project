@@ -1,0 +1,741 @@
+﻿KODE;NACE_TITEL_DK
+01.11.00;Dyrkning af korn (undtagen ris), bælgfrugter og olieholdige frø
+01.12.00;Dyrkning af ris
+01.13.00;Dyrkning af grøntsager og meloner, rødder og rodknolde
+01.14.00;Dyrkning af sukkerrør
+01.15.00;Dyrkning af tobak
+01.16.00;Dyrkning af tekstilplanter
+01.19.00;Dyrkning af andre etårige afgrøder
+01.21.00;Dyrkning af druer
+01.22.00;Dyrkning af tropiske og subtropiske frugter
+01.23.00;Dyrkning af citrusfrugter
+01.24.00;Dyrkning af kernefrugter og stenfrugter
+01.25.00;Dyrkning af andre træfrugter, bær og nødder
+01.26.00;Dyrkning af olieholdige frugter
+01.27.00;Dyrkning af planter til fremstilling af drikkevarer
+01.28.00;Dyrkning af krydderiplanter, aromaplanter og lægeplanter
+01.29.00;Dyrkning af andre flerårige afgrøder
+01.30.00;Planteformering
+01.41.00;Avl af malkekvæg
+01.42.00;Avl af andet kvæg og bøfler
+01.43.00;Avl af heste og dyr af hestefamilien
+01.44.00;Avl af kameler og dyr af kamelfamilien
+01.45.00;Avl af får og geder
+01.46.10;Avl af smågrise
+01.46.20;Produktion af slagtesvin
+01.47.00;Fjerkræavl
+01.48.00;Avl af andre dyr
+01.50.00;Blandet landbrugsdrift
+01.61.00;Støtteaktiviteter i forbindelse med planteavl
+01.62.00;Støtteaktiviteter i forbindelse med husdyravl
+01.63.00;Forarbejdning af afgrøder efter høst af frø/sædekorn til udsæd
+01.70.00;Jagt, fældefangst og serviceydelser i forbindelse hermed
+02.10.00;Dyrkning af træer og andre skovbrugsaktiviteter
+02.20.00;Skovning
+02.30.00;Indsamling af vildtvoksende forstmateriale, undtagen træer
+02.40.00;Støtteaktiviteter i forbindelse med skovbrug
+03.11.00;Havfiskeri
+03.12.00;Ferskvandsfiskeri
+03.21.00;Havbrug
+03.22.00;Ferskvandsbrug
+03.30.00;Støtteaktiviteter i forbindelse med fiskeri og akvakultur
+05.10.00;Indvinding af stenkul
+05.20.00;Indvinding af brunkul
+06.10.00;Indvinding af råolie
+06.20.00;Indvinding af naturgas
+07.10.00;Brydning af jernmalm
+07.21.00;Brydning af uran- og thoriummalme
+07.29.00;Brydning af andre ikke-jernholdige metalmalme
+08.11.00;Brydning af pyntesten, kalksten, gips, skifer mv.
+08.12.00;Grus- og sandgravning og indvinding af ler og kaolin
+08.91.00;Indvinding af mineraler til fremstilling af kemiske produkter og gødningsstoffer
+08.92.00;Indvinding af tørv
+08.93.00;Saltindvinding
+08.99.00;Anden råstofindvinding i.a.n.
+09.10.00;Støtteaktiviteter i forbindelse med indvinding af råolie og naturgas
+09.90.00;Støtteaktiviteter i forbindelse med anden råstofindvinding
+10.11.10;Forarbejdning af svinekød
+10.11.90;Forarbejdning af andet kød
+10.12.00;Forarbejdning og konservering af fjerkrækød
+10.13.00;Fremstilling af kød- og fjerkrækødprodukter
+10.20.10;Fremstilling af fiskemel
+10.20.20;Forarbejdning og konservering af fisk, krebsdyr og bløddyr, undtagen fiskemel
+10.31.00;Forarbejdning og konservering af kartofler
+10.32.00;Fremstilling af frugt- og grøntsagssaft
+10.39.00;Anden forarbejdning og konservering af frugt og grøntsager
+10.41.00;Fremstilling af olier og fedtstoffer
+10.42.00;Fremstilling af margarine o.lign. spiselige fedtstoffer
+10.51.00;Fremstilling af mejeriprodukter
+10.52.00;Fremstilling af konsumis
+10.61.00;Fremstilling af mølleriprodukter
+10.62.00;Fremstilling af stivelse og stivelsesprodukter
+10.71.10;Industriel fremstilling af brød og kager mv.
+10.71.20;Fremstilling af friske bageriprodukter
+10.72.00;Fremstilling af tvebakker, kiks, konserverede kager, tærter mv.
+10.73.00;Fremstilling af dejprodukter
+10.81.00;Fremstilling af sukker
+10.82.00;Fremstilling af kakao, chokolade og sukkervarer
+10.83.00;Forarbejdning af te og kaffe
+10.84.00;Fremstilling af smagspræparater og krydderier
+10.85.00;Fremstilling af færdigretter
+10.86.00;Fremstilling af homogeniserede produkter og diætmad
+10.89.00;Fremstilling af andre fødevarer i.a.n.
+10.91.00;Fremstilling af færdige foderblandinger til landbrugsdyr
+10.92.00;Fremstilling af færdige foderblandinger til kæledyr
+11.01.00;Destillation, rektifikation og blanding af alkohol
+11.02.00;Fremstilling af vin af druer
+11.03.00;Fremstilling af cider og andre gærede drikkevarer af frugt
+11.04.00;Fremstilling af andre ikke-destillerede gærede drikkevarer
+11.05.00;Fremstilling af øl
+11.06.00;Fremstilling af malt
+11.07.00;Fremstilling af læskedrikke og vand på flaske
+12.00.00;Fremstilling af tobaksvarer
+13.10.00;Forbehandling og spinding af tekstilfibre
+13.20.00;Vævning af tekstiler
+13.30.00;Efterbehandling af tekstiler
+13.91.00;Fremstilling af trikotagestoffer
+13.92.00;Fremstilling af tekstiler til husholdningsbrug og færdige boligtekstiler
+13.93.00;Fremstilling af gulvtæpper og -måtter
+13.94.00;Fremstilling af reb, tovværk, sejlgarn og netstoffer
+13.95.00;Fremstilling af fiberdug og varer af fiberdug
+13.96.00;Fremstilling af andre tekniske og industrielle tekstiler
+13.99.00;Fremstilling af andre tekstiler i.a.n.
+14.10.00;Fremstilling af strikkede og hæklede beklædningsartikler
+14.21.00;Fremstilling af yderbeklædning
+14.22.00;Fremstilling af underbeklædning
+14.23.00;Fremstilling af arbejdsbeklædning
+14.24.00;Fremstilling af beklædningsartikler af læder og pelsskind
+14.29.00;Fremstilling af andre beklædningsartikler samt tilbehør i.a.n.
+15.11.00;Garvning, beredning og farvning af læder og pelsskind
+15.12.00;Fremstilling af tasker, kufferter, sadelmagervarer mv., uanset materialets art
+15.20.00;Fremstilling af fodtøj
+16.11.00;Udsavning og høvling af træ
+16.12.00;Forarbejdning og færdigbearbejdning af træ
+16.21.00;Fremstilling af finerplader og træbaserede plader
+16.22.00;Fremstilling af sammensatte parketstave
+16.23.00;Fremstilling af bygningstømmer og snedkeriartikler i øvrigt
+16.24.00;Fremstilling af træemballage
+16.25.00;Fremstilling af døre og vinduer af træ
+16.26.00;Fremstilling af fast brændsel på basis af vegetabilsk biomasse
+16.27.00;Færdigbearbejdning af trævarer
+16.28.00;Fremstilling af andre trævarer og varer af kork, strå og flettematerialer
+17.11.00;Fremstilling af papirmasse
+17.12.00;Fremstilling af papir og pap
+17.21.00;Fremstilling af bølgepap, pap og emballage af papir og pap
+17.22.00;Fremstilling af husholdningsartikler og hygiejneartikler samt toiletartikler af papir og pap
+17.23.00;Fremstilling af kontorartikler af papir
+17.24.00;Fremstilling af tapet
+17.25.00;Fremstilling af andre papir- og papvarer
+18.11.00;Trykning af dagblade
+18.12.00;Anden trykning
+18.13.00;Prepress- og premedia-arbejde
+18.14.00;Bogbinding og lignende serviceydelser
+18.20.00;Reproduktion af indspillede medier
+19.10.00;Fremstilling af koksovnsprodukter
+19.20.00;Fremstilling af raffinerede mineralolieprodukter og fossile brændstoffer
+20.11.00;Fremstilling af industrigasser
+20.12.00;Fremstilling af farvestoffer og pigmenter
+20.13.00;Fremstilling af andre uorganiske basiskemikalier
+20.14.00;Fremstilling af andre organiske basiskemikalier
+20.15.00;Fremstilling af gødningsstoffer og nitrogenprodukter
+20.16.00;Fremstilling af plast i ubearbejdet form
+20.17.00;Fremstilling af syntetisk gummi i ubearbejdet form
+20.20.00;Fremstilling af pesticider, desinfektionsmidler og andre agrokemiske produkter
+20.30.00;Fremstilling af maling, lak og lignende overfladebehandlingsmidler, trykfarver samt tætningsmaterialer
+20.41.00;Fremstilling af sæbe, rengørings- og rensemidler samt poleremidler
+20.42.00;Fremstilling af parfume, hårshampoo, tandpasta mv.
+20.51.00;Fremstilling af flydende biobrændstoffer
+20.59.00;Fremstilling af andre kemiske produkter i.a.n.
+20.60.00;Fremstilling af kemofibre
+21.10.00;Fremstilling af farmaceutiske råvarer
+21.20.00;Fremstilling af farmaceutiske præparater
+22.11.00;Fremstilling og vulkanisering af gummidæk og fremstilling af gummislanger
+22.12.00;Fremstilling af andre gummiprodukter
+22.21.00;Fremstilling af plader, ark, rør og slanger samt profiler af plast
+22.22.00;Fremstilling af plastemballage
+22.23.00;Fremstilling af døre og vinduer af plast
+22.24.00;Fremstilling af bygningsartikler af plast
+22.25.00;Forarbejdning og færdigbehandling af plastprodukter
+22.26.00;Fremstilling af andre plastprodukter
+23.11.00;Fremstilling af planglas
+23.12.00;Formning og forarbejdning af planglas
+23.13.00;Fremstilling af flasker, drikkeglas mv.
+23.14.00;Fremstilling af glasfiber
+23.15.00;Fremstilling og bearbejdning af andet glas, herunder teknisk glas
+23.20.00;Fremstilling af ildfaste produkter
+23.31.00;Fremstilling af keramiske teglsten og gulvfliser
+23.32.00;Fremstilling af mursten, teglsten og byggematerialer af brændt ler
+23.41.00;Fremstilling af keramiske husholdningsartikler og pyntegenstande
+23.42.00;Fremstilling af keramiske sanitetsartikler
+23.43.00;Fremstilling af keramiske isolatorer og isoleringsdele
+23.44.00;Fremstilling af andre keramiske produkter til teknisk brug
+23.45.00;Fremstilling af andre keramiske produkter
+23.51.00;Fremstilling af cement
+23.52.00;Fremstilling af kalk og gips
+23.61.00;Fremstilling af byggematerialer af beton
+23.62.00;Fremstilling af byggematerialer af gips
+23.63.00;Fremstilling af færdigblandet beton
+23.64.00;Fremstilling af mørtel
+23.65.00;Fremstilling af fibercement
+23.66.00;Fremstilling af andre produkter af beton, cement og gips
+23.70.00;Tilhugning, tilskæring og færdigbearbejdning af sten
+23.91.00;Fremstilling af slibemidler
+23.99.10;Fremstilling af asfalt og tagpap
+23.99.90;Fremstilling af andre ikke-metalholdige mineralske produkter, bortset fra asfalt og tagpap
+24.10.00;Fremstilling af råjern og råstål samt jernlegeringer
+24.20.00;Fremstilling af rør, hule profiler og tilhørende fittings af stål
+24.31.00;Fremstilling af stænger ved koldtrækning
+24.32.00;Fremstilling af stålbånd ved koldvalsning
+24.33.00;Koldbehandling
+24.34.00;Fremstilling af tråd ved koldtrækning
+24.41.00;Fremstilling af ædelmetaller
+24.42.00;Fremstilling af aluminium
+24.43.00;Fremstilling af bly, zink og tin
+24.44.00;Fremstilling af kobber
+24.45.00;Anden fremstilling af ikke-jernholdige metaller
+24.46.00;Oparbejdning af nukleart brændsel
+24.51.00;Støbning af jernprodukter
+24.52.00;Støbning af stålprodukter
+24.53.00;Støbning af letmetalprodukter
+24.54.00;Støbning af andre ikke-jernholdige metalprodukter
+25.11.00;Fremstilling af metalkonstruktioner og dele heraf
+25.12.00;Fremstilling af døre og vinduer af metal
+25.21.00;Fremstilling af radiatorer, damp- og fyringskedler til centralvarmeanlæg
+25.22.00;Fremstilling af andre tanke og beholdere af metal
+25.30.00;Fremstilling af våben og ammunition
+25.40.00;Smedning og valsning af metal samt pulvermetallurgi
+25.51.00;Overfladebehandling af metal
+25.52.00;Varmebehandling af metal
+25.53.00;Maskinforarbejdning af metal
+25.61.00;Fremstilling af bestik, skære- og klipperedskaber
+25.62.00;Fremstilling af låse og hængsler
+25.63.00;Fremstilling af håndværktøj
+25.91.00;Fremstilling af metaltønder og lignende beholdere
+25.92.00;Fremstilling af letmetalemballage
+25.93.00;Fremstilling af trådvarer, kæder og fjedre
+25.94.00;Fremstilling af lukkeanordninger, bolte, skruer og møtrikker
+25.99.00;Fremstilling af andre færdige metalprodukter i.a.n.
+26.11.00;Fremstilling af elektroniske komponenter
+26.12.00;Fremstilling af printplader o.lign.
+26.20.00;Fremstilling af computere og ydre enheder
+26.30.00;Fremstilling af kommunikationsudstyr
+26.40.00;Fremstilling af elektronik til husholdninger
+26.51.00;Fremstilling af instrumenter og udstyr til måling, afprøvning og navigation
+26.52.00;Fremstilling af ure
+26.60.10;Fremstilling af høreapparater og dele hertil
+26.60.90;Fremstilling af bestrålingsudstyr og elektromedicinsk og elektroterapeutisk udstyr
+26.70.00;Fremstilling af optiske instrumenter, magnetiske og optiske medier og fotografisk udstyr
+27.11.00;Fremstilling af elektriske motorer, generatorer og transformatorer
+27.12.00;Fremstilling af elektriske fordelings- og kontrolapparater
+27.20.00;Fremstilling af batterier og akkumulatorer
+27.31.00;Fremstilling af lyslederkabler
+27.32.00;Fremstilling af andre elektroniske og elektriske ledninger og kabler
+27.33.00;Fremstilling af tilbehør til ledninger og kabler
+27.40.00;Fremstilling af belysningsartikler
+27.51.00;Fremstilling af elektriske husholdningsapparater
+27.52.00;Fremstilling af ikke-elektriske husholdningsapparater
+27.90.00;Fremstilling af andet elektrisk udstyr
+28.11.00;Fremstilling af motorer og turbiner, undtagen motorer til flyvemaskiner, motorkøretøjer og knallerter
+28.12.00;Fremstilling af hydraulisk udstyr
+28.13.00;Fremstilling af andre pumper og kompressorer
+28.14.00;Fremstilling af andre haner og ventiler
+28.15.00;Fremstilling af lejer, tandhjul, tandhjulsudvekslinger og drivelementer
+28.21.00;Fremstilling af ovne, ildsteder og fyringsaggregater til boligopvarmning
+28.22.00;Fremstilling af løfte- og håndteringsudstyr
+28.23.00;Fremstilling af kontormaskiner og -udstyr, undtagen computere og ydre enheder
+28.24.00;Fremstilling af motordrevet håndværktøj
+28.25.00;Fremstilling af klimaanlæg, ikke til husholdningsbrug
+28.29.00;Fremstilling af andre maskiner til generelle formål i.a.n.
+28.30.00;Fremstilling af landbrugs- og skovbrugsmaskiner
+28.41.00;Fremstilling af metalforarbejdende maskiner og maskinværktøj til bearbejdning af metal
+28.42.00;Fremstilling af andet maskinværktøj
+28.91.00;Fremstilling af maskiner til metallurgi
+28.92.00;Fremstilling af maskiner til råstofindvindingsindustrien samt bygge- og anlæg
+28.93.00;Fremstilling af maskiner til føde-, drikke- og tobaksvareindustrien
+28.94.00;Fremstilling af maskiner til produktion af tekstiler, beklædningsartikler og læder
+28.95.00;Fremstilling af maskiner til produktion af papir og pap
+28.96.00;Fremstilling af maskiner til produktion af plast og gummi
+28.97.00;Fremstilling af maskiner til additiv fremstilling
+28.99.00;Fremstilling af andre maskiner til specielle formål i.a.n.
+29.10.00;Fremstilling af motorkøretøjer
+29.20.00;"Fremstilling af karosserier til motorkøretøjer; fremstilling af påhængsvogne og sættevogne"
+29.31.00;Fremstilling af elektrisk og elektronisk udstyr til motorkøretøjer
+29.32.00;Fremstilling af andre dele og tilbehør til motorkøretøjer
+30.11.00;Bygning af civile skibe og flydende materiel
+30.12.00;Bygning af både til fritid og sport
+30.13.00;Bygning af militærfartøjer
+30.20.00;Fremstilling af lokomotiver og andet rullende materiel til jernbaner og sporveje
+30.31.00;Fremstilling af civile luft- og rumfartøjer o.lign.
+30.32.00;Fremstilling af militære luft- og rumfartøjer o.lign.
+30.40.00;Fremstilling af militære kampkøretøjer
+30.91.00;Fremstilling af motorcykler
+30.92.00;Fremstilling af cykler og kørestole
+30.99.00;Fremstilling af andre transportmidler i.a.n.
+31.00.00;Fremstilling af møbler
+32.11.00;Prægning af mønter
+32.12.00;Fremstilling af smykker og lignende varer
+32.13.00;Fremstilling af bijouteri og lignende varer
+32.20.00;Fremstilling af musikinstrumenter
+32.30.00;Fremstilling af sportsudstyr
+32.40.00;Fremstilling af spil og legetøj
+32.50.00;Fremstilling af medicinske og dentale instrumenter samt udstyr hertil
+32.91.00;Fremstilling af koste og børster
+32.99.00;Andre fremstillingsaktiviteter i.a.n.
+33.11.00;Reparation og vedligeholdelse af færdige metalprodukter
+33.12.00;Reparation og vedligeholdelse af maskiner
+33.13.00;Reparation og vedligeholdelse af elektronisk og optisk udstyr
+33.14.00;Reparation og vedligeholdelse af elektrisk udstyr
+33.15.00;Reparation og vedligeholdelse af civile skibe og både
+33.16.00;Reparation og vedligeholdelse af civile luft- og rumfartøjer
+33.17.00;Reparation og vedligeholdelse af andre civile transportmidler
+33.18.00;Reparation og vedligeholdelse af militære kampkøretøjer, skibe, både og luft- og rumfartøjer
+33.19.00;Reparation og vedligeholdelse af andet udstyr
+33.20.00;Installation af industrimaskiner og -udstyr
+35.11.00;Produktion af elektricitet fra ikke-vedvarende energikilder
+35.12.00;Produktion af elektricitet fra vedvarende energikilder
+35.13.00;Transmission af elektricitet
+35.14.00;Distribution af elektricitet
+35.15.10;Handel med elektricitet via ladestationer o. lign.
+35.15.90;Anden handel med elektricitet
+35.16.00;Lagring af elektricitet
+35.21.00;Produktion af gas
+35.22.00;Distribution af gas
+35.23.00;Handel med gas gennem rørledninger
+35.24.00;Oplagring af gas i forbindelse med drift af forsyningsnet
+35.30.00;Fjernvarmeforsyning
+35.40.00;Mægler- og agentaktiviteter i forbindelse med forsyning af elektricitet og naturgas
+36.00.00;Vandforsyning
+37.00.00;Opsamling og behandling af spildevand
+38.11.00;Indsamling af ikke-farligt affald
+38.12.00;Indsamling af farligt affald
+38.21.00;Genindvinding af materialer
+38.22.00;Energiudnyttelse af affald
+38.23.00;Anden nyttiggørelse af affald
+38.31.00;Forbrænding uden energiudnyttelse
+38.32.00;Deponering eller permanent oplagring
+38.33.00;Anden bortskaffelse af affald
+39.00.00;Rensning af jord og grundvand og anden dekontaminering
+41.00.00;Opførelse af bygninger
+42.11.00;Anlæg af veje og motorveje
+42.12.00;Anlæg af jernbaner og undergrundsbaner
+42.13.00;Anlæg af broer og tunneller
+42.21.00;Anlæg af ledningsnet til væsker
+42.22.00;Anlæg af ledningsnet til elektricitet og telekommunikation
+42.91.00;Anlæg af vandveje, havne, diger, dæmninger mv.
+42.99.00;Andre anlægsaktiviteter i.a.n.
+43.11.00;Nedrivning
+43.12.00;Forberedende byggepladsarbejder
+43.13.00;Funderingsundersøgelser
+43.21.00;El-installation
+43.22.00;Installation af vvs-, varme- og klimaanlæg
+43.23.00;Installation af isolering
+43.24.00;Andre bygningsinstallationsaktiviteter
+43.31.00;Stukkatøraktiviteter
+43.32.00;Tømrer- og bygningssnedkeraktiviteter
+43.33.00;Udførelse af gulvbelægninger og vægbeklædning
+43.34.10;Maleraktiviteter
+43.34.20;Glarmesteraktiviteter
+43.35.00;Anden bygningsfærdiggørelse
+43.41.00;Tagdækningsaktiviteter
+43.42.00;Andre specialiserede bygningsarbejder
+43.50.00;Specialiserede anlægsaktiviteter
+43.60.00;Formidlingsaktiviteter i forbindelse med specialiserede bygge- og anlægsarbejder
+43.91.00;Murerarbejde
+43.99.00;Andre specialiserede byggeaktiviteter i.a.n.
+46.11.00;Agenturhandel med landbrugsråvarer, levende dyr, tekstilråvarer og halvfabrikata
+46.12.00;Agenturhandel med brændstoffer, malme, metaller og kemiske produkter til industrien
+46.13.00;Agenturhandel med tømmer og andre byggematerialer
+46.14.00;Agenturhandel med maskiner, teknisk udstyr, skibe og flyvemaskiner
+46.15.00;Agenturhandel med møbler, husholdningsartikler og isenkram
+46.16.00;Agenturhandel med tekstiler, beklædning, pelsværk, fodtøj og lædervarer
+46.17.10;Fiskeauktioner
+46.17.90;Anden agenturhandel med føde-, drikke- og tobaksvarer
+46.18.10;Agenturhandel med motorcykler, biler, busser og trailere mv.
+46.18.90;Agenturhandel med specialiseret varesortiment, bortset fra køretøjer
+46.19.00;Agenturhandel med ikke-specialiseret varesortiment
+46.21.00;Engroshandel med korn, uforarbejdet tobak, såsæd og foderstoffer
+46.22.00;Engroshandel med blomster og planter
+46.23.00;Engroshandel med levende dyr
+46.24.00;Engroshandel med huder, skind og læder
+46.31.00;Engroshandel med frugt og grøntsager
+46.32.10;Engroshandel med kød og kødprodukter
+46.32.20;Engroshandel med fisk og fiskeprodukter
+46.33.00;Engroshandel med mejeriprodukter, æg samt spiselige olier og fedtstoffer
+46.34.10;Engroshandel med øl, mineralvand, frugt- og grøntsagssaft
+46.34.20;Engroshandel med vin og spiritus
+46.35.00;Engroshandel med tobaksvarer
+46.36.00;Engroshandel med sukker, chokolade og sukkervarer
+46.37.00;Engroshandel med kaffe, te, kakao og krydderier
+46.38.00;Engroshandel med andre fødevarer
+46.39.00;Ikke-specialiseret engroshandel med føde-, drikke- og tobaksvarer
+46.41.00;Engroshandel med tekstiler
+46.42.10;Engroshandel med beklædning
+46.42.20;Engroshandel med fodtøj
+46.43.10;Engroshandel med hvidevarer og elektriske husholdningsartikler
+46.43.20;Engroshandel med radio og tv, fotografiske og optiske artikler
+46.44.10;Engroshandel med porcelæns- og glasvarer
+46.44.20;Engroshandel med rengøringsmidler
+46.45.00;Engroshandel med parfumerivarer og kosmetik
+46.46.10;Engroshandel med medicinalvarer og sygeplejeartikler
+46.46.20;Engroshandel med læge- og hospitalsartikler
+46.47.00;Engroshandel med møbler til bolig-, kontor- og butiksbrug, tæpper og belysningsartikler
+46.48.00;Engroshandel med ure og smykker
+46.49.10;Engroshandel med cykler, sportsartikler og lystbåde
+46.49.20;Engroshandel med bøger, papir og papirvarer
+46.49.30;Engroshandel med kufferter og lædervarer
+46.49.90;Engroshandel med andre husholdningsartikler i.a.n.
+46.50.00;Engroshandel med informations- og kommunikationsudstyr
+46.61.00;Engroshandel med landbrugsmaskiner, -udstyr og tilbehør hertil
+46.62.00;Engroshandel med værktøjsmaskiner
+46.63.00;Engroshandel med maskiner til minedrift og bygge- og anlægsaktiviteter
+46.64.00;Engroshandel med andre maskiner og andet udstyr
+46.71.00;Engroshandel med motorkøretøjer
+46.72.00;Engroshandel med reservedele og tilbehør til motorkøretøjer
+46.73.00;Engroshandel med motorcykler samt reservedele og tilbehør dertil
+46.81.00;Engroshandel med fast, flydende og luftformigt brændstof og lignende varer
+46.82.00;Engroshandel med metaller og metalmalme
+46.83.00;Engroshandel med træ og byggematerialer samt sanitetsartikler
+46.84.00;Engroshandel med isenkram, varmeanlæg og tilbehør
+46.85.00;Engroshandel med kemiske produkter
+46.86.00;Engroshandel med andre råvarer og halvfabrikata
+46.87.00;Engroshandel med affaldsprodukter
+46.89.00;Anden specialiseret engroshandel i.a.n.
+46.90.00;Ikke-specialiseret engroshandel
+47.11.10;Detailhandel med kioskvarer
+47.11.20;Detailhandel med dagligvarer i supermarkeder og købmandsbutikker
+47.11.30;Detailhandel med dagligvarer i discountsupermarkeder
+47.12.00;Anden ikke-specialiseret detailhandel
+47.21.00;Detailhandel med frugt og grøntsager
+47.22.00;Detailhandel med kød og kødprodukter
+47.23.00;Detailhandel med fisk, krebsdyr og bløddyr
+47.24.00;Detailhandel med bagværk og konfekture
+47.25.00;Detailhandel med drikkevarer
+47.26.00;Detailhandel med tobaksvarer
+47.27.00;Detailhandel med andre fødevarer
+47.30.00;Detailhandel med motorbrændstoffer
+47.40.00;Detailhandel med informations- og kommunikationsudstyr
+47.51.00;Detailhandel med tekstiler
+47.52.10;Detailhandel med maling og tapet
+47.52.20;Detailhandel med byggematerialer og værktøj
+47.53.00;Detailhandel med tæpper, vægbeklædning og gulvbelægning
+47.54.00;Detailhandel med elektriske husholdningsapparater
+47.55.10;Detailhandel med møbler
+47.55.20;Detailhandel med bad- og køkkenelementer mv.
+47.55.30;Detailhandel med køkkenudstyr og service mv.
+47.55.90;Detailhandel med boligtekstiler, belysnings- og husholdningsartikler i.a.n.
+47.61.00;Detailhandel med bøger
+47.62.00;Detailhandel med aviser og andre tidsskrifter samt kontorartikler
+47.63.10;Detailhandel med sports- og fritidsudstyr
+47.63.20;Detailhandel med cykler
+47.63.30;Detailhandel med lystbåde og udstyr hertil
+47.64.00;Detailhandel med spil og legetøj
+47.69.10;Detailhandel med musikinstrumenter
+47.69.20;Detailhandel med kunst mv.
+47.69.90;Detailhandel med andre kulturelle artikler i.a.n
+47.71.10;Detailhandel med tøj
+47.71.20;Detailhandel med baby- og børnetøj
+47.72.10;Detailhandel med fodtøj
+47.72.20;Detailhandel med lædervarer
+47.73.00;Detailhandel med farmaceutiske produkter
+47.74.10;Optikeraktiviteter
+47.74.20;Detailhandel med andre medicinske og ortopædiske artikler
+47.75.00;Detailhandel med kosmetikvarer og toiletartikler
+47.76.10;Detailhandel med blomster og planter
+47.76.20;Detailhandel med kæledyr og udstyr til kæledyr
+47.77.00;Detailhandel med ure og smykker
+47.78.00;Detailhandel med andre nye varer
+47.79.00;Detailhandel med brugte varer
+47.81.00;Detailhandel med motorkøretøjer
+47.82.00;Detailhandel med reservedele og tilbehør til motorkøretøjer
+47.83.00;Detailhandel med motorcykler samt reservedele og tilbehør dertil
+47.91.00;Formidlingsaktiviteter inden for ikke-specialiseret detailhandel
+47.92.00;Formidlingsaktiviteter inden for specialiseret detailhandel
+49.11.00;Persontransport med regional- eller fjerntog
+49.12.00;Persontransport med nærbane
+49.20.00;Godstransport med tog
+49.31.00;Passagertransport ad vej med fast køreplan
+49.32.00;Passagertransport ad vej uden fast køreplan
+49.33.00;Passagertransport på bestilling i køretøj med chauffør
+49.34.00;Passagertransport med tovbaner og skilifter
+49.39.00;Anden landpassagertransport i.a.n.
+49.41.00;Vejgodstransport
+49.42.00;Flytteaktiviteter
+49.50.00;Rørtransport
+50.10.00;Sø- og kysttransport af passagerer
+50.20.00;Sø- og kysttransport af gods
+50.30.00;Transport af passagerer ad indre vandveje
+50.40.00;Transport af gods ad indre vandveje
+51.10.10;Passagertransport med rutefly
+51.10.20;Passagertransport med charter- og taxifly
+51.21.00;Lufttransport af gods
+51.22.00;Rumfart
+52.10.00;Oplagring og opbevaring
+52.21.10;Drift af stationer, godsterminaler mv.
+52.21.20;Drift af parkering og vejhjælp mv.
+52.21.30;Drift af betalingsveje, -broer og -tunneler
+52.22.10;Drift af erhvervshavne
+52.22.20;Drift af bugserings-, bjærgnings- og redningsvæsen mv.
+52.23.00;Serviceydelser i forbindelse med luftfart
+52.24.00;Godshåndtering
+52.25.00;Serviceydelser i forbindelse med logistik
+52.26.00;Andre støtteaktiviteter i forbindelse med transport
+52.31.00;Formidlingsaktiviteter inden for godstransport
+52.32.00;Formidlingsaktiviteter inden for passagertransport
+53.10.00;Postaktiviteter omfattet af forsyningspligten
+53.20.00;Andre post- og kuréraktiviteter
+53.30.00;Formidlingsaktiviteter inden for post- og kuréraktiviteter
+55.10.00;Drift af hoteller og lignende overnatningsfaciliteter
+55.20.00;Drift af ferieboliger og andre overnatningsfaciliteter til kortvarige ophold
+55.30.00;Drift af campingpladser
+55.40.00;Formidlingsaktiviteter inden for overnatningsfaciliteter
+55.90.00;Andre overnatningsfaciliteter
+56.11.10;Servering af mad i restauranter og caféer
+56.11.90;Drift af øvrige spisesteder
+56.12.00;Drift af mobile madboder
+56.21.00;Event catering
+56.22.00;Catering på kontrakt og andre restaurationsaktiviteter
+56.30.10;Udskænkning af ikke-alkoholiske drikkevarer
+56.30.20;Udskænkning af alkoholiske drikkevarer
+56.40.00;Formidlingsaktiviteter i forbindelse med restaurationsaktiviteter
+58.11.00;Udgivelse af bøger
+58.12.00;Udgivelse af aviser og dagblade
+58.13.00;Udgivelse af ugeblade og magasiner
+58.19.00;Andre udgiveraktiviteter, undtagen udgivelse af software
+58.21.00;Udgivelse af videospil
+58.29.00;Anden udgivelse af software
+59.11.00;Produktion af film, videoer og TV-programmer
+59.12.00;Aktiviteter efter produktion af film, videoer og TV-programmer
+59.13.00;Distribution af film og videoer
+59.14.00;Fremvisning af film og andre billedmedier
+59.20.00;Indspilning af lydoptagelser og udgivelse af musik
+60.10.00;Radioaktiviteter og distribution af lydoptagelser
+60.20.00;Programskabelse, udgivelse og distribution af billedoptagelser
+60.31.00;Nyhedsbureauers aktiviteter
+60.39.00;Anden distribution af medieindhold
+61.10.00;Levering af fastnetbaseret, trådløs og satellitbaseret telekommunikation
+61.20.00;Videresalg af telekommunikation og formidlingsaktiviteter inden for telekommunikation
+61.90.00;Andre telekommunikationsaktiviteter
+62.10.00;Computerprogrammering
+62.20.00;Computerkonsulentbistand og forvaltning af computerfaciliteter
+62.90.00;Andre IT- og computerserviceaktiviteter
+63.10.00;IT-infrastruktur, databehandling, hosting og relaterede aktiviteter
+63.91.00;Drift af portaler til internettet
+63.92.00;Andre informationsaktiviteter
+64.11.00;Centralbankers aktiviteter
+64.19.00;Andre pengeinstitutters aktiviteter
+64.21.10;Finansielle holdingselskaber
+64.21.20;Ikke-finansielle holdingselskaber
+64.21.30;Gennemløbsholdingselskaber
+64.22.00;Finansielle conduiters aktiviteter
+64.31.10;Pengemarkedsfondes aktiviteter
+64.31.20;Andre investeringsfondes aktiviteter
+64.32.00;Trusters aktiviteter
+64.91.00;Finansiel leasing
+64.92.10;Realkreditinstitutters aktiviteter
+64.92.20;Andre kreditinstitutters aktiviteter
+64.92.30;Andre kreditselskabers aktiviteter
+64.99.10;Investering for egen regning
+64.99.90;Anden finansiel formidling i.a.n.
+65.11.00;Livsforsikring
+65.12.00;Anden forsikring
+65.20.00;Genforsikring
+65.30.10;Pensionskassers aktiviteter
+65.30.20;Anden pensionsforsikring
+66.11.00;Forvaltning af kapitalmarkeder
+66.12.00;Værdipapir- og varemægling
+66.19.00;Andre aktiviteter i forbindelse med finansielle tjenesteydelser, undtagen forsikring og pensionsforsikring
+66.21.00;Risiko- og skadesvurdering
+66.22.00;Forsikringsagenters og forsikringsmægleres aktiviteter
+66.29.00;Aktiviteter i forbindelse med forsikring og pensionsforsikring i.a.n.
+66.30.00;Formueforvaltning
+68.11.00;Køb og salg af egen fast ejendom
+68.12.00;Gennemførelse af byggeprojekter
+68.20.10;Udlejning af almennyttige boliger
+68.20.20;Udlejning af private andelsboliger
+68.20.30;Anden udlejning af boliger
+68.20.40;Udlejning af erhvervsejendomme
+68.31.10;Ejendomsmægleres aktiviteter
+68.31.20;Boliganvisning
+68.32.10;Administration af fast ejendom på kontraktbasis
+68.32.20;Drift af ejerforeninger
+69.10.00;Juridiske aktiviteter
+69.20.00;"Bogføring og revision; skatterådgivning"
+70.10.10;Ikke-finansielle hovedsæders aktiviteter
+70.10.20;Finansielle hovedsæders aktiviteter
+70.20.00;Virksomhedsrådgivning og anden ledelsesrådgivning
+71.11.00;Arkitektaktiviteter
+71.12.10;Rådgivende ingeniøraktiviteter inden for byggeri og anlægsarbejder
+71.12.20;Rådgivende ingeniøraktiviteter inden for produktions- og maskinteknik
+71.12.30;Rådgivende ingeniøraktiviteter inden for færdige fabriksanlæg
+71.12.40;Geologiske undersøgelser og prospektering, landinspektører mv.
+71.12.90;Anden teknisk rådgivning
+71.20.10;Kontrol af levnedsmidler
+71.20.20;Teknisk afprøvning og kontrol
+71.20.90;Anden måling og teknisk analyse
+72.10.00;Forskning og eksperimentel udvikling inden for naturvidenskab og teknik
+72.20.00;Forskning og eksperimentel udvikling inden for samfundsvidenskab og humanistiske videnskaber
+73.11.10;Planlægning og design af reklamekampagner
+73.11.90;Andre reklameaktiviteter
+73.12.00;Indrykning af reklamer i medier
+73.20.00;Markedsanalyse og offentlig meningsmåling
+73.30.00;Public relations og kommunikation
+74.11.00;Industrielt design og modedesign
+74.12.00;Grafisk design og visuel kommunikation
+74.13.00;Indretningsaktiviteter
+74.14.00;Andet specialiseret designarbejde
+74.20.00;Fotografiske aktiviteter
+74.30.00;Oversættelse og tolkning
+74.91.00;Patentbureauers aktiviteter og tjenesteydelser i forbindelse med markedsføring
+74.99.10;Landbrugskonsulenters aktiviteter
+74.99.90;Andre liberale, videnskabelige og tekniske tjenesteydelser i.a.n.
+75.00.00;Dyrlægeaktiviteter
+77.11.00;Udlejning og leasing af biler og lette motorkøretøjer
+77.12.00;Udlejning og leasing af lastbiler
+77.21.00;Udlejning og leasing af varer til fritid og sport
+77.22.00;Udlejning og leasing af andre varer til personlig brug og husholdningsbrug
+77.31.00;Udlejning og leasing af landbrugsmaskiner og -udstyr
+77.32.00;Udlejning og leasing af entreprenørmateriel
+77.33.00;Udlejning og leasing af kontormaskiner og -udstyr og computere
+77.34.00;Udlejning og leasing af skibe og både
+77.35.00;Udlejning og leasing af luftfartøjer
+77.39.10;Udlejning og leasing af andet materiel, udstyr og andre materielle aktiver til events
+77.39.90;Udlejning og leasing af andet materiel, udstyr og andre materielle aktiver, bortset fra til events
+77.40.00;Leasing af intellektuelle ejendomsrettigheder og lignende produkter, dog ikke ophavsretsbeskyttede værker
+77.51.00;Formidlingsaktiviteter inden for udlejning og leasing af biler, autocampere og påhængsvogne
+77.52.00;Formidlingsaktiviteter inden for udlejning og leasing af andre materielle aktiver og ikke-finansielle immaterielle aktiver
+78.10.00;Arbejdsformidlingskontorers aktiviteter
+78.20.00;Vikarbureauers aktiviteter og anden personaleformidling
+79.11.00;Rejsebureauers aktiviteter
+79.12.00;Rejsearrangørers aktiviteter
+79.90.00;Andre reservationstjenesteydelser og tjenesteydelser i forbindelse hermed
+80.01.00;Efterforskning og private vagt- og sikkerhedsaktiviteter
+80.09.00;Vagt- og sikkerhedsaktiviteter i.a.n.
+81.10.00;Levering af kombinerede hjælpetjenester i forbindelse med drift af fast ejendom
+81.21.00;Almindelig rengøring i bygninger
+81.22.10;Vinduespolering
+81.22.20;Skorstensfejning
+81.22.90;Anden rengøring af bygninger og rengøring af erhvervslokaler i.a.n. 
+81.23.00;Anden rengøring
+81.30.00;Landskabspleje
+82.10.00;Administrations- og kontorserviceaktiviteter
+82.20.00;Drift af callcentre
+82.30.00;Organisering af kongresser, messer og udstillinger
+82.40.00;Formidlingsaktiviteter inden for forretningsservice i.a.n.
+82.91.00;Inkassoaktiviteter og kreditoplysning
+82.92.00;Pakkeriaktiviteter
+82.99.00;Andre forretningsserviceaktiviteter i.a.n.
+84.11.00;Generelle offentlige forvaltningsaktiviteter
+84.12.00;Administration af sundhedsvæsen, undervisning, kultur og sociale forhold
+84.13.00;Administration af og bidrag til erhvervsfremme
+84.21.00;Udenrigsanliggender
+84.22.00;Aktiviteter inden for forsvar
+84.23.00;Aktiviteter inden for retsvæsen
+84.24.00;Aktiviteter inden for offentlig sikkerhed og orden
+84.25.00;Aktiviteter inden for brandvæsen
+84.30.00;Aktiviteter inden for lovpligtig socialsikring
+85.10.00;Førskoleundervisning
+85.20.10;Undervisning på almene grundskoler
+85.20.20;Undervisning på specialskoler for børn med funktionsnedsættelser
+85.31.10;Undervisning på ungdoms- og efterskoler
+85.31.20;Undervisning på gymnasier, studenter- og HF-kurser
+85.32.00;Undervisning på erhvervsfaglige skoler
+85.33.00;Videregående uddannelse, ikke på universitetsniveau
+85.40.00;Videregående uddannelse på universitetsniveau
+85.51.00;Undervisning inden for sport og fritid
+85.52.00;Undervisning i kulturelle discipliner
+85.53.00;Drift af køreskoler
+85.59.00;Anden undervisning i.a.n.
+85.61.00;Formidlingsaktiviteter i forbindelse med kurser og undervisere
+85.69.00;Levering af hjælpeydelser i forbindelse med undervisning i.a.n.
+86.10.00;Aktiviteter inden for hospitalsvæsen
+86.21.00;Alment praktiserende lægers aktiviteter
+86.22.00;Speciallægers aktiviteter
+86.23.00;Tandlægers aktiviteter
+86.91.00;Billeddiagnostiske undersøgelser og medicinske laboratorieaktiviteter
+86.92.00;Patienttransport med ambulance
+86.93.00;Psykologisk og psykoterapeutisk rådgivning
+86.94.00;Sundhedspleje, hjemmesygepleje, jordemoderaktiviteter mv.
+86.95.00;Fysio- og ergoterapi
+86.96.00;Traditionelle, komplementære og alternative behandlingsformer
+86.97.00;Formidlingsaktiviteter inden for læge- og tandlægeaktiviteter samt sundhedsvæsen i øvrigt
+86.99.00;Drift af sundhedsvæsen i øvrigt i.a.n.
+87.10.10;Drift af plejehjem
+87.10.20;Institutionsophold med sygepleje i.a.n.
+87.20.10;Drift af døgninstitutioner for personer med psykiske handicap
+87.20.20;Drift af behandlingshjem for stofmisbrugere og alkoholskadede
+87.30.10;Drift af døgninstitutioner for personer med fysisk handicap
+87.30.20;Drift af beskyttede boliger o. lign.
+87.91.00;Formidlingsaktiviteter i forbindelse med institutionsophold
+87.99.10;Drift af døgninstitutioner for børn og unge
+87.99.20;Familiepleje
+87.99.30;Drift af flygtninge- og asylcentre
+87.99.90;Drift af andre former for institutionsophold
+88.10.10;Drift af hjemmehjælp
+88.10.20;Drift af dagcentre mv.
+88.10.30;Drift af revalideringsinstitutioner
+88.91.10;Drift af dagpleje
+88.91.20;Drift af vuggestuer
+88.91.30;Drift af børnehaver
+88.91.40;Drift af skolefritidsordninger og fritidshjem
+88.91.50;Drift af aldersintegrerede institutioner
+88.91.60;Drift af fritids- og ungdomsklubber
+88.99.10;Støtteaktiviteter relateret til sygdomsbekæmpende, sociale og velgørende formål
+88.99.20;Aktiviteter til støtte for flygtninge- og katastrofeofre mv.
+88.99.90;Andre sociale støtte- og rådgivningsaktiviteter uden institutionsophold
+90.11.00;Litteratur- og musikkomposition
+90.12.00;Billedkunstnerisk skaben
+90.13.00;Anden kunstnerisk skaben
+90.20.10;Teater- og koncertproduktioner
+90.20.20;Selvstændigt udøvende scenekunstnere
+90.31.00;Drift af teater- og koncertsale, kulturhuse mv.
+90.39.10;Teknisk planlægning, levering, opsætning og betjening af udstyr til events
+90.39.20;Levering af andre serviceydelser i forbindelse med kunstnerisk skaben og scenekunst i.a.n.
+91.11.00;Biblioteksaktiviteter
+91.12.00;Arkivaktiviteter
+91.21.00;Museumsaktiviteter og aktiviteter i forbindelse med samlinger
+91.22.00;Drift og bevarelse af fortidsminder, mindesmærker mv.
+91.30.00;Konservering, restaurering og andre serviceydelser inden for kulturarv
+91.41.00;Drift af botaniske og zoologiske haver
+91.42.00;Drift af naturreservater
+92.00.00;Lotteri- og andre spilleaktiviteter
+93.11.00;Drift af sportsanlæg
+93.12.00;Drift af sportsklubber
+93.13.00;Drift af fitnesscentre
+93.19.00;Sportsaktiviteter i.a.n.
+93.21.00;Drift af forlystelsesparker o.lign.
+93.29.10;Drift af lystbådehavne
+93.29.90;Drift af andre forlystelser og fritidsaktiviteter
+94.11.00;Erhvervs- og arbejdsgiverorganisationers aktiviteter
+94.12.00;Faglige sammenslutningers aktiviteter
+94.20.00;Fagforeningers aktiviteter
+94.91.00;Religiøse institutioners og foreningers aktiviteter
+94.92.00;Politiske partiers aktiviteter
+94.99.00;Andre organisationers og foreningers aktiviteter i.a.n.
+95.10.00;Reparation og vedligeholdelse af computere og kommunikationsudstyr
+95.21.00;Reparation og vedligeholdelse af forbrugerelektronik
+95.22.00;Reparation og vedligeholdelse af husholdningsapparater og redskaber til hus og have
+95.23.00;Reparation og vedligeholdelse af fodtøj og lædervarer
+95.24.00;Reparation og vedligeholdelse af møbler og boligudstyr
+95.25.00;Reparation og vedligeholdelse af ure og smykker
+95.29.00;Reparation og vedligeholdelse af varer til personlig brug og husholdningsbrug i.a.n.
+95.31.10;Dækservice
+95.31.20;Reparation og lakering af karosseri samt undervognsbehandling
+95.31.90;Reparation og vedligeholdelse af motorkøretøjer i.a.n.
+95.32.00;Reparation og vedligeholdelse af motorcykler
+95.40.00;Formidlingsaktiviteter i forbindelse med reparation og vedligeholdelse af computere, varer til personlig brug og husholdningsbrug samt motorkøretøjer og motorcykler
+96.10.10;Drift af erhvervs- og institutionsvaskerier
+96.10.20;Drift af renserier og selvbetjeningsvaskerier mv.
+96.21.00;Drift af frisør- og barbersaloner
+96.22.00;Skønhedspleje og anden skønhedsbehandling
+96.23.00;Drift af dagspa, saunaer og dampbade
+96.30.00;Drift af bedemandsforretninger og begravelsesvæsen
+96.40.00;Formidlingsaktiviteter inden for personlige serviceydelser
+96.91.00;Levering af personlige serviceydelser i hjemmet
+96.99.00;Andre personlige serviceydelser i.a.n.
+97.00.00;Aktiviteter i husholdninger med ansat medhjælp
+98.10.00;Private husholdningers produktion af udifferentierede varer til eget brug
+98.20.00;Private husholdningers produktion af udifferentierede tjenesteydelser til eget brug
+99.00.10;Ambassaders eksterritoriale aktivitet
+99.00.20;Andre eksterritoriale organisationers og organers aktiviteter
+
+
