@@ -1,0 +1,36 @@
+diff --git a/gui/vexto_selector_gui.py b/gui/vexto_selector_gui.py
+--- a/gui/vexto_selector_gui.py
++++ b/gui/vexto_selector_gui.py
+@@
+-  • Én branchekode
+-Returnerer Tuple[List[int], str]  – eller None hvis man trykker Annullér.
++  • Branchekoder (multi-select)
++Returnerer Tuple[List[int], List[str]] – eller None hvis man trykker Annullér.
+@@
+-def run_selector() -> tuple[list[int], str] | None:
++def run_selector() -> tuple[list[int], list[str]] | None:
+@@
+-    # Branchekoder – Listbox (single-select)
+-    bran_listbox = tk.Listbox(frm_bran, selectmode="browse",
+-                              height=20, width=15)
++    # Branchekoder – Listbox (multi-select)
++    bran_listbox = tk.Listbox(frm_bran, selectmode="multiple",
++                              height=20, width=15)
+@@
+-    bran_listbox.select_set(0)        # vælg første som default
+@@
+-        sel_bran = bran_listbox.curselection()
+-        if not sel_bran:
+-            messagebox.showwarning("Ingen branchekode",
+-                                   "Vælg én branchekode før du fortsætter.")
+-            return
+-        branchekode = bran_listbox.get(sel_bran[0])
++        sel_bran = bran_listbox.curselection()
++        if not sel_bran:
++            messagebox.showwarning("Manglende valg",
++                                   "Vælg mindst én branchekode.")
++            return
++        branchekoder = [bran_listbox.get(i) for i in sel_bran]
+@@
+-    return valgte_postnumre, branchekode
++    return valgte_postnumre, branchekoder
