@@ -1,61 +1,59 @@
-"""
-Elasticsearch handler
----------------------
-search_companies(postnumre, branchekode, size=10_000)
-    ➜ returnerer liste af dicts (flade felter) – klar til at lægge i en DataFrame.
-"""
-from typing import List
-import os
-from pathlib import Path
-
-from elasticsearch import Elasticsearch
-from dotenv import load_dotenv
-
-load_dotenv()  # indlæs evt. .env med ES_HOST, ES_APIKEY
-
-ES_HOST   = os.getenv("ES_HOST", "http://localhost:9200")
-ES_APIKEY = os.getenv("ES_APIKEY")
-
-# Index-navn kan justeres her, men navnet **må ikke** ændres andre steder,
-# da main.py forventer det samme.
-ES_INDEX  = os.getenv("ES_INDEX", "vexto-cvr")
-
-
-def _connect() -> Elasticsearch:
-    """Opret ES-klient – uanset om API-key eller basic-auth benyttes."""
-    if ES_APIKEY:
-        return Elasticsearch(ES_HOST, api_key=ES_APIKEY, verify_certs=False)
-    # Fallback til no-auth (localhost)
-    return Elasticsearch(ES_HOST, verify_certs=False)
-
-
-def search_companies(postnumre: List[int], branchekode: str, size: int = 10_000) -> List[dict]:
+def _make_es_query(branche: str, postnumre: List[int], include_active_only: bool = True) -> Dict[str, Any]:
     """
-    Returnerer en liste af hits (dict).
-    Felt-strukturen flades ud ved _source-niveau => direkte til DataFrame.
-    """
-    es = _connect()
+    Bygger ElasticSearch forespørgslen for en given (renset) branchekode og liste af postnumre.
+    Inkluderer filtrering for kun aktive virksomheder, hvis angivet.
+    
+    BEMÆRK: Denne funktion bygger KUN den del af query'en, der går i JSON-body.
+    'size' og 'scroll' parametre håndteres separat som URL-parametre for initial request.
 
-    query_body = {
-        "size": size,
+    Args:
+        branche (str): Den rensede branchekode (f.eks. "433200").
+        postnumre (list[int]): En liste af postnumre at søge efter.
+        include_active_only (bool): Om der kun skal søges efter aktive virksomheder.
+
+    Returns:
+        dict: ElasticSearch forespørgsels-body i JSON-format.
+    """
+    # Konverter postnumre til strenge, da ElasticSearch ofte gemmer dem som strenge,
+    # og 'terms' forespørgsler kræver typematch.
+    postnumre_str = [str(p) for p in postnumre]
+
+    # 'filter' klausulen i ElasticSearch er god til caching og bruges til Bool-queries,
+    # hvor alle betingelser skal være sande.
+    bool_query_filters = [
+        {"term": {"Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchekode": branche}},
+        {"terms": {"Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postnummer": postnumre_str}}
+    ]
+    
+    # Tilføj et filter for statusKode = "NORMAL" for at sikre, at kun aktive virksomheder inkluderes.
+    # Dette er mere robust end at udelukke specifikke tekstbeskrivelser.
+    if include_active_only:
+        bool_query_filters.append({
+            "term": {
+                "Vrvirksomhed.virksomhedMetadata.nyesteVirksomhedsstatus.statusKode": "NORMAL"
+            }
+        })
+
+    es_query_body = {
+        # '_source' definerer, hvilke felter der skal returneres i svaret.
+        # Kun de nødvendige felter bør inkluderes for at minimere datamængden.
+        "_source": [
+            "Vrvirksomhed.cvrNummer",
+            "Vrvirksomhed.virksomhedMetadata.nyesteNavn.navn",
+            "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postnummer",
+            "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.vejnavn",
+            "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.husnummerFra",
+            "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postdistrikt",
+            "Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchekode",
+            "Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchetekst",
+            "Vrvirksomhed.virksomhedMetadata.nyesteVirksomhedsstatus.statusTekst" # Inkluder status for lettere debug
+        ],
         "query": {
             "bool": {
-                "must": [
-                    {"term":   {"branchekode": branchekode}},
-                    {"terms":  {"postnummer":  postnumre}}
-                ]
+                "filter": bool_query_filters # Disse skal matche
             }
-        }
+        },
+        "sort": [{"_doc": "asc"}] # Tilføj sortering for at sikre ensartet rækkefølge, vigtigt for search_after og duplikathåndtering.
     }
-
-    resp = es.search(index=ES_INDEX, body=query_body)
-    hits = resp.get("hits", {}).get("hits", [])
-
-    # Fladgør resultater:  {"_id": ...,  ..._source}
-    flat = []
-    for h in hits:
-        row = {"_id": h["_id"]}
-        row.update(h.get("_source", {}))
-        flat.append(row)
-
-    return flat
+        
+    return es_query_body
