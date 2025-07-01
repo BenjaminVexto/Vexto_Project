@@ -1,0 +1,14 @@
+# Windows binærer
+*.exe
+
+# Installer eller andre store filer
+git-installer.exe
+
+# Python cache / miljøer
+__pycache__/
+*.py[cod]
+env/
+venv/
+
+# VSCode indstillinger du ikke vil versionere
+.vscode/
