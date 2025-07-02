@@ -1,0 +1,51 @@
+# config/scoring_rules.yml
+
+technical_seo:
+  max_points: 25
+  rules:
+    https_check:
+      description: "Siden bruger en sikker HTTPS-forbindelse."
+      data_key: is_https
+      type: boolean_true
+      points: 25
+
+# -- KIRURGISK INDGREB START --
+basic_seo:
+  max_points: 30 # Forøget fra 10 til 30 (10 for alt-tekst + 20 for schema)
+  rules:
+    alt_ratio_check:
+      description: "Størstedelen af billederne (>80%) har alt-tekst."
+      data_key: img_alt_ratio
+      type: greater_than_or_equal
+      threshold: 0.8
+      points: 10
+    schema_markup_check:
+      description: "Siden har struktureret data (Schema.org)."
+      data_key: schema_markup_found
+      type: boolean_true
+      points: 20
+# -- KIRURGISK INDGREB SLUT --
+
+performance:
+  max_points: 80
+  rules:
+    lcp_score:
+      description: "Largest Contentful Paint (LCP) score"
+      data_key: lcp_ms
+      levels:
+        - name: "good"
+          description_suffix: "er under 2.5 sekunder (hurtig)."
+          type: less_than_or_equal
+          threshold: 2500
+          points: 35
+        - name: "needs_improvement"
+          description_suffix: "er mellem 2.5s og 4.0s."
+          type: less_than_or_equal
+          threshold: 4000
+          points: 15
+    
+    mobile_friendly_check:
+      description: "Siden er mobilvenlig."
+      data_key: is_mobile_friendly
+      type: boolean_true
+      points: 45

@@ -1,0 +1,632 @@
+<!DOCTYPE html><html lang="da" class="position-relative"><head prefix="og: http://ogp.me/ns#">
+     <meta charset="utf-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <link rel="dns-prefetch" href="//ww2.proshop.dk">
+         <script type="text/javascript" async="" src="https://ww2.proshop.dk/gtag/js?id=G-KNBWHMY9GP&amp;cx=c&amp;gtm=45Fe56r1v9115630387za204&amp;sign=d6990490ee0806445530dda4eb0e23a46f3b2041e4e348288186fdd5c3508d5d_20250701&amp;tag_exp=101509157~103116026~103200004~103233427~103308216~103308218~103351869~103351871~104684208~104684211~104718208~104784387~104784389~104885889~104885891"></script><script async="" src="//ww2.proshop.dk/gtm.js?id=GTM-PCQSS3W"></script><script>var proshopGtmServerDataLayer = [{}];</script>
+     <script type="module">
+    window.dataLayer = window.dataLayer || [];
+    function getElements() {
+        return document.querySelectorAll('[data-gtm]');
+    }
+    getElements().forEach(el => {
+        window.dataLayer.push(JSON.parse(atob(el.dataset.gtm)));
+    });
+    let btns = document.querySelectorAll('button[data-gtm-item-id]');
+    btns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            let gtmId = this.getAttribute('data-gtm-item-id');
+            getElements().forEach(el => {
+                var gtmJson = JSON.parse(atob(el.dataset.gtm));
+                for (var i = 0; i <= gtmJson.ecommerce.items.length; i++) {
+                    if (gtmJson.ecommerce.items[i].item_id !== gtmId) {
+                        continue;
+                    }
+                    window.dataLayer.push({ event: 'add_to_cart', ecommerce: { items: gtmJson.ecommerce.items[i] } });
+                    return;
+                }
+            });
+        },false);
+    });
+    let basketBuyBtn = document.querySelector('#CommerceBasketApp a.site-btn-green');
+    if (basketBuyBtn) {
+        basketBuyBtn.addEventListener('click', function (e) {
+            let basketLines = document.querySelectorAll('#basketLines li input');
+            basketLines.forEach((element) => {
+                let gtmJson = JSON.parse(this.getAttribute("data-gtm-click"));
+                let theId = element.getAttribute("id");
+                for (let index = 0; gtmJson.ecommerce.items.length; index++) {
+                    if (gtmJson.ecommerce.items[index].item_id !== theId) {
+                        continue;
+                    }
+                    gtmJson.ecommerce.items[index].quantity = element.value;
+                    window.dataLayer.push({ ecommerce: null })
+                    window.dataLayer.push(gtmJson);
+                    break;
+                }
+            });
+        });
+    }
+    let paymentTypeButtons = document.getElementsByName("paymentOption");    
+    paymentTypeButtons.forEach(function (paymentTypeButton) {
+        paymentTypeButton.addEventListener('click', function () {
+            window.dataLayer.push({ ecommerce: null })
+            window.dataLayer.push(JSON.parse(atob(paymentTypeButton.getAttribute('data-gtm-payment'))));
+        });
+    });
+</script>
+     <script type="text/javascript">
+    var apps = {};
+    apps.queue = [];
+    apps.register = function (rootContainer, app) {
+        if (typeof registerApp != 'undefined')
+            registerApp(rootContainer, app)
+        else {
+            apps.queue.push({ rootContainer, app });
+        }
+    }
+</script>
+     
+    
+
+     <title>Musemåtte » Køb mousepad til gaming eller kontor online | Proshop</title>
+              <link rel="canonical" href="https://www.proshop.dk/Musemaatte-tilbehoer">
+         <meta property="og:url" content="https://www.proshop.dk/Musemaatte-tilbehoer">
+              <meta name="description" content="Ny musemåtte? Se vores store udvalg af mousepads fra kendte brands i alle størrelser. Skarpe priser og lynhurtig levering!">
+         <meta property="og:description" content="Ny musemåtte? Se vores store udvalg af mousepads fra kendte brands i alle størrelser. Skarpe priser og lynhurtig levering!">
+     <meta property="og:title" content="Musemåtte » Køb mousepad til gaming eller kontor online | Proshop">
+     <meta property="og:type" content="website">
+     <meta property="og:image" content="mstile-310x310.png">
+     <link rel="apple-touch-icon-precomposed" sizes="57x57" href="/apple-touch-icon-57x57.png">
+     <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114x114.png">
+     <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72x72.png">
+     <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144x144.png">
+     <link rel="apple-touch-icon-precomposed" sizes="60x60" href="/apple-touch-icon-60x60.png">
+     <link rel="apple-touch-icon-precomposed" sizes="120x120" href="/apple-touch-icon-120x120.png">
+     <link rel="apple-touch-icon-precomposed" sizes="76x76" href="/apple-touch-icon-76x76.png">
+     <link rel="apple-touch-icon-precomposed" sizes="152x152" href="/apple-touch-icon-152x152.png">
+     <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+     <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+     <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+     <link rel="icon" type="image/png" href="/favicon-128.png" sizes="128x128">
+     <meta name="application-name" content="PROSHOP">
+     <meta name="msapplication-TileColor" content="#FFFFFF">
+     <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+     <meta name="msapplication-square70x70logo" content="/mstile-70x70.png">
+     <meta name="msapplication-square150x150logo" content="/mstile-150x150.png">
+     <meta name="msapplication-wide310x150logo" content="/mstile-310x150.png">
+     <meta name="msapplication-square310x310logo" content="/mstile-310x310.png">
+     <meta name="format-detection" content="telephone=no">
+     
+    
+    
+<link rel="stylesheet" href="/dist/Proshop/site.fe780979.css">
+    
+
+
+     
+    
+    <link rel="preload" href="/dist/js/shared.8624c6ee.js" as="script">
+<script src="/dist/js/shared.8624c6ee.js" defer=""></script>
+
+    <script type="text/javascript" src="/Content/v-1173573356/scriptsBase.bundle.js" defer=""></script>
+    <script src="/dist/js/menu.98017c24.js" defer=""></script>
+
+<script src="/dist/js/common.c941cdb1.js" defer=""></script>
+
+<script src="/dist/js/showmo.2.4db2c254.js" defer=""></script>
+
+
+    
+    <script src="/dist/js/productList.2d010be8.js" defer=""></script>
+
+<script src="/dist/js/showmo.2.4db2c254.js" defer=""></script>
+
+
+    
+
+
+
+ <style type="text/css">.siteSlideEnergyLabelContainer {
+  margin-bottom: 15px;
+}
+.siteSlideEnergyLabelContainer img {
+  max-width: 60px;
+}
+.splide__slide .site-image-discount-splash div span,
+.splideElement .site-image-discount-splash div span {
+  margin-left: 0px;
+}
+</style><style type="text/css">@keyframes splide-loading{0%{transform:rotate(0)}to{transform:rotate(1turn)}}.splide--draggable>.splide__slider>.splide__track,.splide--draggable>.splide__track{-webkit-user-select:none;-ms-user-select:none;user-select:none}.splide--fade>.splide__slider>.splide__track>.splide__list,.splide--fade>.splide__track>.splide__list{display:block}.splide--fade>.splide__slider>.splide__track>.splide__list>.splide__slide,.splide--fade>.splide__track>.splide__list>.splide__slide{left:0;opacity:0;position:absolute;top:0;z-index:0}.splide--fade>.splide__slider>.splide__track>.splide__list>.splide__slide.is-active,.splide--fade>.splide__track>.splide__list>.splide__slide.is-active{opacity:1;position:relative;z-index:1}.splide--rtl{direction:rtl}.splide--ttb.is-active>.splide__slider>.splide__track>.splide__list,.splide--ttb.is-active>.splide__track>.splide__list{display:block}.splide__container{box-sizing:border-box;position:relative}.splide__list{-webkit-backface-visibility:hidden;backface-visibility:hidden;display:-ms-flexbox;display:flex;height:100%;margin:0!important;padding:0!important;transform-style:preserve-3d}.splide.is-initialized:not(.is-active) .splide__list{display:block}.splide__pagination{-ms-flex-align:center;align-items:center;display:-ms-flexbox;display:flex;-ms-flex-wrap:wrap;flex-wrap:wrap;-ms-flex-pack:center;justify-content:center;margin:0;pointer-events:none}.splide__pagination li{display:inline-block;line-height:1;list-style-type:none;margin:0;pointer-events:auto}.splide__progress__bar{width:0}.splide{outline:none;position:relative;visibility:hidden}.splide.is-initialized,.splide.is-rendered{visibility:visible}.splide__slide{-webkit-backface-visibility:hidden;backface-visibility:hidden;box-sizing:border-box;-ms-flex-negative:0;flex-shrink:0;list-style-type:none!important;margin:0;outline:none;position:relative}.splide__slide img{vertical-align:bottom}.splide__slider{position:relative}.splide__spinner{animation:splide-loading 1s linear infinite;border:2px solid #999;border-left-color:transparent;border-radius:50%;bottom:0;contain:strict;display:inline-block;height:20px;left:0;margin:auto;position:absolute;right:0;top:0;width:20px}.splide__track{overflow:hidden;position:relative;z-index:0}</style><style type="text/css">/*@cms-BtnDefaultBgColor: #0f2f56;*/
+</style><style type="text/css">/*@cms-BtnDefaultBgColor: #0f2f56;*/
+.slideContainer[data-v-d9c0b786] {
+  flex-wrap: wrap;
+}
+.splideElement[data-v-d9c0b786]:not(:first-child) {
+  margin-left: 10px;
+}
+.splideElement[data-v-d9c0b786] {
+  margin-bottom: 10px;
+  border: 1px solid #cbcbcb;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-basis: 0;
+  flex-grow: 1;
+  padding: 15px;
+  overflow: hidden;
+}
+.splide__cta[data-v-d9c0b786] {
+  display: block;
+  height: 100%;
+  transition: border-color 0.1s ease-in-out;
+}
+@media screen and (max-width: 991px) {
+.splideElement[data-v-d9c0b786] {
+    min-width: 40%;
+}
+.splideElement[data-v-d9c0b786]:nth-child(even) {
+    margin-left: 10px;
+}
+.splideElement[data-v-d9c0b786]:nth-child(odd) {
+    margin-left: 0px;
+}
+}
+</style><script type="text/javascript" async="" src="/Content/v-1173573356/testSeek.bundle.js"></script><script type="text/javascript" async="" src="/Content/v-1173573356/leadFamly.bundle.js"></script></head>
+ 
+
+
+<body id="siteContainer" data-version="1.0.9313.19199" data-cnet="1df6b731e6" data-lang="da-DK" data-site="proshop.dk" style="">
+    <noscript><iframe src="//ww2.proshop.dk/ns.html?id=GTM-PCQSS3W" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<script type="module">
+(function (w, d, s, l, i) { w[l] = w[l] || []; w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' }); var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src = '//ww2.proshop.dk/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f); })(window, document, 'script', 'dataLayer', 'GTM-PCQSS3W');
+</script>
+
+    
+
+<header id="pageHeader" class="fixed-top w-100">
+    <div class="pl-2 pr-2 ps-container">
+        <div class="ps-container__inner header__template">
+            <div class="header__logo align-items-center">
+                <a href="/" aria-label="Back to Home" id="logohome"><div data-vueapp="campaigns" class="site-logo" id="c9781b337da2f41c690c6b8d11590431b" element-id="9781b337-da2f-41c6-90c6-b8d11590431b" data="e30=" data-v-app=""><div><div><img src="/Images/proshop_logo_tagline_new_outlined_med_opacity_3684c4325e81.svg"></div></div></div>
+</a>
+            </div>
+<div class="header__search d-flex flex-nowrap">
+    <div class="header__burger hidden-md hidden-lg mr-2">
+        <button type="button" aria-label="Open menu" id="menu-button" class="pi-sm header__burger-menu navbar-toggle position-relative" aria-expanded="false" aria-haspopup="true" aria-controls="main-menu"><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button>
+        <p class="header__text m-0 position-relative">Menu</p>
+    </div>
+    <div class="position-relative flex-1">
+        <form action="/" class="d-flex align-items-center" method="GET" role="search" novalidate="novalidate">
+           <input type="search" data-action="/ClientPlugins/AutoComplete/SearchResult" id="search-input" class="input__round-lg w-100 site-search" name="s" placeholder="Søg" title="Søg" aria-description="Søg efter produkter" enterkeyhint="search" autocomplete="off">
+           <button id="btn_clearSearchTerm" class="hidden" type="reset">Ryd</button>
+           <button type="submit" aria-label="Søg efter produkter" class="input__round-btn green d-flex justify-content-center align-items-center"><i class="ki pi-xs pi-search"></i></button>
+        </form>
+    </div>
+</div><div class="header__categories d-flex">
+<a href="/Kundeservice.htm" class="header__icon d-block"><i class="pi-sm pi pi-headphones-b m-auto d-block"></i><p class="header__text m-0">Hjælp</p></a>                <div class="header__icon input__new"><a id="logout" class="hidden btn__no-style dropdown-toggle w-100 position-relative" href="/CustomerCenter/CustomerAccount">
+    <i class="pi-sm pi pi-login m-auto d-block position-relative"><small class="header__number-login position-absolute"><span class="pi-xxs pi pi-check-white"></span></small></i>
+    <p id="loginButtonText" class="hidden-xs hidden-sm header__text m-0">Log ind</p>
+    <p id="loginButtonTextSm" class="hidden-md hidden-lg header__text m-0">Min konto</p>
+</a>
+<button id="openLogin" type="button" class="btn__no-style w-100 position-relative" data-toggle="modal" data-target="#loginModal">
+    <i class="pi-sm pi pi-login m-auto d-block position-relative"></i>
+    <p id="loginButtonText" class="hidden-xs hidden-sm  hidden-sm header__text m-0">Log ind</p>
+    <p id="loginButtonTextSm" class="hidden-md hidden-lg header__text m-0">Log ind</p>
+</button></div><div class="header__icon">
+<div id="minibasket" data-customerid="">
+<form action="/Basket" class="form-horizontal" method="get" novalidate="novalidate">        <button type="submit" class="btn__no-style position-relative w-100" id="btnBasket"><i class="pi-sm pi pi-basket m-auto position-relative d-block"><small data-minibasketlinecount=""></small></i><p class="hidden-xs hidden-sm header__text m-0" data-minibasketprice="" data-toggle="tooltip" data-placement="bottom">0,00 kr.</p><p class="hidden-md hidden-lg header__text m-0">Kurv</p></button>
+</form></div></div>
+            </div>
+        </div>
+    </div>
+    
+
+
+<section class="menu-top hidden-xs hidden-sm position-absolute w-100">
+    <div class="pl-2 pr-2 ps-container">
+        <div class="d-flex flex-nowrap">
+                <a class="menu-top__cta menu-top__cta--bf" href="/Baerbar">Bærbar</a>
+                <a class="menu-top__cta menu-top__cta--bf" href="/Gaming">Gaming</a>
+                <a class="menu-top__cta menu-top__cta--bf" href="/Mobil">Mobil</a>
+                <a class="menu-top__cta menu-top__cta--bf" href="/Smart-Home">Smart Home</a>
+                <a class="menu-top__cta menu-top__cta--bf" href="/SSD">SSD</a>
+                            <div class="menu-top__cta menu-top__cta--bf"><a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/Hus-Have" data-gtm-vis-polling-id115630387_30="66" data-gtm-vis-recent-on-screen115630387_57="139" data-gtm-vis-first-on-screen115630387_57="139" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="242" data-gtm-vis-first-on-screen115630387_30="242" data-gtm-vis-total-visible-time115630387_30="700">Hus &amp; Have</a> <a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/DEALS" data-gtm-vis-polling-id115630387_30="67" data-gtm-vis-recent-on-screen115630387_57="144" data-gtm-vis-first-on-screen115630387_57="145" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="242" data-gtm-vis-first-on-screen115630387_30="242" data-gtm-vis-total-visible-time115630387_30="700">DEALS</a> <a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/dutzo-computere" data-gtm-vis-polling-id115630387_30="68" data-gtm-vis-recent-on-screen115630387_57="148" data-gtm-vis-first-on-screen115630387_57="148" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="242" data-gtm-vis-first-on-screen115630387_30="242" data-gtm-vis-total-visible-time115630387_30="700">DUTZO Gaming</a> <a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/Erhverv" data-gtm-vis-polling-id115630387_30="69" data-gtm-vis-recent-on-screen115630387_57="151" data-gtm-vis-first-on-screen115630387_57="151" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="242" data-gtm-vis-first-on-screen115630387_30="242" data-gtm-vis-total-visible-time115630387_30="700">Erhverv</a> <a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/Gavekort/Gavekort/100001" data-gtm-vis-polling-id115630387_30="70" data-gtm-vis-recent-on-screen115630387_57="153" data-gtm-vis-first-on-screen115630387_57="153" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="242" data-gtm-vis-first-on-screen115630387_30="242" data-gtm-vis-total-visible-time115630387_30="700">Gavekort</a></div>
+        </div>
+    </div>
+</section>
+
+
+</header><div id="search-result" class="position-relative" style="display: block; opacity: 0;"></div>
+        <div class="site-background-banner visible-lg"><div data-vueapp="campaigns" class="site-background-skin" id="c20a7b958acb14a93b2a74596cf36c719" element-id="20a7b958-acb1-4a93-b2a7-4596cf36c719" data="e30=" data-v-app=""><div><div><a data-action="campaignClick" data-id="4c956537-ca35-47e1-ac2d-e5b08026b97d" data-name="PRO01740 - Fairphone (Gen. 6) Launch - Frontpage Takeover" data-creative="20a7b958-acb1-4a93-b2a7-4596cf36c719" data-position="background-skin" class="site-background-cta visible-lg" href="/Fairphone-Gen-6" target="_self" data-gtm-vis-recent-on-screen115630387_57="156" data-gtm-vis-first-on-screen115630387_57="156" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1"></a></div></div></div>
+</div>
+    
+    
+
+    <div class="site-container-fullwidth">
+        <div class="top-banner-container visible-sm">
+            <div class="site-top-banner d-flex justify-content-center align-items-center"><div data-vueapp="campaigns" class="site-top" id="c133b79045ba04d648e679f04868336d1" element-id="133b7904-5ba0-4d64-8e67-9f04868336d1" data="e30=" data-v-app=""><div><div><a data-action="campaignClick" data-id="4c956537-ca35-47e1-ac2d-e5b08026b97d" data-name="PRO01740 - Fairphone (Gen. 6) Launch - Frontpage Takeover" data-creative="133b7904-5ba0-4d64-8e67-9f04868336d1" data-position="top" href="/Fairphone-Gen-6" target="_self"><img src="/Images/PRO01740-The-Fairphone-siteskin-top-CTA-DK_ba77e7f0f03a.jpg" alt=""></a></div></div></div>
+</div>
+        </div>
+            <div class="visible-xs site-top-banner-mobile"><div data-vueapp="campaigns" class="site-top-small" id="cca339e43954e4ef9b874a4c238dd3794" element-id="ca339e43-954e-4ef9-b874-a4c238dd3794" data="e30=" data-v-app=""><div><div><a data-action="campaignClick" data-id="4c956537-ca35-47e1-ac2d-e5b08026b97d" data-name="PRO01740 - Fairphone (Gen. 6) Launch - Frontpage Takeover" data-creative="ca339e43-954e-4ef9-b874-a4c238dd3794" data-position="top-small" href="/Fairphone-Gen-6" target="_self"><img src="/Images/PRO01740-The-Fairphone-852x150-DK_08d1592a2923.jpg" alt=""></a></div></div></div>
+</div>
+    <div class="container site-container ps-container position-relative px-2 pt-1 hasTopBanner">
+        
+
+        
+        
+<div class="site-content-table row">
+    <div class="col-xs-12 col-md-3 p-0">
+        <aside id="Site-menu" class="position-relative" data-v-app=""><nav class="site-mainMenu position-relative" aria-label="Main menu" menulevel="1"><!----><ul class="site-mainMenuItems d-flex" id="main-menu" role="menu" aria-labelledby="menu-button"><li class="outlet d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/outlet.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/outlet.svg&quot;);"></i><a class="d-flex" href="/Auktion-Outlet" role="menuitem" tabindex="0">Auktion &amp; Outlet</a><i class=""></i></li><li class="campaign d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/campaigns.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/campaigns.svg&quot;);"></i><a class="d-flex" href="/campaigns" role="menuitem" tabindex="0">Kampagner</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/boger.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/boger.svg&quot;);"></i><a class="d-flex" href="/Boeger" role="menuitem" tabindex="0">Bøger</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/spilfilm.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/spilfilm.svg&quot;);"></i><a class="d-flex" href="/Boern-Legetoej" role="menuitem" tabindex="0">Børn &amp; Legetøj</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/computer.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/computer.svg&quot;);"></i><a class="d-flex" href="/Computer" role="menuitem" tabindex="0">Computer</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/pets.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/pets.svg&quot;);"></i><a class="d-flex" href="/Dyreartikler" role="menuitem" tabindex="0">Dyreartikler</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/belysning.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/belysning.svg&quot;);"></i><a class="d-flex" href="/El-VVS" role="menuitem" tabindex="0">El &amp; VVS</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/fotovideo.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/fotovideo.svg&quot;);"></i><a class="d-flex" href="/Foto-Video" role="menuitem" tabindex="0">Foto &amp; Video</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/hardware.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/hardware.svg&quot;);"></i><a class="d-flex" href="/Hardware" role="menuitem" tabindex="0">Hardware</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/hushave.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/hushave.svg&quot;);"></i><a class="d-flex" href="/Hus-Have" role="menuitem" tabindex="0">Hus &amp; Have</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/husholdning.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/husholdning.svg&quot;);"></i><a class="d-flex" href="/Husholdning" role="menuitem" tabindex="0">Husholdning</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/kablerstik.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/kablerstik.svg&quot;);"></i><a class="d-flex" href="/Kabler-Stik" role="menuitem" tabindex="0">Kabler &amp; Stik</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/office-supplies.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/office-supplies.svg&quot;);"></i><a class="d-flex" href="/Kontor-og-hobbyartikler" role="menuitem" tabindex="0">Kontor- og hobbyartikler</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/mobilgps.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/mobilgps.svg&quot;);"></i><a class="d-flex" href="/Mobil-Tablet" role="menuitem" tabindex="0">Mobil &amp; Tablet</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/netvaerk.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/netvaerk.svg&quot;);"></i><a class="d-flex" href="/Netvaerk" role="menuitem" tabindex="0">Netværk</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/personligpleje.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/personligpleje.svg&quot;);"></i><a class="d-flex" href="/Personlig-pleje" role="menuitem" tabindex="0">Personlig pleje</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/printereforbrugstoffer.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/printereforbrugstoffer.svg&quot;);"></i><a class="d-flex" href="/Printere-Forbrugsstoffer" role="menuitem" tabindex="0">Printere &amp; Forbrugsstoffer</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/software.svg" width="25" height="25" class="site-mainMenuItemIcon lazy"></i><a class="d-flex" href="/Software" role="menuitem" tabindex="0">Software</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/games-gaming.svg" width="25" height="25" class="site-mainMenuItemIcon lazy"></i><a class="d-flex" href="/Spil-Gaming" role="menuitem" tabindex="0">Spil &amp; Gaming</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/tvhifi.svg" width="25" height="25" class="site-mainMenuItemIcon lazy"></i><a class="d-flex" href="/Tv-og-lyd" role="menuitem" tabindex="0">Tv og lyd</a><i class=""></i></li><!----></ul></nav><!----></aside>
+        
+            <div class="hidden-xs hidden-sm mt-2">
+                <div class="mb-2"><div data-vueapp="campaigns" class="site-bottom-left" id="c81cecc2c6c754ff4bdfbc548018d6412" element-id="81cecc2c-6c75-4ff4-bdfb-c548018d6412" data="e30=" data-v-app=""><div><!--v-if--></div></div>
+</div><div data-vueapp="campaigns" class="site-bottom-left-2" id="c49271a34d03945e7814b28d0918bb617" element-id="49271a34-d039-45e7-814b-28d0918bb617" data="e30=" data-v-app=""><div><!--v-if--></div></div>
+
+            </div>
+    </div>
+    <main class="col-xs-12 col-md-9">
+            <div>
+                <div class="site-bar-breadcrumbs d-flex mb-2">
+                    <ol class="breadcrumb d-flex small" id="breadcrumbs" itemscope="" itemtype="http://schema.org/BreadcrumbList"><li itemscope="" itemprop="itemListElement" itemtype="http://schema.org/ListItem"><a class="p-0" href="/" itemprop="item"><span itemprop="name">Forside</span></a><meta itemprop="position" content="1"></li>
+
+
+<li itemscope="" itemprop="itemListElement" itemtype="http://schema.org/ListItem"><a class="p-0" href="/Musemaatte-tilbehoer" itemprop="item"><span itemprop="name">Musemåtte &amp; tilbehør</span></a><meta itemprop="position" content="2"></li></ol>
+                </div>
+            </div>
+        
+        
+
+    <div class="site-campaignElement" data-campaign-element-id="57133009-4a51-499a-ac86-415976b997f0">
+        <a data-action="campaignClick" data-id="c806b532-1d49-4d6d-a863-7aecd753cf67" data-name="Corsair iCUE Murals - Category Banner" data-creative="57133009-4a51-499a-ac86-415976b997f0" data-position="category-top" href="/Corsair" target="_self" data-gtm-vis-polling-id115630387_30="71" data-gtm-vis-recent-on-screen115630387_57="159" data-gtm-vis-first-on-screen115630387_57="159" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="242" data-gtm-vis-first-on-screen115630387_30="242" data-gtm-vis-total-visible-time115630387_30="700"><img src="/Images/Corsair-iCUE-Murals-852-x350-EN_5e8f665c4022.jpg"></a>
+    </div>
+
+
+
+
+
+
+
+
+        <span data-type="category" data-siteid="proshop.dk" data-categoryid="inputtilbehor"></span>
+    <div id="categoryLongDesc" class="position-relative pb-4 site-display-all">
+        <div class="site-fadeout-container" id="categoryInnerContainer">
+            <h1>Musemåtte til kontor eller gaming</h1><p>Uanset om du benytter en <strong><a href="/Mus?f~mus_teknologi=optisk&amp;b=" target="_blank">optisk</a> </strong>eller <strong><a href="/Mus?f~mus_teknologi=laser&amp;b=" target="_blank">laser mus</a></strong>, er det en rigtig god idé at benytte en musemåtte. Der findes mange forskellige størrelser, der fylder alt fra et lille område til hele skrivebordet.</p><p>De fleste musemåtter er udført i stof og har et gummilag nedenunder for at sikre en god fiksering. Nogle modeller er også lavet i polycarbonat, som giver en mere glat overflade. Er det ikke nok for dig med RGB i dit <strong><a href="/Kabinet" target="_blank">kabinet</a></strong>, dit <strong><a href="/Bundkort" target="_blank">bundkort</a> </strong>og din <strong><a href="https://www.proshop.dk/Mus?pre=0&amp;f~mus_type=gaming-mus" target="_blank">gaming mus</a></strong>, så findes der også musemåtter med RGB i 16.8 millioner farver.</p><p>Er du på udkig efter kabelstyring til din <strong><a href="/Mus" target="_blank">mus</a></strong>, så findes der også flere forskellige løsninger. Med kabelstyring kan du ubesværet spille uden at komme i problemer med din ledning.</p><p>Hvis du gerne vil undgå museskader, kan det være en god idé at købe en musemåtte med en håndstøtte. Hvis du gerne vil væk fra den klassiske mus, vil det være en god idé at købe en rollermouse.</p>
+            <div class="w-100 d-flex justify-content-center">
+                <button id="showLess" class="btn site-btn-between site-btn-white site-btn-hasborder mt-4"><span>Fold sammen</span></button>
+            </div>
+        </div>
+        <div class="w-100 justify-content-center d-flex">
+            <button id="showMore" class="position-absolute btn site-btn-between site-btn-white site-btn-hasborder" style="display: none;"><span>Læs mere</span></button>
+        </div>
+    </div>
+    <div class="longDescShadow position-relative"></div>
+    <div id="productList" class="w-100 new-design" data-v-app=""><div class="site-filter-sorting clearfix pt-2"><div><div class="mb-2 clearfix"><div class="site-filter site-filterOrderBy"><ul class="list-inline row"><li class="dropdown site-filter position-relative facetCollection"><button href="#" class="btn site-btn-between site-btn-white site-btn-hasborder col-xs-12"><p class="filter__btn-md">Sorter efter:&nbsp;<span>Popularitet</span></p><i class="ki-s pi-chev-right bg-black rotate90"></i></button><div class="dropdown-menu position-absolute"><ul class="site-dropdown" role="menu"><li class="checkbox position-relative d-block"><a><span>Pris <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-up" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5z"></path>
+</svg></span></a></li><li class="checkbox position-relative d-block"><a><span>Pris <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-down" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z"></path>
+</svg></span></a></li><li class="checkbox position-relative d-block"><a><span>Rabat %</span></a></li><li class="checkbox position-relative d-block"><a><span>Popularitet</span></a></li><li class="checkbox position-relative d-block"><a><span>Alfabetisk</span></a></li><li class="checkbox position-relative d-block"><a><span>Nyeste</span></a></li></ul></div></li></ul></div><div class="site-filter"><ul class="list-inline row"><li class="dropdown site-filter position-relative facetCollection" aria-label="Filtrer efter Pris"><button id="dropdownMenuBtnPrices" class="btn site-btn-between site-btn-white site-btn-hasborder col-xs-12" aria-haspopup="true" aria-expanded="false" aria-controls="dropdownMenuPrices"><p class="filter__btn-md">Pris</p><i class="ki-s pi-chev-right bg-black rotate90"></i></button><div class="dropdown-menu position-absolute" id="dropdownMenuPrices" role="menu" aria-labelledby="dropdownMenuBtnPrices"><!--v-if--></div></li><li class="dropdown site-filter position-relative facetCollection" aria-label="Filtrer efter Lagerstatus"><button id="dropdownMenuBtnDeliveryStatus" class="btn site-btn-between site-btn-white site-btn-hasborder col-xs-12" aria-haspopup="true" aria-expanded="false" aria-controls="dropdownMenuDeliveryStatus"><p class="filter__btn-md">Lagerstatus</p><i class="ki-s pi-chev-right bg-black rotate90"></i></button><div class="dropdown-menu position-absolute" id="dropdownMenuDeliveryStatus" role="menu" aria-labelledby="dropdownMenuBtnDeliveryStatus"><!--v-if--></div></li><li class="dropdown site-filter position-relative facetCollection" aria-label="Filtrer efter Produkttype"><button id="dropdownMenuBtninputtilbehor_produkttype" class="btn site-btn-between site-btn-white site-btn-hasborder col-xs-12" aria-haspopup="true" aria-expanded="false" aria-controls="dropdownMenuinputtilbehor_produkttype"><p class="filter__btn-md">Produkttype</p><i class="ki-s pi-chev-right bg-black rotate90"></i></button><div class="dropdown-menu position-absolute" id="dropdownMenuinputtilbehor_produkttype" role="menu" aria-labelledby="dropdownMenuBtninputtilbehor_produkttype"><!--v-if--></div></li><li class="dropdown site-filter position-relative facetCollection" aria-label="Filtrer efter Producent"><button id="dropdownMenuBtnBrands" class="btn site-btn-between site-btn-white site-btn-hasborder col-xs-12" aria-haspopup="true" aria-expanded="false" aria-controls="dropdownMenuBrands"><p class="filter__btn-md">Producent</p><i class="ki-s pi-chev-right bg-black rotate90"></i></button><div class="dropdown-menu position-absolute" id="dropdownMenuBrands" role="menu" aria-labelledby="dropdownMenuBtnBrands"><!--v-if--></div></li></ul><!--v-if--></div><!--v-if--></div><ul class="list-inline active-results d-flex mb-1"><li><button class="btn site-btn-short site-filter-selected-btn" role="button"><span>ASUS</span>&nbsp;<i class="ki ki-s pi-x-circle-fill-white"></i></button></li><li><button class="btn site-btn-short site-filter-selected-btn" role="button"><span>Corsair</span>&nbsp;<i class="ki ki-s pi-x-circle-fill-white"></i></button></li><li><button class="btn site-btn-short site-filter-selected-btn" role="button"><span>dezen</span>&nbsp;<i class="ki ki-s pi-x-circle-fill-white"></i></button></li><li><button class="btn site-btn-short site-filter-selected-btn" role="button"><span>DUTZO</span>&nbsp;<i class="ki ki-s pi-x-circle-fill-white"></i></button></li><li><button class="btn site-btn-short site-filter-selected-btn" role="button"><span>Kingston</span>&nbsp;<i class="ki ki-s pi-x-circle-fill-white"></i></button></li><li><button class="btn site-btn-short site-filter-selected-btn" role="button"><span>Logitech</span>&nbsp;<i class="ki ki-s pi-x-circle-fill-white"></i></button></li><li><button class="btn site-btn-short site-filter-selected-btn" role="button"><span>Mousetrapper</span>&nbsp;<i class="ki ki-s pi-x-circle-fill-white"></i></button></li><li><button class="btn site-btn-short site-filter-selected-btn" role="button"><span>Razer</span>&nbsp;<i class="ki ki-s pi-x-circle-fill-white"></i></button></li><li><button class="btn site-btn-short site-filter-selected-btn" role="button"><span>Sandberg</span>&nbsp;<i class="ki ki-s pi-x-circle-fill-white"></i></button></li><li><button class="btn site-btn-short site-filter-selected-btn" role="button"><span>SteelSeries</span>&nbsp;<i class="ki ki-s pi-x-circle-fill-white"></i></button></li><li><button class="btn site-btn-short site-filter-selected-btn" role="button"><span>Varmilo</span>&nbsp;<i class="ki ki-s pi-x-circle-fill-white"></i></button></li><li><button class="btn site-btn-short site-filter-selected-btn" role="button"><span><span class="text-muted">+&nbsp;</span>Lagervarer</span>&nbsp;<i class="ki ki-s pi-x-circle-fill-white"></i></button></li><li><a class="btn site-btn-short site-filter-selected-btn reset-facets" role="button"> Nulstil alle filtre </a></li></ul></div></div><ul class="site-panel list-unstyled site-productlist-container pt-1" role="list" id="products" data-gtm="eyJldmVudCI6InZpZXdfaXRlbV9saXN0IiwiZWNvbW1lcmNlIjp7Iml0ZW1zIjpbeyJpdGVtX2lkIjoiMjEwMDk4NSIsIml0ZW1fbmFtZSI6IlN0ZWVsU2VyaWVzIFFjSyBMYXJnZSIsIml0ZW1fYnJhbmQiOiJTdGVlbFNlcmllcyIsIml0ZW1fY2F0ZWdvcnkiOiJNdXNlbeV0dGUgJiB0aWxiZWj4ciIsInByaWNlIjo5OS4wMDAsInF1YW50aXR5IjoxfSx7Iml0ZW1faWQiOiIzMTk5MzcxIiwiaXRlbV9uYW1lIjoiQVNVUyBST0cgSG9uZSBBY2UgWFhMIiwiaXRlbV9icmFuZCI6IkFTVVMiLCJpdGVtX2NhdGVnb3J5IjoiTXVzZW3ldHRlICYgdGlsYmVo+HIiLCJwcmljZSI6MjY5LjAwMCwicXVhbnRpdHkiOjF9LHsiaXRlbV9pZCI6IjI4ODgxMDMiLCJpdGVtX25hbWUiOiJBU1VTIFJPRyBTY2FiYmFyZCBJSSBYWEwiLCJpdGVtX2JyYW5kIjoiQVNVUyIsIml0ZW1fY2F0ZWdvcnkiOiJNdXNlbeV0dGUgJiB0aWxiZWj4ciIsInByaWNlIjoyNjkuMDAwLCJxdWFudGl0eSI6MX0seyJpdGVtX2lkIjoiMzEwNzI5OSIsIml0ZW1fbmFtZSI6IkxvZ2l0ZWNoIEc4NDAgWEwgR2FtaW5nIE1vdXNlcGFkIiwiaXRlbV9icmFuZCI6IkxvZ2l0ZWNoIiwiaXRlbV9jYXRlZ29yeSI6Ik11c2Vt5XR0ZSAmIHRpbGJlaPhyIiwicHJpY2UiOjI0OS4wMDAsInF1YW50aXR5IjoxfSx7Iml0ZW1faWQiOiIzMTA3MTkyIiwiaXRlbV9uYW1lIjoiTG9naXRlY2ggRzI0MCBDbG90aCBHYW1pbmcgTW91c2VwYWQiLCJpdGVtX2JyYW5kIjoiTG9naXRlY2giLCJpdGVtX2NhdGVnb3J5IjoiTXVzZW3ldHRlICYgdGlsYmVo+HIiLCJwcmljZSI6NzEuMDAwLCJxdWFudGl0eSI6MX0seyJpdGVtX2lkIjoiMzMxODU2MSIsIml0ZW1fbmFtZSI6IlN0ZWVsU2VyaWVzIFFjSyBYWEwiLCJpdGVtX2JyYW5kIjoiU3RlZWxTZXJpZXMiLCJpdGVtX2NhdGVnb3J5IjoiTXVzZW3ldHRlICYgdGlsYmVo+HIiLCJwcmljZSI6MjE5LjAwMCwicXVhbnRpdHkiOjF9LHsiaXRlbV9pZCI6IjMxMDcyMDkiLCJpdGVtX25hbWUiOiJMb2dpdGVjaCBHNjQwIENsb3RoIEdhbWluZyBNb3VzZXBhZCIsIml0ZW1fYnJhbmQiOiJMb2dpdGVjaCIsIml0ZW1fY2F0ZWdvcnkiOiJNdXNlbeV0dGUgJiB0aWxiZWj4ciIsInByaWNlIjoxOTkuMDAwLCJxdWFudGl0eSI6MX0seyJpdGVtX2lkIjoiMzEwNzE5OCIsIml0ZW1fbmFtZSI6IkxvZ2l0ZWNoIEc0NDAgSGFyZCBHYW1pbmcgTW91c2VwYWQiLCJpdGVtX2JyYW5kIjoiTG9naXRlY2giLCJpdGVtX2NhdGVnb3J5IjoiTXVzZW3ldHRlICYgdGlsYmVo+HIiLCJwcmljZSI6MTI5LjAwMCwicXVhbnRpdHkiOjF9LHsiaXRlbV9pZCI6IjI1ODI0ODEiLCJpdGVtX25hbWUiOiJkZXplbiBNb3VzZXBhZCAtIFNtYWxsIiwiaXRlbV9icmFuZCI6ImRlemVuIiwiaXRlbV9jYXRlZ29yeSI6Ik11c2Vt5XR0ZSAmIHRpbGJlaPhyIiwicHJpY2UiOjI5LjAwMCwicXVhbnRpdHkiOjF9LHsiaXRlbV9pZCI6IjMyNjk3OTEiLCJpdGVtX25hbWUiOiJTcGlnZW4gRGVza1BhZCBMRDMwMiAtIGJyb3duIiwiaXRlbV9icmFuZCI6IlNwaWdlbiIsIml0ZW1fY2F0ZWdvcnkiOiJNdXNlbeV0dGUgJiB0aWxiZWj4ciIsInByaWNlIjoyMTguMDAwLCJxdWFudGl0eSI6MX0seyJpdGVtX2lkIjoiMjIwNzUxMiIsIml0ZW1fbmFtZSI6IlN0ZWVsU2VyaWVzIFFDSyBIZWF2eSBMYXJnZSIsIml0ZW1fYnJhbmQiOiJTdGVlbFNlcmllcyIsIml0ZW1fY2F0ZWdvcnkiOiJNdXNlbeV0dGUgJiB0aWxiZWj4ciIsInByaWNlIjoxOTkuMDAwLCJxdWFudGl0eSI6MX0seyJpdGVtX2lkIjoiMzAxNDQyNiIsIml0ZW1fbmFtZSI6IkxvZ2l0ZWNoIERlc2sgTWF0IFN0dWRpbyBTZXJpZXMgLSBNaWQgR3JleSIsIml0ZW1fYnJhbmQiOiJMb2dpdGVjaCIsIml0ZW1fY2F0ZWdvcnkiOiJNdXNlbeV0dGUgJiB0aWxiZWj4ciIsInByaWNlIjoxNDkuMDAwLCJxdWFudGl0eSI6MX0seyJpdGVtX2lkIjoiMjUzMTA1MiIsIml0ZW1fbmFtZSI6IlN0ZWVsU2VyaWVzIFFjSyBIZWF2eSBYWEwiLCJpdGVtX2JyYW5kIjoiU3RlZWxTZXJpZXMiLCJpdGVtX2NhdGVnb3J5IjoiTXVzZW3ldHRlICYgdGlsYmVo+HIiLCJwcmljZSI6Mjk5LjAwMCwicXVhbnRpdHkiOjF9LHsiaXRlbV9pZCI6IjMxMDcyMjgiLCJpdGVtX25hbWUiOiJMb2dpdGVjaCBHNzQwIENsb3RoIEdhbWluZyBNb3VzZSBQYWQiLCJpdGVtX2JyYW5kIjoiTG9naXRlY2giLCJpdGVtX2NhdGVnb3J5IjoiTXVzZW3ldHRlICYgdGlsYmVo+HIiLCJwcmljZSI6MTg5LjAwMCwicXVhbnRpdHkiOjF9LHsiaXRlbV9pZCI6IjI3Nzk3NjMiLCJpdGVtX25hbWUiOiJEVVRaTyBGdXNoaSBHYW1pbmcgTW91c2VwYWQgLSBNZWRpdW0iLCJpdGVtX2JyYW5kIjoiRFVUWk8iLCJpdGVtX2NhdGVnb3J5IjoiTXVzZW3ldHRlICYgdGlsYmVo+HIiLCJwcmljZSI6MzkuMDAwLCJxdWFudGl0eSI6MX0seyJpdGVtX2lkIjoiMzIyMTY2NSIsIml0ZW1fbmFtZSI6Ik1pb25peCBBbGlvdGggWEwgTW91c2VwYWQgLSA5MHg0MCBjbSAtIEJsYWNrIiwiaXRlbV9icmFuZCI6Ik1pb25peCIsIml0ZW1fY2F0ZWdvcnkiOiJNdXNlbeV0dGUgJiB0aWxiZWj4ciIsInByaWNlIjoxNDkuMDAwLCJxdWFudGl0eSI6MX0seyJpdGVtX2lkIjoiMzAxNDUxMCIsIml0ZW1fbmFtZSI6IkxvZ2l0ZWNoIE1vdXNlIFBhZCBTdHVkaW8gU2VyaWVzIC0gR3JhcGhpdGUiLCJpdGVtX2JyYW5kIjoiTG9naXRlY2giLCJpdGVtX2NhdGVnb3J5IjoiTXVzZW3ldHRlICYgdGlsYmVo+HIiLCJwcmljZSI6NjkuMDAwLCJxdWFudGl0eSI6MX0seyJpdGVtX2lkIjoiMjAwMDA0MiIsIml0ZW1fbmFtZSI6IlNhbmRiZXJnIE1vdXNlcGFkIiwiaXRlbV9icmFuZCI6IlNhbmRiZXJnIiwiaXRlbV9jYXRlZ29yeSI6Ik11c2Vt5XR0ZSAmIHRpbGJlaPhyIiwicHJpY2UiOjI4LjAwMCwicXVhbnRpdHkiOjF9LHsiaXRlbV9pZCI6IjI3Nzk3NjUiLCJpdGVtX25hbWUiOiJEVVRaTyBGdXNoaSBHYW1pbmcgTW91c2VwYWQgLSBEZXNrdG9wIiwiaXRlbV9icmFuZCI6IkRVVFpPIiwiaXRlbV9jYXRlZ29yeSI6Ik11c2Vt5XR0ZSAmIHRpbGJlaPhyIiwicHJpY2UiOjc5LjAwMCwicXVhbnRpdHkiOjF9LHsiaXRlbV9pZCI6IjIxMDAxMjIiLCJpdGVtX25hbWUiOiJTdGVlbFNlcmllcyBRY0sgU21hbGwiLCJpdGVtX2JyYW5kIjoiU3RlZWxTZXJpZXMiLCJpdGVtX2NhdGVnb3J5IjoiTXVzZW3ldHRlICYgdGlsYmVo+HIiLCJwcmljZSI6NjkuMDAwLCJxdWFudGl0eSI6MX0seyJpdGVtX2lkIjoiMzA2ODYwMSIsIml0ZW1fbmFtZSI6Ilh0cmZ5IEdQNSBYTCBNb3VzZXBhZCAtIFdoaXRlIiwiaXRlbV9icmFuZCI6Ilh0cmZ5IiwiaXRlbV9jYXRlZ29yeSI6Ik11c2Vt5XR0ZSAmIHRpbGJlaPhyIiwicHJpY2UiOjE2OS4wMDAsInF1YW50aXR5IjoxfSx7Iml0ZW1faWQiOiIzMDgxMTc4IiwiaXRlbV9uYW1lIjoiQWx0ZXJ6b25lIFBBRCBEZXNrdG9wIFZlZ2FuIExlYXRoZXIgU3VyZmFjZSAtIENvZ25hYyBCcm93biIsIml0ZW1fYnJhbmQiOiJBbHRlcnpvbmUiLCJpdGVtX2NhdGVnb3J5IjoiTXVzZW3ldHRlICYgdGlsYmVo+HIiLCJwcmljZSI6MjQ5LjAwMCwicXVhbnRpdHkiOjF9LHsiaXRlbV9pZCI6IjMzMDE2MTIiLCJpdGVtX25hbWUiOiJTVVBFIERFU0tNQVQgVEhJUyBJUyBGSU5FIiwiaXRlbV9icmFuZCI6IlNVUEUiLCJpdGVtX2NhdGVnb3J5IjoiTXVzZW3ldHRlICYgdGlsYmVo+HIiLCJwcmljZSI6MTAxLjAwMCwicXVhbnRpdHkiOjF9LHsiaXRlbV9pZCI6IjMzMzU4NzIiLCJpdGVtX25hbWUiOiJMb2dpdGVjaCBHIFBPV0VSUExBWSAyIFdpcmVsZXNzIENoYXJnaW5nIFN5c3RlbSIsIml0ZW1fYnJhbmQiOiJMb2dpdGVjaCIsIml0ZW1fY2F0ZWdvcnkiOiJNdXNlbeV0dGUgJiB0aWxiZWj4ciIsInByaWNlIjo4NDkuMDAwLCJxdWFudGl0eSI6MX0seyJpdGVtX2lkIjoiMzE1MDA2OSIsIml0ZW1fbmFtZSI6IlNwZWVkLUxpbmsgQVRFQ1MgU29mdCBHYW1pbmcgTW91c2VwYWQgLSBTaXplIFhYTCIsIml0ZW1fYnJhbmQiOiJTcGVlZC1MaW5rIiwiaXRlbV9jYXRlZ29yeSI6Ik11c2Vt5XR0ZSAmIHRpbGJlaPhyIiwicHJpY2UiOjEwNS4wMDAsInF1YW50aXR5IjoxfV19LCJzdWJ0b3RhbEFtb3VudCI6MC4wfQ=="><li class="site-active-results-container mb-1 mt-0">Produkter i din søgning: 200</li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><div class="site-image-discount-splash position-absolute"><div class="position-relative"><span class="position-absolute">-33%</span></div></div> <a class="show" href="/Musemaatte-tilbehoer/SteelSeries-QcK-Large/2100985" title="SteelSeries QcK Large - 63003"><img alt="Musemåtte &amp; tilbehør - SteelSeries QcK Large - 63003" height="116" src="/Images/174x116/2100985_db4d187b5a43.jpg" width="174"></a><div data-energy="" data-cpn="S4859923" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><div class="badge-gradient-wrapper position-relative" style="overflow: hidden;"><div class="site-image-badge-container-lg"><span class="site-image-badge-nostyle site-image-badge-default">DEALS</span><span class="site-image-badge-nostyle site-image-badge-default">SUMMER OFFER</span><span class="site-image-badge-nostyle site-image-badge-default">HOT</span></div><div class="gradient-left" style="display: none;"></div><div class="gradient-right" style="display: none;"></div></div><a class="site-product-link" href="/Musemaatte-tilbehoer/SteelSeries-QcK-Large/2100985"><h2 product-display-name="" class="truncate-overflow">SteelSeries QcK Large</h2> Gaming musemåtte, størrelse: 450 x 400 x 2 mm (bredde x dybde x højde), overflade materiale: mikrovævet stof, med syede kanter, med anti-skrid bund materiale, farve: sort </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><div class="presales-price d-block">Før&nbsp;<span class="site-currency-pre d-inline-block">149,00 kr.</span></div><span class="site-currency-lg has-presales-price">99,00 kr.</span><span class="hidden-xs">(79,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="2100985"><input name="token" type="hidden" value="90627ba41b51"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="2100985"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">2100985</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager - 1-2 dages levering</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><div class="site-image-discount-splash position-absolute"><div class="position-relative"><span class="position-absolute">-37%</span></div></div> <a class="show" href="/Musemaatte-tilbehoer/ASUS-ROG-Hone-Ace-XXL/3199371" title="ASUS ROG Hone Ace XXL - 90MP03G0-BPUA00"><img alt="Musemåtte &amp; tilbehør - ASUS ROG Hone Ace XXL - 90MP03G0-BPUA00" height="116" src="/Images/174x116/3199371_95e01f84ef01.png" width="174"></a><div data-energy="" data-cpn="S28168713" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><div class="badge-gradient-wrapper position-relative" style="overflow: hidden;"><div class="site-image-badge-container-lg"><span class="site-image-badge-nostyle site-image-badge-default">DEALS</span><span class="site-image-badge-nostyle site-image-badge-default">GAMING DEAL OF THE MONTH</span><span class="site-image-badge-nostyle site-image-badge-default">HOT</span></div><div class="gradient-left" style="display: none;"></div><div class="gradient-right" style="display: none;"></div></div><a class="site-product-link" href="/Musemaatte-tilbehoer/ASUS-ROG-Hone-Ace-XXL/3199371"><h2 product-display-name="" class="truncate-overflow">ASUS ROG Hone Ace XXL</h2> Med en størrelse på 900 x 400 mm giver ROG Hone Ace XXL masser af plads til fleksibilitet, især til spillere, der har brug for rigelig bevægelsesplads, når musen har lavere DPI-indstillinger.<br><br>Finjuster dit sigte med ROG Hone Ace XXL-musemåtten til gaming. Den har en overflade af hybridstof, der giver overlegen kontrol, og en beskyttende nanobelægning, der øger holdbarheden. Undersiden af Hone Ace XXL er lavet af polyuretanbaseret memory-skum, som giver fremragende affjedring og holder musemåtten sikkert på plads i kampens hede. </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><div class="presales-price d-block">Før&nbsp;<span class="site-currency-pre d-inline-block">428,00 kr.</span></div><span class="site-currency-lg has-presales-price">269,00 kr.</span><span class="hidden-xs">(215,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3199371"><input name="token" type="hidden" value="59ee8568656f"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3199371"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3199371</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><div class="site-image-discount-splash position-absolute"><div class="position-relative"><span class="position-absolute">-22%</span></div></div> <a class="show" href="/Musemaatte-tilbehoer/ASUS-ROG-Scabbard-II-XXL/2888103" title="ASUS ROG Scabbard II XXL - 90MP0210-BPUA00"><img alt="Musemåtte &amp; tilbehør - ASUS ROG Scabbard II XXL - 90MP0210-BPUA00" height="116" src="/Images/174x116/2888103_eec089a39646.png" width="174"></a><div data-energy="" data-cpn="S24456231" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><div class="badge-gradient-wrapper position-relative" style="overflow: hidden;"><div class="site-image-badge-container-lg"><span class="site-image-badge-nostyle site-image-badge-default">DEALS</span><span class="site-image-badge-nostyle site-image-badge-default">GAMING DEAL OF THE MONTH</span><span class="site-image-badge-nostyle site-image-badge-default">HOT</span></div><div class="gradient-left" style="display: none;"></div><div class="gradient-right" style="display: none;"></div></div><a class="site-product-link" href="/Musemaatte-tilbehoer/ASUS-ROG-Scabbard-II-XXL/2888103"><h2 product-display-name="" class="truncate-overflow">ASUS ROG Scabbard II XXL</h2> Gaming musemåtte, størrelse: 900 x 400 x 3 mm (bredde x dybde x højde), overflade materiale: stof, med syede kanter og anti-fray (modvirker optrevling af kanter), materiale, med anti-skrid bund materiale, farve: sort / rød<br><br> • ROG Scabbard II gamingmusemåtte (medium og extended størrelser) med beskyttende nanobelægning, som giver en vand-, olie- og støvafvisende overflade, samt slidstærke, fladsyede kanter og skridsikker gummibund.<ul><li>Beskyttende nanobelægning i militærkvalitet giver en vand-, olie- og støvafvisende overflade og sikrer jævn musebevægelse</li><li>Fladsyede, slidstærke kanter</li><li>Smalt sømdesign for langvarig holdbarhed og et pænere udseende</li></ul></a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><div class="presales-price d-block">Før&nbsp;<span class="site-currency-pre d-inline-block">349,00 kr.</span></div><span class="site-currency-lg has-presales-price">269,00 kr.</span><span class="hidden-xs">(215,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="2888103"><input name="token" type="hidden" value="f9a168733a36"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="2888103"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">2888103</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/Logitech-G840-XL-Gaming-Mousepad/3107299" title="Logitech G840 XL Gaming Mousepad - 943-000778"><img alt="Musemåtte &amp; tilbehør - Logitech G840 XL Gaming Mousepad - 943-000778" height="116" src="/Images/174x116/3107299_32104b502476.png" width="174"></a><div data-energy="" data-cpn="S27129863" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/Logitech-G840-XL-Gaming-Mousepad/3107299"><h2 product-display-name="" class="truncate-overflow">Logitech G840 XL Gaming Mousepad</h2> Gaming musemåtte, materiale: stof med gummiunderside som sikre musmåtten ikke glider, størrelse: 900mm x 400mm x 3mm<p>Stofoverfladen på Logitech G840 Cloth Gaming-musemåtten giver den bedste overfladefriktion til spil med lav DPI så du får bedre kontrol med musen og kan placere markøren helt præcist</p></a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">249,00 kr.</span><span class="hidden-xs">(199,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3107299"><input name="token" type="hidden" value="5d51e469fd73"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3107299"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3107299</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/Logitech-G240-Cloth-Gaming-Mousepad/3107192" title="Logitech G240 Cloth Gaming Mousepad - 943-000785"><img alt="Musemåtte &amp; tilbehør - Logitech G240 Cloth Gaming Mousepad - 943-000785" height="116" src="/Images/174x116/3107192_d0927450e7a5.png" width="174"></a><div data-energy="" data-cpn="S27129865" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/Logitech-G240-Cloth-Gaming-Mousepad/3107192"><h2 product-display-name="" class="truncate-overflow">Logitech G240 Cloth Gaming Mousepad</h2> Gaming musemåtte, materiale: stof med gummiunderside som sikre musmåtten ikke glider, størrelse: 280mm x 340mm x 1mm </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">71,00 kr.</span><span class="hidden-xs">(56,80 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3107192"><input name="token" type="hidden" value="3b7ff77b385e"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3107192"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3107192</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/SteelSeries-QcK-XXL/3318561" title="SteelSeries QcK XXL - 63429"><img alt="Musemåtte &amp; tilbehør - SteelSeries QcK XXL - 63429" class="lazy" data-src="/Images/174x116/3318561_69dc538c8186.png" height="116" width="174"></a><div data-energy="" data-cpn="S29330797" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/SteelSeries-QcK-XXL/3318561"><h2 product-display-name="" class="truncate-overflow">SteelSeries QcK XXL</h2> Gaming musemåtte, størrelse: 900 x 400 x 2 mm (bredde x dybde x højde), overflade materiale: mikrovævet stof, med syede kanter, med anti-skrid bund materiale, farve: sort </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">219,00 kr.</span><span class="hidden-xs">(175,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3318561"><input name="token" type="hidden" value="62daa0bf713b"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3318561"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3318561</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-comming"></div><div class="site-stock-text">Bestilt: forventet på lager 18-07-2025</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/Logitech-G640-Cloth-Gaming-Mousepad/3107209" title="Logitech G640 Cloth Gaming Mousepad - 943-000799"><img alt="Musemåtte &amp; tilbehør - Logitech G640 Cloth Gaming Mousepad - 943-000799" class="lazy" data-src="/Images/174x116/3107209_50a235947603.png" height="116" width="174"></a><div data-energy="" data-cpn="S27129869" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/Logitech-G640-Cloth-Gaming-Mousepad/3107209"><h2 product-display-name="" class="truncate-overflow">Logitech G640 Cloth Gaming Mousepad</h2> Gaming musemåtte, materiale: stof med gummiunderside som sikre musmåtten ikke glider, størrelse: 400mm x 460mm x 3mm<p>Stofoverfladen på Logitech G640 Cloth Gaming-musemåtten giver den bedste overfladefriktion til spil med lav DPI så du får bedre kontrol med musen og kan placere markøren helt præcist</p></a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">199,00 kr.</span><span class="hidden-xs">(159,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3107209"><input name="token" type="hidden" value="ed29cf82ba1b"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3107209"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3107209</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/Logitech-G440-Hard-Gaming-Mousepad/3107198" title="Logitech G440 Hard Gaming Mousepad - 943-000792"><img alt="Musemåtte &amp; tilbehør - Logitech G440 Hard Gaming Mousepad - 943-000792" class="lazy" data-src="/Images/174x116/3107198_40bbb4107781.png" height="116" width="174"></a><div data-energy="" data-cpn="S27129867" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/Logitech-G440-Hard-Gaming-Mousepad/3107198"><h2 product-display-name="" class="truncate-overflow">Logitech G440 Hard Gaming Mousepad</h2> Gaming musemåtte, materiale: polypropylen med gummiunderside som sikre musmåtten ikke glider, størrelse: 280mm x 340mm x 3mm<p>Den hårde polymeroverflade på G440-musemåtten giver den bedste overfladefriktion til spil med høj DPI. Kontrollen af musen forbedres, og du kan placere markøren helt præcist</p></a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">129,00 kr.</span><span class="hidden-xs">(103,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3107198"><input name="token" type="hidden" value="7d77b6870b14"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3107198"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3107198</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/dezen-Mousepad-Small/2582481" title="dezen Mousepad - Small - MP-STDS"><img alt="Musemåtte &amp; tilbehør - dezen Mousepad - Small - MP-STDS" class="lazy" data-src="/Images/174x116/2582481_7fda713fcf9f.jpg" height="116" width="174"></a><div data-energy="" data-cpn="S21899931" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/dezen-Mousepad-Small/2582481"><h2 product-display-name="" class="truncate-overflow">dezen Mousepad - Small</h2> Office musemåtte, størrelse: 300 x 240 x 2 mm (bredde x dybde x højde), overflade materiale: stof, med anti-skrid bund materiale, farve: sort </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">29,00 kr.</span><span class="hidden-xs">(23,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="2582481"><input name="token" type="hidden" value="03dd50b79f75"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="2582481"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">2582481</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/Spigen-DeskPad-LD302-brown/3269791" title="Spigen DeskPad LD302 - brown - APP04763"><img alt="Musemåtte &amp; tilbehør - Spigen DeskPad LD302 - brown - APP04763" class="lazy" data-src="/Images/174x116/3269791_45995f165302.jpg" height="116" width="174"></a><div data-energy="" data-cpn="" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/Spigen-DeskPad-LD302-brown/3269791"><h2 product-display-name="" class="truncate-overflow">Spigen DeskPad LD302 - brown</h2><p></p><h2>Spigen MousePad LD302</h2><ul><li>Made from Velo Leather (100% premium vegan leather)</li><li>Water-resistant and easy to clean</li><li>Non-slip grip via rubber padding</li><li>Protects desk from surface scratches</li></ul></a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">218,00 kr.</span><span class="hidden-xs">(174,40 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3269791"><input name="token" type="hidden" value="8c97895ea0f3"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3269791"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3269791</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/SteelSeries-QCK-Heavy-Large/2207512" title="SteelSeries QCK Heavy Large - 63008"><img alt="Musemåtte &amp; tilbehør - SteelSeries QCK Heavy Large - 63008" class="lazy" data-src="/Images/174x116/2207512_1eae9adbaf00.jpg" height="116" width="174"></a><div data-energy="" data-cpn="S4859925" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/SteelSeries-QCK-Heavy-Large/2207512"><h2 product-display-name="" class="truncate-overflow">SteelSeries QCK Heavy Large</h2> Gaming musemåtte, størrelse: 450 x 400 x 6 mm (bredde x dybde x højde), overflade materiale: mikrovævet stof, med syede kanter, med anti-skrid bund materiale, farve: sort </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">199,00 kr.</span><span class="hidden-xs">(159,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="2207512"><input name="token" type="hidden" value="393891b896f7"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="2207512"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">2207512</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/Logitech-Desk-Mat-Studio-Series-Mid-Grey/3014426" title="Logitech Desk Mat Studio Series - Mid Grey - 956-000052"><img alt="Musemåtte &amp; tilbehør - Logitech Desk Mat Studio Series - Mid Grey - 956-000052" class="lazy" data-src="/Images/174x116/3014426_6f01f3d24914.png" height="116" width="174"></a><div data-energy="" data-cpn="S25937330" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/Logitech-Desk-Mat-Studio-Series-Mid-Grey/3014426"><h2 product-display-name="" class="truncate-overflow">Logitech Desk Mat Studio Series - Mid Grey</h2> Logitech Desk Mat - Studio Series, multifunktionelt stort skrivebordsunderlag, udvidet musemåtte, skridsikkert, spilderesistent og holdbart design </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">149,00 kr.</span><span class="hidden-xs">(119,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3014426"><input name="token" type="hidden" value="c290014411f7"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3014426"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3014426</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/SteelSeries-QcK-Heavy-XXL/2531052" title="SteelSeries QcK Heavy XXL - 67500"><img alt="Musemåtte &amp; tilbehør - SteelSeries QcK Heavy XXL - 67500" class="lazy" data-src="/Images/174x116/2531052_9eb4ad68561f.jpg" height="116" width="174"></a><div data-energy="" data-cpn="S15261706" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/SteelSeries-QcK-Heavy-XXL/2531052"><h2 product-display-name="" class="truncate-overflow">SteelSeries QcK Heavy XXL</h2> Gaming musemåtte, størrelse: 900 x 400 x 4 mm (bredde x dybde x højde), overflade materiale: mikrovævet stof, med syede kanter, med anti-skrid bund materiale, farve: sort </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">299,00 kr.</span><span class="hidden-xs">(239,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="2531052"><input name="token" type="hidden" value="c4d071e18e33"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="2531052"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">2531052</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/Logitech-G740-Cloth-Gaming-Mouse-Pad/3107228" title="Logitech G740 Cloth Gaming Mouse Pad - 943-000806"><img alt="Musemåtte &amp; tilbehør - Logitech G740 Cloth Gaming Mouse Pad - 943-000806" class="lazy" data-src="/Images/174x116/3107228_0831422a6937.png" height="116" width="174"></a><div data-energy="" data-cpn="S27153330" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/Logitech-G740-Cloth-Gaming-Mouse-Pad/3107228"><h2 product-display-name="" class="truncate-overflow">Logitech G740 Cloth Gaming Mouse Pad</h2> Gaming musemåtte, materiale: stof med gummiunderside som sikre musmåtten ikke glider, størrelse: 375mm x 460mm x 5mm<p>Stofoverfladen på Logitech G740 Cloth Gaming-musemåtten giver den bedste overfladefriktion til spil med lav DPI så du får bedre kontrol med musen og kan placere markøren helt præcist</p></a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">189,00 kr.</span><span class="hidden-xs">(151,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3107228"><input name="token" type="hidden" value="9cc3f2e9e0fc"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3107228"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3107228</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/DUTZO-Fushi-Gaming-Mousepad-Medium/2779763" title="DUTZO Fushi Gaming Mousepad - Medium - FUSHIV2-M"><img alt="Musemåtte &amp; tilbehør - DUTZO Fushi Gaming Mousepad - Medium - FUSHIV2-M" class="lazy" data-src="/Images/174x116/2779763_ad503156d50d.png" height="116" width="174"></a><div data-energy="" data-cpn="S22445714" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/DUTZO-Fushi-Gaming-Mousepad-Medium/2779763"><h2 product-display-name="" class="truncate-overflow">DUTZO Fushi Gaming Mousepad - Medium</h2> Gaming musemåtte, 360 mm x 300 mm x 2 mm (bredde x dybde x højde), er kompatibel med alle mus typer (kugle, optisk og laser sensorer), bunden er fremstillet af skridsikker gummi, overfladen består af stof, sort </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">39,00 kr.</span><span class="hidden-xs">(31,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="2779763"><input name="token" type="hidden" value="e0d205264b0c"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="2779763"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">2779763</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/Mionix-Alioth-XL-Mousepad-90x40-cm-Black/3221665" title="Mionix Alioth XL Mousepad - 90x40 cm - Black - ALIOTH-XL"><img alt="Musemåtte &amp; tilbehør - Mionix Alioth XL Mousepad - 90x40 cm - Black - ALIOTH-XL" class="lazy" data-src="/Images/174x116/3221665_6ffaf2f858a9.jpg" height="116" width="174"></a><div data-energy="" data-cpn="" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/Mionix-Alioth-XL-Mousepad-90x40-cm-Black/3221665"><h2 product-display-name="" class="truncate-overflow">Mionix Alioth XL Mousepad - 90x40 cm - Black</h2> Gaming musemåtte, størrelse: 900 x 400 x 3 mm (bredde x dybde x højde), overflade materiale: stof, med syede kanter og anti-fray (modvirker optrevling af kanter), materiale, med anti-skrid bund materiale, farve: sort </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">149,00 kr.</span><span class="hidden-xs">(119,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3221665"><input name="token" type="hidden" value="5f0e19ab55b3"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3221665"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3221665</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/Logitech-Mouse-Pad-Studio-Series-Graphite/3014510" title="Logitech Mouse Pad Studio Series - Graphite - 956-000049"><img alt="Musemåtte &amp; tilbehør - Logitech Mouse Pad Studio Series - Graphite - 956-000049" class="lazy" data-src="/Images/174x116/3014510_c80c73d6c1ed.jpg" height="116" width="174"></a><div data-energy="" data-cpn="S25937326" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/Logitech-Mouse-Pad-Studio-Series-Graphite/3014510"><h2 product-display-name="" class="truncate-overflow">Logitech Mouse Pad Studio Series - Graphite</h2> Logitech Mouse Pad - Studio Series, musemåtte til computer med skridsikker gummibase, let glidende, spilderesistent overflade, holdbare materialer, bærbar, friskt moderne design </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">69,00 kr.</span><span class="hidden-xs">(55,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3014510"><input name="token" type="hidden" value="358ab7e60115"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3014510"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3014510</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/Sandberg-Mousepad/2000042" title="Sandberg Mousepad - 520-05"><img alt="Musemåtte &amp; tilbehør - Sandberg Mousepad - 520-05" class="lazy" data-src="/Images/174x116/2000042_f448dfd30c7f.jpg" height="116" width="174"></a><div data-energy="" data-cpn="S1698265" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/Sandberg-Mousepad/2000042"><h2 product-display-name="" class="truncate-overflow">Sandberg Mousepad</h2><div><p>Sandberg Mousepad er det perfekte underlag til din mus. Skridsikker på undersiden så den ikke flytter på sig ved hurtige håndbevægelser.</p><p>Med helt plan overflade der sikrer præcis bevægelse af musemarkøren.</p><p>Understøtter alle typer mus.</p></div></a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">28,00 kr.</span><span class="hidden-xs">(22,40 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="2000042"><input name="token" type="hidden" value="8a6a780691fc"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="2000042"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">2000042</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/DUTZO-Fushi-Gaming-Mousepad-Desktop/2779765" title="DUTZO Fushi Gaming Mousepad - Desktop - FUSHIV2-D"><img alt="Musemåtte &amp; tilbehør - DUTZO Fushi Gaming Mousepad - Desktop - FUSHIV2-D" class="lazy" data-src="/Images/174x116/2779765_586ce822f6ad.png" height="116" width="174"></a><div data-energy="" data-cpn="S22445713" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/DUTZO-Fushi-Gaming-Mousepad-Desktop/2779765"><h2 product-display-name="" class="truncate-overflow">DUTZO Fushi Gaming Mousepad - Desktop</h2> Gaming musemåtte, 900 mm x 420 mm x 2 mm (bredde x dybde x højde), er kompatibel med alle mus typer (kugle, optisk og laser sensorer), bunden er fremstillet af skridsikker gummi, overfladen består af stof, sort </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">79,00 kr.</span><span class="hidden-xs">(63,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="2779765"><input name="token" type="hidden" value="4122ef68d2f0"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="2779765"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">2779765</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/SteelSeries-QcK-Small/2100122" title="SteelSeries QcK Small - 63005"><img alt="Musemåtte &amp; tilbehør - SteelSeries QcK Small - 63005" class="lazy" data-src="/Images/174x116/2100122_b66d47643813.jpg" height="116" width="174"></a><div data-energy="" data-cpn="S4859924" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/SteelSeries-QcK-Small/2100122"><h2 product-display-name="" class="truncate-overflow">SteelSeries QcK Small</h2> Gaming musemåtte, størrelse: 250 x 210 x 2 mm (bredde x dybde x højde), overflade materiale: mikrovævet stof, med syede kanter, med anti-skrid bund materiale, farve: sort </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">69,00 kr.</span><span class="hidden-xs">(55,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="2100122"><input name="token" type="hidden" value="7628e3022456"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="2100122"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">2100122</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/Xtrfy-GP5-XL-Mousepad-White/3068601" title="Xtrfy GP5 XL Mousepad - White - GP5-XL-LITUS-WHITE"><img alt="Musemåtte &amp; tilbehør - Xtrfy GP5 XL Mousepad - White - GP5-XL-LITUS-WHITE" class="lazy" data-src="/Images/174x116/3068601_e2ee89692645.png" height="116" width="174"></a><div data-energy="" data-cpn="S26938627" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/Xtrfy-GP5-XL-Mousepad-White/3068601"><h2 product-display-name="" class="truncate-overflow">Xtrfy GP5 XL Mousepad - White</h2> Tastatur- og musepude </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">169,00 kr.</span><span class="hidden-xs">(135,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3068601"><input name="token" type="hidden" value="0e4bbb4b387d"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3068601"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3068601</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/Alterzone-PAD-Desktop-Vegan-Leather-Surface-Cognac-Brown/3081178" title="Alterzone PAD Desktop Vegan Leather Surface - Cognac Brown - ALZVGL-1"><img alt="Musemåtte &amp; tilbehør - Alterzone PAD Desktop Vegan Leather Surface - Cognac Brown - ALZVGL-1" class="lazy" data-src="/Images/174x116/3081178_0397b041e2c1.jpg" height="116" width="174"></a><div data-energy="" data-cpn="" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/Alterzone-PAD-Desktop-Vegan-Leather-Surface-Cognac-Brown/3081178"><h2 product-display-name="" class="truncate-overflow">Alterzone PAD Desktop Vegan Leather Surface - Cognac Brown</h2> Alterzone Pad er lavet af premium vegansk læder, der giver den samme luksuriøse følelse som dyrebaseret læder. Den er holdbar og blød at røre ved, måler 80 cm x 30 cm, hvilket gør den til en ideel arbejdsflade til ethvert skrivebord. Den vandtætte funktion sikrer nem rengøring, og dens glatte overflade er perfekt til brug som musemåtte.<br><br>Puden kommer med en aftagelig rem, så du kan rulle den op for praktisk transport eller opbevaring. Dens syede kanter forhindrer optrævling, hvilket sikrer en længere levetid. Den elegante cognacbrune farve komplementerer ethvert skrivebord og skaber et moderne og behageligt arbejdsmiljø. </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">249,00 kr.</span><span class="hidden-xs">(199,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3081178"><input name="token" type="hidden" value="b64c17970520"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3081178"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3081178</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/SUPE-DESKMAT-THIS-IS-FINE/3301612" title="SUPE DESKMAT THIS IS FINE - 369851"><img alt="Musemåtte &amp; tilbehør - SUPE DESKMAT THIS IS FINE - 369851" class="lazy" data-src="/Images/174x116/3301612_36f5d5caa648.png" height="116" width="174"></a><div data-energy="" data-cpn="" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/SUPE-DESKMAT-THIS-IS-FINE/3301612"><h2 product-display-name="" class="truncate-overflow">SUPE DESKMAT THIS IS FINE</h2> Ekstra bred musemåtte med fantastisk sjovt SUPE®-design.<br><br>Musemåtten er lavet med højkvalitets ultravævet overflade, der har fremragende glidning,<br>syede kanter og skridsikker bund.<br><br>Størrelse 920 x 360 x 3 mm. </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">101,00 kr.</span><span class="hidden-xs">(80,80 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3301612"><input name="token" type="hidden" value="963d6bb93613"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3301612"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3301612</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/Logitech-G-POWERPLAY-2-Wireless-Charging-System/3335872" title="Logitech G POWERPLAY 2 Wireless Charging System - 947-000003"><img alt="Musemåtte &amp; tilbehør - Logitech G POWERPLAY 2 Wireless Charging System - 947-000003" class="lazy" data-src="/Images/174x116/3335872_ba0ba5fb872b.jpg" height="116" width="174"></a><div data-energy="" data-cpn="S30315562" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/Logitech-G-POWERPLAY-2-Wireless-Charging-System/3335872"><h2 product-display-name="" class="truncate-overflow">Logitech G POWERPLAY 2 Wireless Charging System</h2> Gaming musemåtte, størrelse: 344 x 284 x 3.5 mm (bredde x dybde x højde), overflade materiale: stof, med syede kanter, med anti-skrid bund materiale, opladningssystem: Logitech POWERPLAY, farve: sort / blå <br><br>Oplev friheden ved POWERPLAY 2 med nonstop opladning til trådløs gaming, når det er bedst. Ubesværet opsætning, kompatibel med flere G-mus og forberedt til fremtidig teknologi - det er gaming uden pause. Med POWERPLAY 2 slutter spillet først, når du siger, at det skal. Det er ren, uafbrudt trådløs gaming. </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">849,00 kr.</span><span class="hidden-xs">(679,20 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3335872"><input name="token" type="hidden" value="4abd759c07cd"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3335872"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3335872</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="site-productlist-item site-customerCenterCard position-relative" product=""><div class="mr-2"><a class="show" href="/Musemaatte-tilbehoer/Speed-Link-ATECS-Soft-Gaming-Mousepad-Size-XXL/3150069" title="Speed-Link ATECS Soft Gaming Mousepad - Size XXL - SL-620101-XXL-01"><img alt="Musemåtte &amp; tilbehør - Speed-Link ATECS Soft Gaming Mousepad - Size XXL - SL-620101-XXL-01" class="lazy" data-src="/Images/174x116/3150069_c1c690554266.jpg" height="116" width="174"></a><div data-energy="" data-cpn="" data-zoom="50" class="hidden pl-2 pt-2"><img><br><button class="btn-link p-0"><span class="site-energy-datasheet">Produktdatablad</span></button></div></div><div class="site-productTextContainer position-relative"><a class="site-product-link" href="/Musemaatte-tilbehoer/Speed-Link-ATECS-Soft-Gaming-Mousepad-Size-XXL/3150069"><h2 product-display-name="" class="truncate-overflow">Speed-Link ATECS Soft Gaming Mousepad - Size XXL</h2> ATECS XXL er en musemåtte, der virkelig fortjener at blive kaldt XXL takket være sin imponerende størrelse på 100 50 centimeter, og den forbereder dig på store spiloplevelser. ATECS kan hurtigt rulles sammen og er let at transportere og fungerer desuden som underlag for dit tastatur og gamingudstyr. Dens ultraglatte overflade er perfekt til en hurtig spillestil, hvor ultrahurtige musebevægelser oversættes præcist uden absolut heller intet friktionstab. Din på tværs, som også tilbyder en utrolig responshastighed. Kæmpestørrelse til fantastiske spiloplevelser. </a></div><div class="priceContainer"><div class="mt-2 price-container mb-2"><span class="site-currency-lg">105,00 kr.</span><span class="hidden-xs">(84,00 kr.)</span></div><div class="d-flex justify-content-around"><form action="/Basket/AddItem" method="post" novalidate="novalidate" data-type="async-minibasket"><input name="productId" type="hidden" value="3150069"><input name="token" type="hidden" value="47138531fa61"><button class="btn site-btn-tall site-btn-green w-100" type="submit" data-gtm-item-id="3150069"><i class="ki ki-s pi-cart-fill"></i>&nbsp;<span class="">Køb</span></button><small class="mt-1 d-block hidden-xs text-center">3150069</small></form></div></div><div class="d-flex site-stock site-stock-sm mt-2"><div class="site-stock-icon site-icon-stock-in"></div><div class="site-stock-text">På lager – Levering i morgen (bestil inden kl. 22)</div></div></li><li class="text-center"><div><ul class="pagination d-inline-block"><li class="active"><a href="/Musemaatte-tilbehoer" rel="follow" class="position-relative pull-left d-flex justify-content-center align-items-center">1</a></li><li><a href="/Musemaatte-tilbehoer?pn=2" rel="follow" class="position-relative pull-left d-flex justify-content-center align-items-center">2</a></li><li><a href="/Musemaatte-tilbehoer?pn=3" rel="follow" class="position-relative pull-left d-flex justify-content-center align-items-center">3</a></li><li><a href="/Musemaatte-tilbehoer?pn=4" rel="follow" class="position-relative pull-left d-flex justify-content-center align-items-center">4</a></li><li><a href="/Musemaatte-tilbehoer?pn=5" rel="follow" class="position-relative pull-left d-flex justify-content-center align-items-center">5</a></li><li><a class="position-relative pull-left d-flex justify-content-center align-items-center noborder">...</a></li><li><a href="/Musemaatte-tilbehoer?pn=8" rel="follow" class="position-relative pull-left d-flex justify-content-center align-items-center" target="_self">8</a></li><li><a href="/Musemaatte-tilbehoer?pn=2" rel="follow" class="hidden-xs position-relative pull-left d-flex justify-content-center align-items-center"><span class="position-relative pull-left d-flex justify-content-center align-items-center">»</span></a></li></ul></div></li></ul></div>
+
+    </main>
+</div>
+    </div>
+    <script type="module">
+    Consent.activateFor('functional', function () {
+            (function (s, o, l, v, e, m, a, t) {
+        t = 'solvemateConfig'; s[e] = s[e] || function (x, y) { (s[t] = s[t] || {})[x] = y; }; a = o.createElement(l); a.async = 1; a.src = v; o.body.appendChild(a);
+    })(window, document, 'script', 'https://widget.solvemate.com/v2/init.js', 'solvemate');
+    solvemate('projectID', '5f994edd45b0d36364c03bba');
+    if (document.getElementById("chatbot") != null) {
+        solvemate('hideBeacon', true);
+        solvemate('inlineContainerId', 'chatbot');
+        solvemate('hideGreeting', true);
+    }
+    });
+</script>
+</div>
+    <footer class="footer position-relative" role="contentinfo">
+<div class="footer__top py-4">
+    <div class="ps-container">
+        <div class="site-footer-newsletterContainer">
+
+<div class="f-white">
+    Få nyheder, tilbud og konkurrencer direkte i din mailboks
+</div>
+<div class="p-2">
+<form action="/CustomerCenter/Newsletter/Subscribe" class="input-newsletter position-relative w-100" method="get" novalidate="novalidate"><input name="__RequestVerificationToken" type="hidden" value="tahHE0lRv5ZhPIU2_EoSE49M0vAEroeLWuz3yxShGxZsjF9B2JQMjXqIYdCNPlJdGva636T5CSX8m0QGIgFhOBx2ZWUTfbzLTaRIzc-ahR01">        <input name="Email" class="input__round-lg w-100 pr-5" type="email" placeholder="skriv e-mail adresse">
+<input id="source" name="source" type="hidden" value="WebsiteForm">        <button type="submit" aria-label="Newsletter Subscribe" class="input__round-btn position-absolute d-flex justify-content-center align-items-center">
+            <i class="pi-sm pi pi-send-mail rotate45"></i>
+        </button>
+</form></div>
+                <div class="socialLinksContainer">
+                    <span class="f-white pb-1">Find os på:</span>
+                    <div class="socialLinks">
+                            <a class="px-half" rel="noreferrer" href="https://www.facebook.com/proshop.dk/" target="_blank" title="Find os på: Facebook"><img class="lazy soci-icon" width="40" height="40" data-src="/Content/images/SVG/facebook.svg" src="" alt="Facebook"></a>
+                            <a class="px-half" rel="noreferrer" href="https://www.instagram.com/proshop.dk/" target="_blank" title="Find os på: Instagram"><img class="lazy soci-icon" width="40" height="40" data-src="/Content/images/SVG/instagram.svg" src="" alt="Instagram"></a>
+                            <a class="px-half" rel="noreferrer" href="https://www.tiktok.com/@proshop.dk" target="_blank" title="Find os på: TikTok"><img class="lazy soci-icon" width="40" height="40" data-src="/Content/images/SVG/tiktok.svg" src="" alt="TikTok"></a>
+                            <a class="px-half" rel="noreferrer" href="https://www.youtube.com/c/ProshopDk" target="_blank" title="Find os på: Youtube"><img class="lazy soci-icon" width="40" height="40" data-src="/Content/images/SVG/youtube-logotype.svg" src="" alt="Youtube"></a>
+                            <a class="px-half" rel="noreferrer" href="https://www.linkedin.com/company/proshop-aps/" target="_blank" title="Find os på: LinkedIn"><img class="lazy soci-icon" width="40" height="40" data-src="/Content/images/SVG/linkedin.svg" src="" alt="LinkedIn"></a>
+                    </div>
+                </div>
+        </div>
+    </div>
+</div>
+<div class="pl-2 pr-2 ps-container">
+    <div class="ps-container__inner ps__template--footer">
+        <div class="footer__contact footer__accordion-item active">
+                <div class="display-5 footer__header d-flex"><span class="align-items-center"><i class="pi-sm pi pi-headphones-b mr-1"></i>Åbningstider telefon</span><button class="d-flex footer__toggle" data-toggle="true" aria-expanded="true" aria-controls="accordion__section-0"><div class="align-items-center text-left d-flex"><i class="pi-sm pi pi-headphones-b mr-1"></i>Åbningstider telefon</div> <i class="ki pi-xs pi-chevron-down"></i></button></div>
+                <div id="accordion__section-0" class="footer__accordion-list">
+                    <table width="100%">
+<tbody>
+<tr>
+<td>Mandag - Torsdag:</td>
+<td>08:00 - 16:00</td>
+</tr>
+<tr>
+<td>Fredag:</td>
+<td>08:00 - 15:30</td>
+</tr>
+<tr>
+<td>Weekend &amp; helligdage:</td>
+<td>Lukket</td>
+</tr>
+<tr>
+<td colspan="2">&nbsp;&nbsp;</td>
+</tr>
+<tr>
+<td colspan="2">Find svar på ofte stillede spørgsmål i vores <span style="text-decoration: underline;"><strong><a href="/Kundeservice.htm">kundecenter</a></strong></span>, eller kontakt os på&nbsp;<a href="mailto:support@proshop.dk">support@proshop.dk</a>, henvendelser besvares inden for 48 timer.</td>
+</tr>
+</tbody>
+</table>
+                        <div class="pt-2"><p class="display-5 d-flex fw700 footer__display m-0">Åbningstider for afhentning af varer</p>Se åbningstider og adresser for Pick-up Points i København og Aarhus, <span style="text-decoration: underline;"><strong><a href="/Om-Pick-up-Points.htm">klik her</a></strong></span>.</div>
+                </div>
+        </div>
+        <div class="footer__support footer__accordion-item">
+            <div class="display-5 footer__header d-flex">
+                <span>Support</span>
+                <button class="d-flex footer__toggle" data-toggle="true" aria-expanded="false" aria-controls="accordion__section-1">
+                    Support
+                    <i class="ki-s pi-chev-right svg-fill-red"></i>
+                </button>
+            </div>
+            <div id="accordion__section-1" class="footer__accordion-list">
+                <ul class="list-unstyled arrow__list">
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Guides.htm"> Guides</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Forsendelse-og-levering.htm"> Forsendelse og levering</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Om-Pick-up-Points.htm"> Om Pick-up Points</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Reparation-Defekt.htm"> Reparation / Defekt</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Kundeservice.htm"> Kundeservice</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Handelsbetingelser.htm"> Handelsbetingelser</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Persondatapolitik.htm"> Persondatapolitik</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CSR.htm"> CSR</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Black-Friday"> Black Friday 2025</a>
+                        </li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer__myProshop footer__accordion-item">
+            <div class="display-5 footer__header d-flex">
+                <span>Min side</span>
+                <button class="d-flex footer__toggle" data-toggle="true" aria-expanded="false" aria-controls="accordion__section-2">
+                    Min side
+                    <i class="ki-s pi-chev-right svg-fill-red"></i>
+                </button>
+            </div>
+            <div id="accordion__section-2" class="footer__accordion-list">
+                <ul class="list-unstyled arrow__list">
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter"> Mit Proshop</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter/Rma/Login"> Reklamation</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter/CustomerReturn/StartReturnCase"> Returnering</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter/Account"> Købshistorik</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter/CustomerAccount/ForgotPassword"> Glemt adgangskode</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Guide-til-fragtskader.htm"> Guide til fragtskader</a>
+                        </li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer__address">
+                <div class="footer__accordion-item">
+                    <div class="display-5 footer__header d-flex">
+                        <span>Kontakt</span>
+                        <button class="d-flex footer__toggle" data-toggle="true" aria-expanded="false" aria-controls="accordion__section-3">
+                            Kontakt
+                            <i class="ki-s pi-chev-right svg-fill-red"></i>
+                        </button>
+                    </div>
+                    <div id="accordion__section-3" class="footer__accordion-list">
+                        Proshop a/s<br>Slet Møllevej 17<br>8270&nbsp;Højbjerg<br>Danmark<br>DK18966239<br><a href="mailto:support@proshop.dk">support@proshop.dk</a><br><br>
+
+                        <ul class="list-unstyled arrow__list">
+                                <li class="d-flex align-items-center">
+                                    <i class="ki-s pi-chev-right bg-black"></i>
+                                    <a href="/Om-Proshop.htm"> Om Proshop</a>
+                                </li>
+                                <li class="d-flex align-items-center">
+                                    <i class="ki-s pi-chev-right bg-black"></i>
+                                    <a href="/Erhverv"> Erhverv</a>
+                                </li>
+                                <li class="d-flex align-items-center">
+                                    <i class="ki-s pi-chev-right bg-black"></i>
+                                    <a href="/Job.htm"> Job</a>
+                                </li>
+                        </ul>
+                        <div class="pt-2 clearfix">
+                            
+       <div class="menu-button-links pull-left btn-group position-relative">
+        <a id="dropdown-lang" href="#" aria-controls="languageMenu" class="familyRelationsDropdownBtn dropdown btn site-btn-between site-btn-white site-btn-hasborder dropdown-toggle langDropDownBtn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="ki-m pi pi-globe mr-1"></i>
+            <p>Lande</p>
+            <i class="ki-s pi-chev-right bg-black rotate90 ml-1"></i>
+        </a>
+        <ul id="languageMenu" role="menu" aria-labelledby="dropdown-lang" class="dropdown__list dropdown-menu familyRelationsDropdown langDropDown">
+                <li role="none">
+                    <a href="//www.proshop.at">
+                        proshop.at
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.de">
+                        proshop.de
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.fi">
+                        proshop.fi
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.nl">
+                        proshop.nl
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.no">
+                        proshop.no
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.pl">
+                        proshop.pl
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.se">
+                        proshop.se
+                    </a>
+                </li>
+        </ul>
+    </div>
+
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+</div>
+    <div class="pl-2 pr-2 ps-container"><div class="d-flex footer-row__flex pb-4 pt-2 footer__border justify-content-center">     <div class="site-campaignElement" data-campaign-element-id="299d6d40-a5aa-42b0-914e-f084bc90add2">
+        <a rel="noopener" data-action="campaignClick" data-id="3c871804-857c-4555-a051-a659fd8e74e4" data-name="Proshop.dk defaults" data-creative="299d6d40-a5aa-42b0-914e-f084bc90add2" data-position="footer-certification" href="//certifikat.emaerket.dk/eshop/proshop.dk" target="_blank" border="0" id="emaerke"><img class="lazy" data-src="/Content/images/SVG/e-maerket.svg" alt="e-maerket" width="62" height="66" style="width:62px;height:66px"></a><script src="" defer="" data-consent-src="https://static.klaviyo.com/onsite/js/klaviyo.js?company_id=L6MTra" data-category-consent="cookie_cat_marketing"></script><script>window._learnq=window._learnq||[];window._learnq.push(["track","Visited webpage",{url:window.location.href,name:document.title}])</script><style>.footer__border{flex-direction:initial}</style><a rel="noopener" data-action="campaignClick" data-id="3c871804-857c-4555-a051-a659fd8e74e4" data-name="Proshop.dk defaults" data-creative="299d6d40-a5aa-42b0-914e-f084bc90add2" data-position="footer-certification" href="https://www.findsmiley.dk/989192" target="_blank" alt="Fødevarestyrelsen smiley"><img class="lazy ml-2" style="height:59px;width:50px" data-src="/Images/smiley_105x125.gif" alt="Fødevarestyrelsen smiley" width="50" height="60"></a>
+    </div>
+ </div></div>
+<div class="footer__bottom">
+    <div class="pl-2 pr-2 ps-container">
+        <div class="d-flex footer-row__flex pt-4 pb-2 justify-content-between align-items-center">
+            <div class="text-center flex-center">
+                        <div class="d-flex mb-2 mx-1">
+                            <img class="lazy" data-src="/content/images/delivery/Postnord.svg" alt="Postnord">
+                        </div>
+            </div>
+            <div class="text-center flex-center flex-wrap">
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/Dankort.svg" alt="Dankort">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/apple-pay.svg" alt="Apple Pay">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/google-pay.svg" alt="Google Pay">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/MobilePay.svg" alt="MobilePay">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/Visa.svg" alt="Visa">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/MasterCard.svg" alt="Mastercard">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/PayPal.svg" alt="PayPal">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/Klarna.svg" alt="Klarna">
+                        </div>
+            </div>
+        </div>
+    </div>
+    <div id="auctionsMenu" class="d-flex pl-2 pr-2 ps-container"></div> 
+</div>
+<script type="text/javascript">
+    let footerToggle = document.querySelectorAll("[data-toggle='true']");
+    for (var i = 0; i < footerToggle.length; i++) {
+        footerToggle[i].addEventListener('click', function (e) {
+            e.currentTarget.closest('.footer__accordion-item').classList.toggle('active');
+            this.toggleAttribute('aria-expanded="true"');
+        });
+    }
+</script><input id="cookieTextFirstPart" type="hidden" value="Hos Proshop a/s bruger vi cookies til at forbedre brugeroplevelsen samt til personalisering af indhold og annoncer. Denne information deles med tredjepart, eksempelvis Google og Facebook, og cookies anvendes til anonym sporing på tværs af hjemmesider.">
+<input id="cookieTextLastPart" type="hidden" value="Ved at bruge vores hjemmeside, godkender du vores cookie- og persondatapolitik.">
+<input id="cookieLinkText" type="hidden" value="Du kan læse mere her">
+<input id="cookieLink" type="hidden" value="https://www.proshop.dk/Persondatapolitik.htm">
+<input id="cookieAcceptButtonText" type="hidden" value="OK"></footer>
+    
+<div class="modal--custom modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModal" aria-hidden="true" data-url="/CustomerCenter/CustomerAccount/TopLogin">
+    <div class="modal-dialog position-relative" role="document">
+        <div class="modal-body position-relative"><button type="button" class="login-modal--close d-flex align-items-center justify-content-end position-absolute" data-dismiss="modal" aria-label="Close"><i aria-hidden="true" class="pi pi-close"></i></button><div id="modalData"><div class="site-spinner mt-1 text-center"></div></div></div>
+    </div>
+</div>
+    <div id="fixedBottomMessage"></div>
+    
+    
+    
+<link rel="stylesheet" href="/dist/Proshop/under.422943e7.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="/dist/under.422943e7.css"></noscript>
+
+
+    <script type="text/javascript" language="javascript">
+        var rsa;var raptorLoaded = function (raptor) { rsa = raptor; raptor.initialize({ customerID: "5875", productIdParamIndex: 2, eventTypeParamIndex: 1, useCookies: Consent.isValid('marketing') });
+            var raptorUserId = '';var userId = $('#minibasket').data('customerid');
+            console.log("Raptor **************: " + userId);if (raptorUserId.length > 0) userId = raptorUserId;else if (userId === '0') userId = ''; raptor.trackEvent("visit", "", "", "", "", "", userId, "", "", "", "", "");
+        };
+    </script>
+
+<script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon="{&quot;rayId&quot;:&quot;95865445f822eb46&quot;,&quot;serverTiming&quot;:{&quot;name&quot;:{&quot;cfExtPri&quot;:true,&quot;cfEdge&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfL4&quot;:true,&quot;cfSpeedBrain&quot;:true,&quot;cfCacheStatus&quot;:true}},&quot;version&quot;:&quot;2025.6.2&quot;,&quot;token&quot;:&quot;f8b2150c90b94f51987ae93c4994ca3a&quot;}" crossorigin="anonymous"></script>
+
+
+ 
+ 
+<script type="text/javascript">
+var Consent = { cookieWarning: false, validCategories: ["functional", "statistic", "marketing"] };window.dataLayer = window.dataLayer || [];function gtag() { dataLayer.push(arguments); }gtag('consent', 'default', {'ad_storage': 'denied','ad_user_data': 'denied','ad_personalization': 'denied','analytics_storage': 'denied','wait_for_update': 2000 });if (navigator.userAgent.includes("CookieInformationScanner")) { initCookieInf(); }else if (document.cookie.indexOf('CookieInformationConsent=') < 0) { window.addEventListener('mousemove', initCookieInf);window.addEventListener('scroll', initCookieInf);window.addEventListener('keydown', initCookieInf);} else { initCookieInf();} function initCookieInf() { window.removeEventListener('mousemove', initCookieInf);window.removeEventListener('scroll', initCookieInf);window.removeEventListener('keydown', initCookieInf);var sc = document.createElement('script');sc.type = 'text/javascript';sc.id = 'CookieConsent';sc.defer = true;sc.src = 'https://policy.app.cookieinformation.com/uc.js';sc.dataset.culture = 'DA';sc.dataset.gcmVersion = '2.0';document.head.appendChild(sc);} Consent.cookieWarning = true;Consent.isValid = function (category) { try { return CookieInformation.getConsentGivenFor('cookie_cat_' + category); } catch { return false; } };Consent.run = function (category, callback) { if (Consent.isValid(category)) { callback(); } };Consent.activateFor = function (category, callback) { if (Consent.isValid(category)) { callback(); } else { window.addEventListener('CookieInformationConsentGiven', function () { Consent.run(category, callback) }); } };
+</script>
+ <style>:root{--background-banner-image-url:url(/Images/PRO01740-The-Fairphone-siteskin-DK_02bd2b16fe17.jpg)}@media(max-width:1199px){.site-background-cta{display:none!important}}</style></body></html>

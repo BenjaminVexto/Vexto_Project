@@ -1,0 +1,17 @@
+# pyproject.toml
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vexto"
+version = "0.1.0"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+    "network: marks tests that require a live network connection",
+]
+pythonpath = [
+  "src",
+]

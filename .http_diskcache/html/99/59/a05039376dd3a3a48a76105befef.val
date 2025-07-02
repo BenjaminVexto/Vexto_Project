@@ -1,0 +1,726 @@
+<!DOCTYPE html><html lang="da" class="position-relative"><head prefix="og: http://ogp.me/ns#">
+     <meta charset="utf-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <link rel="dns-prefetch" href="//ww2.proshop.dk">
+         <script type="text/javascript" async="" src="https://ww2.proshop.dk/gtag/js?id=G-KNBWHMY9GP&amp;cx=c&amp;gtm=45Fe56r1v9115630387za204&amp;sign=d6990490ee0806445530dda4eb0e23a46f3b2041e4e348288186fdd5c3508d5d_20250701&amp;tag_exp=101509157~103116026~103200004~103233427~103308216~103308218~103351869~103351871~104684208~104684211~104718208~104784387~104784389~104885889~104885891"></script><script async="" src="//ww2.proshop.dk/gtm.js?id=GTM-PCQSS3W"></script><script>var proshopGtmServerDataLayer = [{}];</script>
+     <script type="module">
+    window.dataLayer = window.dataLayer || [];
+    function getElements() {
+        return document.querySelectorAll('[data-gtm]');
+    }
+    getElements().forEach(el => {
+        window.dataLayer.push(JSON.parse(atob(el.dataset.gtm)));
+    });
+    let btns = document.querySelectorAll('button[data-gtm-item-id]');
+    btns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            let gtmId = this.getAttribute('data-gtm-item-id');
+            getElements().forEach(el => {
+                var gtmJson = JSON.parse(atob(el.dataset.gtm));
+                for (var i = 0; i <= gtmJson.ecommerce.items.length; i++) {
+                    if (gtmJson.ecommerce.items[i].item_id !== gtmId) {
+                        continue;
+                    }
+                    window.dataLayer.push({ event: 'add_to_cart', ecommerce: { items: gtmJson.ecommerce.items[i] } });
+                    return;
+                }
+            });
+        },false);
+    });
+    let basketBuyBtn = document.querySelector('#CommerceBasketApp a.site-btn-green');
+    if (basketBuyBtn) {
+        basketBuyBtn.addEventListener('click', function (e) {
+            let basketLines = document.querySelectorAll('#basketLines li input');
+            basketLines.forEach((element) => {
+                let gtmJson = JSON.parse(this.getAttribute("data-gtm-click"));
+                let theId = element.getAttribute("id");
+                for (let index = 0; gtmJson.ecommerce.items.length; index++) {
+                    if (gtmJson.ecommerce.items[index].item_id !== theId) {
+                        continue;
+                    }
+                    gtmJson.ecommerce.items[index].quantity = element.value;
+                    window.dataLayer.push({ ecommerce: null })
+                    window.dataLayer.push(gtmJson);
+                    break;
+                }
+            });
+        });
+    }
+    let paymentTypeButtons = document.getElementsByName("paymentOption");    
+    paymentTypeButtons.forEach(function (paymentTypeButton) {
+        paymentTypeButton.addEventListener('click', function () {
+            window.dataLayer.push({ ecommerce: null })
+            window.dataLayer.push(JSON.parse(atob(paymentTypeButton.getAttribute('data-gtm-payment'))));
+        });
+    });
+</script>
+     <script type="text/javascript">
+    var apps = {};
+    apps.queue = [];
+    apps.register = function (rootContainer, app) {
+        if (typeof registerApp != 'undefined')
+            registerApp(rootContainer, app)
+        else {
+            apps.queue.push({ rootContainer, app });
+        }
+    }
+</script>
+     
+    
+
+     <title>Oprettelse af fortrydelsessag</title>
+         <meta name="robots" content="noindex">
+               <meta property="og:title" content="Oprettelse af fortrydelsessag">
+     <meta property="og:type" content="website">
+     <meta property="og:image" content="mstile-310x310.png">
+     <link rel="apple-touch-icon-precomposed" sizes="57x57" href="/apple-touch-icon-57x57.png">
+     <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114x114.png">
+     <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72x72.png">
+     <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144x144.png">
+     <link rel="apple-touch-icon-precomposed" sizes="60x60" href="/apple-touch-icon-60x60.png">
+     <link rel="apple-touch-icon-precomposed" sizes="120x120" href="/apple-touch-icon-120x120.png">
+     <link rel="apple-touch-icon-precomposed" sizes="76x76" href="/apple-touch-icon-76x76.png">
+     <link rel="apple-touch-icon-precomposed" sizes="152x152" href="/apple-touch-icon-152x152.png">
+     <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+     <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+     <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+     <link rel="icon" type="image/png" href="/favicon-128.png" sizes="128x128">
+     <meta name="application-name" content="PROSHOP">
+     <meta name="msapplication-TileColor" content="#FFFFFF">
+     <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+     <meta name="msapplication-square70x70logo" content="/mstile-70x70.png">
+     <meta name="msapplication-square150x150logo" content="/mstile-150x150.png">
+     <meta name="msapplication-wide310x150logo" content="/mstile-310x150.png">
+     <meta name="msapplication-square310x310logo" content="/mstile-310x310.png">
+     <meta name="format-detection" content="telephone=no">
+     
+    
+    
+<link rel="stylesheet" href="/dist/Proshop/customerCenter.81243dc7.css">
+
+
+     
+    
+    
+    <script src="/dist/js/customerCenterMenu.fa58cc99.js" defer=""></script>
+
+<script src="/dist/js/common.c941cdb1.js" defer=""></script>
+
+<link rel="preload" href="/dist/js/shared.8624c6ee.js" as="script">
+<script src="/dist/js/shared.8624c6ee.js" defer=""></script>
+<script src="/dist/js/showmo.2.4db2c254.js" defer=""></script>
+
+
+
+
+ <style type="text/css">.site-customercenter .menu-container {
+  position: absolute;
+}
+.menu-container #horisontalMenu.scrollIntoView_false .navigation_bar_container {
+  display: none;
+}
+.menu-container .button_container .splide__arrow.splide__arrow--next {
+  margin-left: 10px;
+}
+#navContainer {
+  padding-inline-start: 0px;
+  height: -moz-max-content;
+  height: max-content;
+}
+#navContainer .pi-arrow-down-fill {
+  display: none;
+}
+#navContainer .ps-nav__cat {
+  display: flex;
+  align-items: center;
+  min-height: clamp(42px, 5vh, 48px);
+  padding-right: 0.6rem;
+}
+#navContainer .ps-nav__cat a {
+  flex: 1 1;
+  text-decoration: none;
+}
+#navContainer .ps-nav__cat a,
+#navContainer .ps-nav__cat .btn__no-style {
+  color: #121212;
+}
+#navContainer .ps-nav__cat a:hover,
+#navContainer .ps-nav__cat .btn__no-style:hover {
+  color: var(--proshop-primary);
+}
+#navContainer .ps-nav__cat:has(> a.active) {
+  background-color: #e8e8e8;
+}
+#navContainer .ps-nav__cat:has(> a.active) a {
+  color: #BE0000 !important;
+}
+#navContainer .ps-nav__cat:has(> a.active) .pi-chev-right {
+  display: none;
+}
+#navContainer .ps-nav__cat:has(> a.active) .pi-arrow-down-fill {
+  display: block;
+}
+#navContainer .ps-nav__cat:has(> a.active) .pi-arrow-down-fill {
+  opacity: 1 !important;
+  background-position: right 0px center;
+}
+@media (hover: hover) {
+#navContainer .ps-nav__cat:hover {
+    text-decoration: none;
+    color: var(--proshop-primary);
+    background-color: var(--gray-200);
+}
+#navContainer .ps-nav__cat:hover .pi-arrow-down-fill {
+    opacity: 1;
+    background-position: right 0px center;
+}
+#navContainer .ps-nav__cat:hover .pi-arrow-down-fill {
+    display: block;
+}
+#navContainer .ps-nav__cat:hover .pi-chev-right {
+    display: none;
+}
+}
+.menu-container.alwaysHorizontal #horisontalMenu #navContainer {
+  white-space: nowrap;
+  overflow-x: scroll;
+  display: flex;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+}
+.menu-container.alwaysHorizontal #horisontalMenu nav .button_container {
+  display: flex !important;
+}
+@media (max-width: 991px) {
+.site-customercenter .menu-container,
+  .menu-container {
+    position: relative;
+    margin-bottom: 30px;
+}
+.menu-container .button_container button {
+    padding: 0;
+}
+.menu-container .button_container button[disabled] {
+    background-color: #e8e8e8;
+}
+.splide__arrow {
+    padding: 0;
+    border: none;
+    border-radius: 100%;
+    display: inherit;
+    justify-content: center;
+    align-items: center;
+}
+#navContainer {
+    white-space: nowrap;
+    overflow-x: scroll;
+    display: flex;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+}
+#navContainer.ps-nav__main {
+    padding: 0.6rem;
+}
+#navContainer .ps-nav__cat {
+    padding: 0;
+    width: -moz-max-content;
+    width: max-content;
+    scroll-snap-align: start;
+    padding-right: 0px;
+}
+#navContainer .ps-nav__cat:has(> a.active) {
+    background-color: #fff !important;
+}
+#navContainer .ps-nav__cat:hover,
+  #navContainer .ps-nav__cat:focus {
+    background: #fff !important;
+}
+}
+</style><style type="text/css">.siteSlideEnergyLabelContainer {
+  margin-bottom: 15px;
+}
+.siteSlideEnergyLabelContainer img {
+  max-width: 60px;
+}
+.splide__slide .site-image-discount-splash div span,
+.splideElement .site-image-discount-splash div span {
+  margin-left: 0px;
+}
+</style><style type="text/css">@keyframes splide-loading{0%{transform:rotate(0)}to{transform:rotate(1turn)}}.splide--draggable>.splide__slider>.splide__track,.splide--draggable>.splide__track{-webkit-user-select:none;-ms-user-select:none;user-select:none}.splide--fade>.splide__slider>.splide__track>.splide__list,.splide--fade>.splide__track>.splide__list{display:block}.splide--fade>.splide__slider>.splide__track>.splide__list>.splide__slide,.splide--fade>.splide__track>.splide__list>.splide__slide{left:0;opacity:0;position:absolute;top:0;z-index:0}.splide--fade>.splide__slider>.splide__track>.splide__list>.splide__slide.is-active,.splide--fade>.splide__track>.splide__list>.splide__slide.is-active{opacity:1;position:relative;z-index:1}.splide--rtl{direction:rtl}.splide--ttb.is-active>.splide__slider>.splide__track>.splide__list,.splide--ttb.is-active>.splide__track>.splide__list{display:block}.splide__container{box-sizing:border-box;position:relative}.splide__list{-webkit-backface-visibility:hidden;backface-visibility:hidden;display:-ms-flexbox;display:flex;height:100%;margin:0!important;padding:0!important;transform-style:preserve-3d}.splide.is-initialized:not(.is-active) .splide__list{display:block}.splide__pagination{-ms-flex-align:center;align-items:center;display:-ms-flexbox;display:flex;-ms-flex-wrap:wrap;flex-wrap:wrap;-ms-flex-pack:center;justify-content:center;margin:0;pointer-events:none}.splide__pagination li{display:inline-block;line-height:1;list-style-type:none;margin:0;pointer-events:auto}.splide__progress__bar{width:0}.splide{outline:none;position:relative;visibility:hidden}.splide.is-initialized,.splide.is-rendered{visibility:visible}.splide__slide{-webkit-backface-visibility:hidden;backface-visibility:hidden;box-sizing:border-box;-ms-flex-negative:0;flex-shrink:0;list-style-type:none!important;margin:0;outline:none;position:relative}.splide__slide img{vertical-align:bottom}.splide__slider{position:relative}.splide__spinner{animation:splide-loading 1s linear infinite;border:2px solid #999;border-left-color:transparent;border-radius:50%;bottom:0;contain:strict;display:inline-block;height:20px;left:0;margin:auto;position:absolute;right:0;top:0;width:20px}.splide__track{overflow:hidden;position:relative;z-index:0}</style><style type="text/css">/*@cms-BtnDefaultBgColor: #0f2f56;*/
+</style><style type="text/css">/*@cms-BtnDefaultBgColor: #0f2f56;*/
+.slideContainer[data-v-d9c0b786] {
+  flex-wrap: wrap;
+}
+.splideElement[data-v-d9c0b786]:not(:first-child) {
+  margin-left: 10px;
+}
+.splideElement[data-v-d9c0b786] {
+  margin-bottom: 10px;
+  border: 1px solid #cbcbcb;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-basis: 0;
+  flex-grow: 1;
+  padding: 15px;
+  overflow: hidden;
+}
+.splide__cta[data-v-d9c0b786] {
+  display: block;
+  height: 100%;
+  transition: border-color 0.1s ease-in-out;
+}
+@media screen and (max-width: 991px) {
+.splideElement[data-v-d9c0b786] {
+    min-width: 40%;
+}
+.splideElement[data-v-d9c0b786]:nth-child(even) {
+    margin-left: 10px;
+}
+.splideElement[data-v-d9c0b786]:nth-child(odd) {
+    margin-left: 0px;
+}
+}
+</style><script type="text/javascript" async="" src="/Content/v-1173573356/testSeek.bundle.js"></script><script type="text/javascript" async="" src="/Content/v-1173573356/leadFamly.bundle.js"></script></head>
+ 
+
+
+<body id="siteContainer" data-version="1.0.9313.19199" data-cnet="1df6b731e6" data-lang="da-DK" data-site="proshop.dk" style="">
+    <noscript><iframe src="//ww2.proshop.dk/ns.html?id=GTM-PCQSS3W" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<script type="module">
+(function (w, d, s, l, i) { w[l] = w[l] || []; w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' }); var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src = '//ww2.proshop.dk/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f); })(window, document, 'script', 'dataLayer', 'GTM-PCQSS3W');
+</script>
+
+    
+
+<header id="pageHeader" class="fixed-top w-100">
+    <div class="pl-2 pr-2 ps-container">
+        <div class="ps-container__inner header__template">
+            <div class="header__logo align-items-center">
+                <a href="/" aria-label="Back to Home" id="logohome"><div data-vueapp="campaigns" class="site-logo" id="c9781b337da2f41c690c6b8d11590431b" element-id="9781b337-da2f-41c6-90c6-b8d11590431b" data="eyJ1bmlxdWVQZXJzb25hbElkIjoiRkJCMkQ2MkItNEM0Ri00MDQ2LUQyQTItMDJGNzJGNDU1NzgzIn0=" data-v-app=""><div><div><img src="/Images/proshop_logo_tagline_new_outlined_med_opacity_3684c4325e81.svg"></div></div></div>
+</a>
+            </div>
+<div class="header__search d-flex flex-nowrap">
+    <div class="position-relative flex-1">
+        <form action="/" class="d-flex align-items-center" method="GET" role="search" novalidate="novalidate">
+           <input type="search" data-action="/ClientPlugins/AutoComplete/SearchResult" id="search-input" class="input__round-lg w-100 site-search" name="s" placeholder="Søg" title="Søg" aria-description="Søg efter produkter" enterkeyhint="search" autocomplete="off">
+           <button id="btn_clearSearchTerm" class="hidden" type="reset">Ryd</button>
+           <button type="submit" aria-label="Søg efter produkter" class="input__round-btn green d-flex justify-content-center align-items-center"><i class="ki pi-xs pi-search"></i></button>
+        </form>
+    </div>
+</div><div class="header__categories d-flex">
+<a href="/Kundeservice.htm" class="header__icon d-block"><i class="pi-sm pi pi-headphones-b m-auto d-block"></i><p class="header__text m-0">Hjælp</p></a>                <div class="header__icon input__new"><a id="logout" class="hidden btn__no-style dropdown-toggle w-100 position-relative" href="/CustomerCenter/CustomerAccount">
+    <i class="pi-sm pi pi-login m-auto d-block position-relative"><small class="header__number-login position-absolute"><span class="pi-xxs pi pi-check-white"></span></small></i>
+    <p id="loginButtonText" class="hidden-xs hidden-sm header__text m-0">Log ind</p>
+    <p id="loginButtonTextSm" class="hidden-md hidden-lg header__text m-0">Min konto</p>
+</a>
+<button id="openLogin" type="button" class="btn__no-style w-100 position-relative" data-toggle="modal" data-target="#loginModal">
+    <i class="pi-sm pi pi-login m-auto d-block position-relative"></i>
+    <p id="loginButtonText" class="hidden-xs hidden-sm  hidden-sm header__text m-0">Log ind</p>
+    <p id="loginButtonTextSm" class="hidden-md hidden-lg header__text m-0">Log ind</p>
+</button></div><div class="header__icon">
+<div id="minibasket" data-customerid="">
+<form action="/Basket" class="form-horizontal" method="get" novalidate="novalidate">        <button type="submit" class="btn__no-style position-relative w-100" id="btnBasket"><i class="pi-sm pi pi-basket m-auto position-relative d-block"><small data-minibasketlinecount=""></small></i><p class="hidden-xs hidden-sm header__text m-0" data-minibasketprice="" data-toggle="tooltip" data-placement="bottom">0,00 kr.</p><p class="hidden-md hidden-lg header__text m-0">Kurv</p></button>
+</form></div></div>
+            </div>
+        </div>
+    </div>
+    
+
+
+<section class="menu-top hidden-xs hidden-sm position-absolute w-100">
+    <div class="pl-2 pr-2 ps-container">
+        <div class="d-flex flex-nowrap">
+                <a class="menu-top__cta menu-top__cta--bf" href="/Baerbar">Bærbar</a>
+                <a class="menu-top__cta menu-top__cta--bf" href="/Gaming">Gaming</a>
+                <a class="menu-top__cta menu-top__cta--bf" href="/Mobil">Mobil</a>
+                <a class="menu-top__cta menu-top__cta--bf" href="/Smart-Home">Smart Home</a>
+                <a class="menu-top__cta menu-top__cta--bf" href="/SSD">SSD</a>
+                            <div class="menu-top__cta menu-top__cta--bf"><a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/Hus-Have" data-gtm-vis-polling-id115630387_30="38" data-gtm-vis-recent-on-screen115630387_57="130" data-gtm-vis-first-on-screen115630387_57="130" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="227" data-gtm-vis-first-on-screen115630387_30="227" data-gtm-vis-total-visible-time115630387_30="800">Hus &amp; Have</a> <a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/DEALS" data-gtm-vis-polling-id115630387_30="39" data-gtm-vis-recent-on-screen115630387_57="135" data-gtm-vis-first-on-screen115630387_57="135" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="227" data-gtm-vis-first-on-screen115630387_30="227" data-gtm-vis-total-visible-time115630387_30="800">DEALS</a> <a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/dutzo-computere" data-gtm-vis-polling-id115630387_30="40" data-gtm-vis-recent-on-screen115630387_57="139" data-gtm-vis-first-on-screen115630387_57="139" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="227" data-gtm-vis-first-on-screen115630387_30="227" data-gtm-vis-total-visible-time115630387_30="800">DUTZO Gaming</a> <a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/Erhverv" data-gtm-vis-polling-id115630387_30="41" data-gtm-vis-recent-on-screen115630387_57="141" data-gtm-vis-first-on-screen115630387_57="141" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="227" data-gtm-vis-first-on-screen115630387_30="227" data-gtm-vis-total-visible-time115630387_30="800">Erhverv</a> <a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/Gavekort/Gavekort/100001" data-gtm-vis-polling-id115630387_30="42" data-gtm-vis-recent-on-screen115630387_57="144" data-gtm-vis-first-on-screen115630387_57="144" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="227" data-gtm-vis-first-on-screen115630387_30="227" data-gtm-vis-total-visible-time115630387_30="800">Gavekort</a></div>
+        </div>
+    </div>
+</section>
+
+
+</header><div id="search-result" class="position-relative" style="display: block; opacity: 0;"></div>
+    
+    <div class="site-container-fullwidth">
+        <div class="container site-container ps-container position-relative px-2 pt-1 ">
+        
+
+        
+        
+<div class="row site-content-table site-bg-white site-customercenter">
+    <div class="col-xs-12 col-md-9 col-md-push-3">
+                <div class="site-bar-breadcrumbs mb-2">
+                    <ol class="breadcrumb small d-flex" id="breadcrumbs" itemscope="" itemtype="http://schema.org/BreadcrumbList"><li itemscope="" itemprop="itemListElement" itemtype="http://schema.org/ListItem"><a class="p-0" href="/" itemprop="item"><span itemprop="name">Forside</span></a><meta itemprop="position" content="1"></li> <li itemscope="" itemprop="itemListElement" itemtype="http://schema.org/ListItem"><a class="p-0" href="/CustomerCenter" itemprop="item"><span itemprop="name">Mit Proshop</span></a><meta itemprop="position" content="1"></li></ol>
+                </div>
+    </div>
+    <div class="col-xs-12 col-md-3 menu-container col-md-pull-9">
+        
+<div id="horisontalMenu" data-v-app=""><aside class="position-relative"><nav class="ps-nav"><div class="hidden-md hidden-lg d-flex justify-content-end button_container"><!-- Left Button --><button class="splide__arrow splide__arrow--prev bg-green" id="arrowLeft" aria-controls="splide01-track" aria-label="Previous slide" disabled=""><i class="ki ki-lg pi-arrow-down-fill bg-white rotate180"></i></button><!-- Right Button --><button class="splide__arrow splide__arrow--next bg-green" id="arrowRight" aria-controls="splide01-track" aria-label="Next slide"><i class="ki ki-lg pi-arrow-down-fill bg-white"></i></button></div><!-- Horizontal Menu --><ul id="navContainer" class="ps-nav__main"><li class="ps-nav__cat"><i class="ki ki-lg pi-building"></i><a href="/CustomerCenter" class="">Mit Proshop</a><i class="pi-sm pi-arrow-down-fill svg-fill-red hidden-md hidden-sm hidden-xs"></i><i class="ki-s pi-chev-right bg-gray hidden-md hidden-sm hidden-xs"></i><i class="hidden-lg hidden-md">&nbsp;|&nbsp;</i></li><li class="ps-nav__cat"><i class="ki ki-lg pi-clock-history"></i><a href="/CustomerCenter/History" class="">Købshistorik</a><i class="pi-sm pi-arrow-down-fill svg-fill-red hidden-md hidden-sm hidden-xs"></i><i class="ki-s pi-chev-right bg-gray hidden-md hidden-sm hidden-xs"></i><i class="hidden-lg hidden-md">&nbsp;|&nbsp;</i></li><li class="ps-nav__cat"><i class="ki ki-lg pi-ol"></i><a href="/CustomerCenter/Account" class="">Fakturaoversigt</a><i class="pi-sm pi-arrow-down-fill svg-fill-red hidden-md hidden-sm hidden-xs"></i><i class="ki-s pi-chev-right bg-gray hidden-md hidden-sm hidden-xs"></i><i class="hidden-lg hidden-md">&nbsp;|&nbsp;</i></li><li class="ps-nav__cat"><i class="ki ki-lg pi-activity"></i><a href="/CustomerCenter/Order" class="">Bestillinger</a><i class="pi-sm pi-arrow-down-fill svg-fill-red hidden-md hidden-sm hidden-xs"></i><i class="ki-s pi-chev-right bg-gray hidden-md hidden-sm hidden-xs"></i><i class="hidden-lg hidden-md">&nbsp;|&nbsp;</i></li><li class="ps-nav__cat"><i class="ki ki-lg pi-repeat-red"></i><a href="/CustomerCenter/Rma" class="">Reklamationer</a><i class="pi-sm pi-arrow-down-fill svg-fill-red hidden-md hidden-sm hidden-xs"></i><i class="ki-s pi-chev-right bg-gray hidden-md hidden-sm hidden-xs"></i><i class="hidden-lg hidden-md">&nbsp;|&nbsp;</i></li><li class="ps-nav__cat"><i class="ki ki-lg pi-checklist"></i><a href="/CustomerCenter/Shopping" class="">Indkøbslister</a><i class="pi-sm pi-arrow-down-fill svg-fill-red hidden-md hidden-sm hidden-xs"></i><i class="ki-s pi-chev-right bg-gray hidden-md hidden-sm hidden-xs"></i><i class="hidden-lg hidden-md">&nbsp;|&nbsp;</i></li><li class="ps-nav__cat"><i class="ki ki-lg pi-key"></i><a href="/CustomerCenter/DigitalWarehouse" class="">Licenskoder</a><i class="pi-sm pi-arrow-down-fill svg-fill-red hidden-md hidden-sm hidden-xs"></i><i class="ki-s pi-chev-right bg-gray hidden-md hidden-sm hidden-xs"></i><i class="hidden-lg hidden-md">&nbsp;|&nbsp;</i></li><li class="ps-nav__cat"><i class="ki ki-lg pi-power"></i><form action="/CustomerCenter/CustomerAccount/LogOff" id="logoutForm" method="post" novalidate="novalidate"><input name="__RequestVerificationToken" type="hidden" value="ZnTdDNPwxDcIKp-jtK6i1_00Vi6HDxZN7UNTJQy2g743cl-LZ_Ivqxgd2sRD8VZgrDnN3SIw3Im4TvD416HMZKnTw0D0MNc45xaVVbL7Xuc1"> <button type="submit" class="btn__no-style">Log ud</button></form></li></ul></nav></aside></div>
+    </div>
+    <main class="col-xs-12 col-md-9 col-md-push-3">
+        <div>
+            
+<div class="col-md-12 startReturnCase">
+    <div class="mb-2">
+        <h1>Oprettelse af fortrydelsessag</h1>
+        <p>Udfyld venligst dit kundenummer og ordre- eller fakturanummer. Dette finder du på din faktura. Når du handler Proshop, har du 14 dages fortrydelsesret. Din fortrydelsesfrist starter når du har modtaget varen. Du kan læse mere under <u><b><a href="/Handelsbetingelser.htm">handelsbetingelser</a></b></u>.</p>
+    </div>
+    <div>
+<form action="/CustomerCenter/CustomerReturn/StartReturnCase" class="form-horizontal input__new" method="post" role="form" novalidate="novalidate"><input name="__RequestVerificationToken" type="hidden" value="U-t6q9gvz6TsPCBzO4ED2bhISzalyENHCf4uwnJIGhozEHM1_vZh8UzbVeZb3xbe53a4lK1e-0ZuZjSvpxSdzB97cNNSLcN3iBX7sGe0xd41">            <section id="loginForm">
+                
+
+    <div class="form-group has-feedback position-relative">
+        <div class="col-md-12">
+            <label class="input__label" for="form-control">Kundenummer:</label>
+            <input class="form-control" data-val="true" data-val-required="Kundenummer: skal udfyldes" id="AccountNumber" name="AccountNumber" placeholder="Kundenummer:" type="" value="">
+
+                <span class="pi-xs pi pi-error form-control-feedback" title="Required"></span>
+            <accountnumber class="field-validation-valid help-block" data-valmsg-for="AccountNumber" data-valmsg-replace="true" v-pre=""></accountnumber>
+        </div>
+    </div>
+
+                
+
+    <div class="form-group has-feedback position-relative">
+        <div class="col-md-12">
+            <label class="input__label" for="form-control">Ordre- eller fakturanummer:</label>
+            <input class="form-control" data-val="true" data-val-required="Ordre- eller fakturanummer: skal udfyldes" id="OrderNumber" name="OrderNumber" placeholder="Ordre- eller fakturanummer:" type="" value="">
+
+                <span class="pi-xs pi pi-error form-control-feedback" title="Required"></span>
+            <ordernumber class="field-validation-valid help-block" data-valmsg-for="OrderNumber" data-valmsg-replace="true" v-pre=""></ordernumber>
+        </div>
+    </div>
+
+                <div class="form-group">
+                    <div class="text-right"><input type="submit" value="Find ordre" class="btn site-btn-between site-btn-grey"></div>
+                </div>
+            </section>
+</form>    </div>
+</div>
+
+        </div>
+    </main>
+</div>
+    </div>
+    <script type="module">
+    Consent.activateFor('functional', function () {
+            (function (s, o, l, v, e, m, a, t) {
+        t = 'solvemateConfig'; s[e] = s[e] || function (x, y) { (s[t] = s[t] || {})[x] = y; }; a = o.createElement(l); a.async = 1; a.src = v; o.body.appendChild(a);
+    })(window, document, 'script', 'https://widget.solvemate.com/v2/init.js', 'solvemate');
+    solvemate('projectID', '5f994edd45b0d36364c03bba');
+    if (document.getElementById("chatbot") != null) {
+        solvemate('hideBeacon', true);
+        solvemate('inlineContainerId', 'chatbot');
+        solvemate('hideGreeting', true);
+    }
+    });
+</script>
+</div>
+    <footer class="footer position-relative" role="contentinfo">
+<div class="footer__top py-4">
+    <div class="ps-container">
+        <div class="site-footer-newsletterContainer">
+
+<div class="f-white">
+    Få nyheder, tilbud og konkurrencer direkte i din mailboks
+</div>
+<div class="p-2">
+<form action="/CustomerCenter/Newsletter/Subscribe" class="input-newsletter position-relative w-100" method="get" novalidate="novalidate"><input name="__RequestVerificationToken" type="hidden" value="gq57K4Kva1AUZ5e0AYXYKRFH5eAqjYkSkzYCLmUTNbn7U_fF8lTH4N_ixjovn9441kBqn0C-cUoiweaWSCmHFjQP6L5miQ_Ky7hdM1GVfgw1">        <input name="Email" class="input__round-lg w-100 pr-5" type="email" placeholder="skriv e-mail adresse">
+<input id="source" name="source" type="hidden" value="WebsiteForm">        <button type="submit" aria-label="Newsletter Subscribe" class="input__round-btn position-absolute d-flex justify-content-center align-items-center">
+            <i class="pi-sm pi pi-send-mail rotate45"></i>
+        </button>
+</form></div>
+                <div class="socialLinksContainer">
+                    <span class="f-white pb-1">Find os på:</span>
+                    <div class="socialLinks">
+                            <a class="px-half" rel="noreferrer" href="https://www.facebook.com/proshop.dk/" target="_blank" title="Find os på: Facebook"><img class="lazy soci-icon entered loaded" width="40" height="40" data-src="/Content/images/SVG/facebook.svg" src="/Content/images/SVG/facebook.svg" alt="Facebook" data-ll-status="loaded"></a>
+                            <a class="px-half" rel="noreferrer" href="https://www.instagram.com/proshop.dk/" target="_blank" title="Find os på: Instagram"><img class="lazy soci-icon entered loaded" width="40" height="40" data-src="/Content/images/SVG/instagram.svg" src="/Content/images/SVG/instagram.svg" alt="Instagram" data-ll-status="loaded"></a>
+                            <a class="px-half" rel="noreferrer" href="https://www.tiktok.com/@proshop.dk" target="_blank" title="Find os på: TikTok"><img class="lazy soci-icon entered loaded" width="40" height="40" data-src="/Content/images/SVG/tiktok.svg" src="/Content/images/SVG/tiktok.svg" alt="TikTok" data-ll-status="loaded"></a>
+                            <a class="px-half" rel="noreferrer" href="https://www.youtube.com/c/ProshopDk" target="_blank" title="Find os på: Youtube"><img class="lazy soci-icon entered loaded" width="40" height="40" data-src="/Content/images/SVG/youtube-logotype.svg" src="/Content/images/SVG/youtube-logotype.svg" alt="Youtube" data-ll-status="loaded"></a>
+                            <a class="px-half" rel="noreferrer" href="https://www.linkedin.com/company/proshop-aps/" target="_blank" title="Find os på: LinkedIn"><img class="lazy soci-icon entered loaded" width="40" height="40" data-src="/Content/images/SVG/linkedin.svg" src="/Content/images/SVG/linkedin.svg" alt="LinkedIn" data-ll-status="loaded"></a>
+                    </div>
+                </div>
+        </div>
+    </div>
+</div>
+<div class="pl-2 pr-2 ps-container">
+    <div class="ps-container__inner ps__template--footer">
+        <div class="footer__contact footer__accordion-item active">
+                <div class="display-5 footer__header d-flex"><span class="align-items-center"><i class="pi-sm pi pi-headphones-b mr-1"></i>Åbningstider telefon</span><button class="d-flex footer__toggle" data-toggle="true" aria-expanded="true" aria-controls="accordion__section-0"><div class="align-items-center text-left d-flex"><i class="pi-sm pi pi-headphones-b mr-1"></i>Åbningstider telefon</div> <i class="ki pi-xs pi-chevron-down"></i></button></div>
+                <div id="accordion__section-0" class="footer__accordion-list">
+                    <table width="100%">
+<tbody>
+<tr>
+<td>Mandag - Torsdag:</td>
+<td>08:00 - 16:00</td>
+</tr>
+<tr>
+<td>Fredag:</td>
+<td>08:00 - 15:30</td>
+</tr>
+<tr>
+<td>Weekend &amp; helligdage:</td>
+<td>Lukket</td>
+</tr>
+<tr>
+<td colspan="2">&nbsp;&nbsp;</td>
+</tr>
+<tr>
+<td colspan="2">Find svar på ofte stillede spørgsmål i vores <span style="text-decoration: underline;"><strong><a href="/Kundeservice.htm">kundecenter</a></strong></span>, eller kontakt os på&nbsp;<a href="mailto:support@proshop.dk">support@proshop.dk</a>, henvendelser besvares inden for 48 timer.</td>
+</tr>
+</tbody>
+</table>
+                        <div class="pt-2"><p class="display-5 d-flex fw700 footer__display m-0">Åbningstider for afhentning af varer</p>Se åbningstider og adresser for Pick-up Points i København og Aarhus, <span style="text-decoration: underline;"><strong><a href="/Om-Pick-up-Points.htm">klik her</a></strong></span>.</div>
+                </div>
+        </div>
+        <div class="footer__support footer__accordion-item">
+            <div class="display-5 footer__header d-flex">
+                <span>Support</span>
+                <button class="d-flex footer__toggle" data-toggle="true" aria-expanded="false" aria-controls="accordion__section-1">
+                    Support
+                    <i class="ki-s pi-chev-right svg-fill-red"></i>
+                </button>
+            </div>
+            <div id="accordion__section-1" class="footer__accordion-list">
+                <ul class="list-unstyled arrow__list">
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Guides.htm"> Guides</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Forsendelse-og-levering.htm"> Forsendelse og levering</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Om-Pick-up-Points.htm"> Om Pick-up Points</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Reparation-Defekt.htm"> Reparation / Defekt</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Kundeservice.htm"> Kundeservice</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Handelsbetingelser.htm"> Handelsbetingelser</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Persondatapolitik.htm"> Persondatapolitik</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CSR.htm"> CSR</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Black-Friday"> Black Friday 2025</a>
+                        </li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer__myProshop footer__accordion-item">
+            <div class="display-5 footer__header d-flex">
+                <span>Min side</span>
+                <button class="d-flex footer__toggle" data-toggle="true" aria-expanded="false" aria-controls="accordion__section-2">
+                    Min side
+                    <i class="ki-s pi-chev-right svg-fill-red"></i>
+                </button>
+            </div>
+            <div id="accordion__section-2" class="footer__accordion-list">
+                <ul class="list-unstyled arrow__list">
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter"> Mit Proshop</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter/Rma/Login"> Reklamation</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter/CustomerReturn/StartReturnCase"> Returnering</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter/Account"> Købshistorik</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter/CustomerAccount/ForgotPassword"> Glemt adgangskode</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Guide-til-fragtskader.htm"> Guide til fragtskader</a>
+                        </li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer__address">
+                <div class="footer__accordion-item">
+                    <div class="display-5 footer__header d-flex">
+                        <span>Kontakt</span>
+                        <button class="d-flex footer__toggle" data-toggle="true" aria-expanded="false" aria-controls="accordion__section-3">
+                            Kontakt
+                            <i class="ki-s pi-chev-right svg-fill-red"></i>
+                        </button>
+                    </div>
+                    <div id="accordion__section-3" class="footer__accordion-list">
+                        Proshop a/s<br>Slet Møllevej 17<br>8270&nbsp;Højbjerg<br>Danmark<br>DK18966239<br><a href="mailto:support@proshop.dk">support@proshop.dk</a><br><br>
+
+                        <ul class="list-unstyled arrow__list">
+                                <li class="d-flex align-items-center">
+                                    <i class="ki-s pi-chev-right bg-black"></i>
+                                    <a href="/Om-Proshop.htm"> Om Proshop</a>
+                                </li>
+                                <li class="d-flex align-items-center">
+                                    <i class="ki-s pi-chev-right bg-black"></i>
+                                    <a href="/Erhverv"> Erhverv</a>
+                                </li>
+                                <li class="d-flex align-items-center">
+                                    <i class="ki-s pi-chev-right bg-black"></i>
+                                    <a href="/Job.htm"> Job</a>
+                                </li>
+                        </ul>
+                        <div class="pt-2 clearfix">
+                            
+       <div class="menu-button-links pull-left btn-group position-relative">
+        <a id="dropdown-lang" href="#" aria-controls="languageMenu" class="familyRelationsDropdownBtn dropdown btn site-btn-between site-btn-white site-btn-hasborder dropdown-toggle langDropDownBtn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="ki-m pi pi-globe mr-1"></i>
+            <p>Lande</p>
+            <i class="ki-s pi-chev-right bg-black rotate90 ml-1"></i>
+        </a>
+        <ul id="languageMenu" role="menu" aria-labelledby="dropdown-lang" class="dropdown__list dropdown-menu familyRelationsDropdown langDropDown">
+                <li role="none">
+                    <a href="//www.proshop.at">
+                        proshop.at
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.de">
+                        proshop.de
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.fi">
+                        proshop.fi
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.nl">
+                        proshop.nl
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.no">
+                        proshop.no
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.pl">
+                        proshop.pl
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.se">
+                        proshop.se
+                    </a>
+                </li>
+        </ul>
+    </div>
+
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+</div>
+    <div class="pl-2 pr-2 ps-container"><div class="d-flex footer-row__flex pb-4 pt-2 footer__border justify-content-center">     <div class="site-campaignElement" data-campaign-element-id="299d6d40-a5aa-42b0-914e-f084bc90add2">
+        <a rel="noopener" data-action="campaignClick" data-id="3c871804-857c-4555-a051-a659fd8e74e4" data-name="Proshop.dk defaults" data-creative="299d6d40-a5aa-42b0-914e-f084bc90add2" data-position="footer-certification" href="//certifikat.emaerket.dk/eshop/proshop.dk" target="_blank" border="0" id="emaerke"><img class="lazy" data-src="/Content/images/SVG/e-maerket.svg" alt="e-maerket" width="62" height="66" style="width:62px;height:66px"></a><script src="" defer="" data-consent-src="https://static.klaviyo.com/onsite/js/klaviyo.js?company_id=L6MTra" data-category-consent="cookie_cat_marketing"></script><script>window._learnq=window._learnq||[];window._learnq.push(["track","Visited webpage",{url:window.location.href,name:document.title}])</script><style>.footer__border{flex-direction:initial}</style><a rel="noopener" data-action="campaignClick" data-id="3c871804-857c-4555-a051-a659fd8e74e4" data-name="Proshop.dk defaults" data-creative="299d6d40-a5aa-42b0-914e-f084bc90add2" data-position="footer-certification" href="https://www.findsmiley.dk/989192" target="_blank" alt="Fødevarestyrelsen smiley"><img class="lazy ml-2" style="height:59px;width:50px" data-src="/Images/smiley_105x125.gif" alt="Fødevarestyrelsen smiley" width="50" height="60"></a>
+    </div>
+ </div></div>
+<div class="footer__bottom">
+    <div class="pl-2 pr-2 ps-container">
+        <div class="d-flex footer-row__flex pt-4 pb-2 justify-content-between align-items-center">
+            <div class="text-center flex-center">
+                        <div class="d-flex mb-2 mx-1">
+                            <img class="lazy" data-src="/content/images/delivery/Postnord.svg" alt="Postnord">
+                        </div>
+            </div>
+            <div class="text-center flex-center flex-wrap">
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/Dankort.svg" alt="Dankort">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/apple-pay.svg" alt="Apple Pay">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/google-pay.svg" alt="Google Pay">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/MobilePay.svg" alt="MobilePay">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/Visa.svg" alt="Visa">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/MasterCard.svg" alt="Mastercard">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/PayPal.svg" alt="PayPal">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/Klarna.svg" alt="Klarna">
+                        </div>
+            </div>
+        </div>
+    </div>
+    <div id="auctionsMenu" class="d-flex pl-2 pr-2 ps-container"></div> 
+</div>
+<script type="text/javascript">
+    let footerToggle = document.querySelectorAll("[data-toggle='true']");
+    for (var i = 0; i < footerToggle.length; i++) {
+        footerToggle[i].addEventListener('click', function (e) {
+            e.currentTarget.closest('.footer__accordion-item').classList.toggle('active');
+            this.toggleAttribute('aria-expanded="true"');
+        });
+    }
+</script><input id="cookieTextFirstPart" type="hidden" value="Hos Proshop a/s bruger vi cookies til at forbedre brugeroplevelsen samt til personalisering af indhold og annoncer. Denne information deles med tredjepart, eksempelvis Google og Facebook, og cookies anvendes til anonym sporing på tværs af hjemmesider.">
+<input id="cookieTextLastPart" type="hidden" value="Ved at bruge vores hjemmeside, godkender du vores cookie- og persondatapolitik.">
+<input id="cookieLinkText" type="hidden" value="Du kan læse mere her">
+<input id="cookieLink" type="hidden" value="https://www.proshop.dk/Persondatapolitik.htm">
+<input id="cookieAcceptButtonText" type="hidden" value="OK"></footer>
+    
+<div class="modal--custom modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModal" aria-hidden="true" data-url="/CustomerCenter/CustomerAccount/TopLogin">
+    <div class="modal-dialog position-relative" role="document">
+        <div class="modal-body position-relative"><button type="button" class="login-modal--close d-flex align-items-center justify-content-end position-absolute" data-dismiss="modal" aria-label="Close"><i aria-hidden="true" class="pi pi-close"></i></button><div id="modalData"><div class="site-spinner mt-1 text-center"></div></div></div>
+    </div>
+</div>
+    <div id="fixedBottomMessage"></div>
+    
+    <script type="text/javascript" src="/Content/v-1173573356/customercenter.bundle.js"></script>
+    
+
+
+    <script type="text/javascript" language="javascript">
+        var rsa;var raptorLoaded = function (raptor) { rsa = raptor; raptor.initialize({ customerID: "5875", productIdParamIndex: 2, eventTypeParamIndex: 1, useCookies: Consent.isValid('marketing') });
+            var raptorUserId = '';var userId = $('#minibasket').data('customerid');
+            console.log("Raptor **************: " + userId);if (raptorUserId.length > 0) userId = raptorUserId;else if (userId === '0') userId = ''; raptor.trackEvent("visit", "", "", "", "", "", userId, "", "", "", "", "");
+        };
+    </script>
+
+<script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon="{&quot;rayId&quot;:&quot;95865425aa21be60&quot;,&quot;serverTiming&quot;:{&quot;name&quot;:{&quot;cfExtPri&quot;:true,&quot;cfEdge&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfL4&quot;:true,&quot;cfSpeedBrain&quot;:true,&quot;cfCacheStatus&quot;:true}},&quot;version&quot;:&quot;2025.6.2&quot;,&quot;token&quot;:&quot;f8b2150c90b94f51987ae93c4994ca3a&quot;}" crossorigin="anonymous"></script>
+
+
+ 
+ 
+<script type="text/javascript">
+var Consent = { cookieWarning: false, validCategories: ["functional", "statistic", "marketing"] };window.dataLayer = window.dataLayer || [];function gtag() { dataLayer.push(arguments); }gtag('consent', 'default', {'ad_storage': 'denied','ad_user_data': 'denied','ad_personalization': 'denied','analytics_storage': 'denied','wait_for_update': 2000 });if (navigator.userAgent.includes("CookieInformationScanner")) { initCookieInf(); }else if (document.cookie.indexOf('CookieInformationConsent=') < 0) { window.addEventListener('mousemove', initCookieInf);window.addEventListener('scroll', initCookieInf);window.addEventListener('keydown', initCookieInf);} else { initCookieInf();} function initCookieInf() { window.removeEventListener('mousemove', initCookieInf);window.removeEventListener('scroll', initCookieInf);window.removeEventListener('keydown', initCookieInf);var sc = document.createElement('script');sc.type = 'text/javascript';sc.id = 'CookieConsent';sc.defer = true;sc.src = 'https://policy.app.cookieinformation.com/uc.js';sc.dataset.culture = 'DA';sc.dataset.gcmVersion = '2.0';document.head.appendChild(sc);} Consent.cookieWarning = true;Consent.isValid = function (category) { try { return CookieInformation.getConsentGivenFor('cookie_cat_' + category); } catch { return false; } };Consent.run = function (category, callback) { if (Consent.isValid(category)) { callback(); } };Consent.activateFor = function (category, callback) { if (Consent.isValid(category)) { callback(); } else { window.addEventListener('CookieInformationConsentGiven', function () { Consent.run(category, callback) }); } };
+</script>
+ </body></html>

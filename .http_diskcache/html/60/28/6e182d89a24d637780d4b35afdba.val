@@ -1,0 +1,1056 @@
+	
+
+	
+
+
+	
+
+
+	
+
+	
+		
+	
+
+	
+
+		
+		
+
+	
+
+
+
+
+
+				
+				
+
+					
+						<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="da-DK" lang="da-DK" prefix="og: http://ogp.me/ns#" class="no-js" data-layout-name="wwdc-evergreen">
+<head>
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta charset="utf-8" />
+<link rel="canonical" href="https://www.apple.com/dk/" />
+
+
+	
+	<link rel="alternate" href="https://www.apple.com/" hreflang="en-US" /><link rel="alternate" href="https://www.apple.com/ae-ar/" hreflang="ar-AE" /><link rel="alternate" href="https://www.apple.com/ae/" hreflang="en-AE" /><link rel="alternate" href="https://www.apple.com/am/" hreflang="en-AM" /><link rel="alternate" href="https://www.apple.com/at/" hreflang="de-AT" /><link rel="alternate" href="https://www.apple.com/au/" hreflang="en-AU" /><link rel="alternate" href="https://www.apple.com/az/" hreflang="en-AZ" /><link rel="alternate" href="https://www.apple.com/befr/" hreflang="fr-BE" /><link rel="alternate" href="https://www.apple.com/benl/" hreflang="nl-BE" /><link rel="alternate" href="https://www.apple.com/bg/" hreflang="bg-BG" /><link rel="alternate" href="https://www.apple.com/bh-ar/" hreflang="ar-BH" /><link rel="alternate" href="https://www.apple.com/bh/" hreflang="en-BH" /><link rel="alternate" href="https://www.apple.com/br/" hreflang="pt-BR" /><link rel="alternate" href="https://www.apple.com/bw/" hreflang="en-BW" /><link rel="alternate" href="https://www.apple.com/by/" hreflang="en-BY" /><link rel="alternate" href="https://www.apple.com/ca/" hreflang="en-CA" /><link rel="alternate" href="https://www.apple.com/ca/fr/" hreflang="fr-CA" /><link rel="alternate" href="https://www.apple.com/cf/" hreflang="fr-CF" /><link rel="alternate" href="https://www.apple.com/chde/" hreflang="de-CH" /><link rel="alternate" href="https://www.apple.com/chfr/" hreflang="fr-CH" /><link rel="alternate" href="https://www.apple.com/ci/" hreflang="fr-CI" /><link rel="alternate" href="https://www.apple.com/cl/" hreflang="es-CL" /><link rel="alternate" href="https://www.apple.com/cm/" hreflang="fr-CM" /><link rel="alternate" href="https://www.apple.com/co/" hreflang="es-CO" /><link rel="alternate" href="https://www.apple.com/cz/" hreflang="cs-CZ" /><link rel="alternate" href="https://www.apple.com/de/" hreflang="de-DE" /><link rel="alternate" href="https://www.apple.com/dk/" hreflang="da-DK" /><link rel="alternate" href="https://www.apple.com/ee/" hreflang="et-EE" /><link rel="alternate" href="https://www.apple.com/eg-ar/" hreflang="ar-EG" /><link rel="alternate" href="https://www.apple.com/eg/" hreflang="en-EG" /><link rel="alternate" href="https://www.apple.com/es/" hreflang="es-ES" /><link rel="alternate" href="https://www.apple.com/fi/" hreflang="fi-FI" /><link rel="alternate" href="https://www.apple.com/fr/" hreflang="fr-FR" /><link rel="alternate" href="https://www.apple.com/ge/" hreflang="en-GE" /><link rel="alternate" href="https://www.apple.com/gn/" hreflang="fr-GN" /><link rel="alternate" href="https://www.apple.com/gq/" hreflang="fr-GQ" /><link rel="alternate" href="https://www.apple.com/gr/" hreflang="el-GR" /><link rel="alternate" href="https://www.apple.com/gw/" hreflang="en-GW" /><link rel="alternate" href="https://www.apple.com/hk/" hreflang="zh-HK" /><link rel="alternate" href="https://www.apple.com/hk/en/" hreflang="en-HK" /><link rel="alternate" href="https://www.apple.com/hr/" hreflang="hr-HR" /><link rel="alternate" href="https://www.apple.com/hu/" hreflang="hu-HU" /><link rel="alternate" href="https://www.apple.com/id/" hreflang="en-ID" /><link rel="alternate" href="https://www.apple.com/ie/" hreflang="en-IE" /><link rel="alternate" href="https://www.apple.com/il/" hreflang="en-IL" /><link rel="alternate" href="https://www.apple.com/in/" hreflang="en-IN" /><link rel="alternate" href="https://www.apple.com/it/" hreflang="it-IT" /><link rel="alternate" href="https://www.apple.com/jo-ar/" hreflang="ar-JO" /><link rel="alternate" href="https://www.apple.com/jo/" hreflang="en-JO" /><link rel="alternate" href="https://www.apple.com/jp/" hreflang="ja-JP" /><link rel="alternate" href="https://www.apple.com/ke/" hreflang="en-KE" /><link rel="alternate" href="https://www.apple.com/kg/" hreflang="en-KG" /><link rel="alternate" href="https://www.apple.com/kr/" hreflang="ko-KR" /><link rel="alternate" href="https://www.apple.com/kw-ar/" hreflang="ar-KW" /><link rel="alternate" href="https://www.apple.com/kw/" hreflang="en-KW" /><link rel="alternate" href="https://www.apple.com/kz/" hreflang="en-KZ" /><link rel="alternate" href="https://www.apple.com/la/" hreflang="es-HN" /><link rel="alternate" href="https://www.apple.com/la/" hreflang="es-AR" /><link rel="alternate" href="https://www.apple.com/la/" hreflang="es-SV" /><link rel="alternate" href="https://www.apple.com/la/" hreflang="es-DO" /><link rel="alternate" href="https://www.apple.com/la/" hreflang="es-EC" /><link rel="alternate" href="https://www.apple.com/la/" hreflang="es-GT" /><link rel="alternate" href="https://www.apple.com/la/" hreflang="es-PE" /><link rel="alternate" href="https://www.apple.com/la/" hreflang="es-BO" /><link rel="alternate" href="https://www.apple.com/la/" hreflang="es-NI" /><link rel="alternate" href="https://www.apple.com/la/" hreflang="es-VE" /><link rel="alternate" href="https://www.apple.com/la/" hreflang="es-PA" /><link rel="alternate" href="https://www.apple.com/la/" hreflang="es-CR" /><link rel="alternate" href="https://www.apple.com/la/" hreflang="es-UY" /><link rel="alternate" href="https://www.apple.com/la/" hreflang="es-PY" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-AG" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-BS" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-TC" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-TT" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-SR" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-BM" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-BB" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-BZ" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-GD" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-KY" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-LC" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-MS" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-KN" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-AI" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-VC" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-GY" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-VG" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-DM" /><link rel="alternate" href="https://www.apple.com/lae/" hreflang="en-JM" /><link rel="alternate" href="https://www.apple.com/li/" hreflang="de-LI" /><link rel="alternate" href="https://www.apple.com/lt/" hreflang="lt-LT" /><link rel="alternate" href="https://www.apple.com/lu/" hreflang="fr-LU" /><link rel="alternate" href="https://www.apple.com/lv/" hreflang="lv-LV" /><link rel="alternate" href="https://www.apple.com/ma/" hreflang="fr-MA" /><link rel="alternate" href="https://www.apple.com/md/" hreflang="en-MD" /><link rel="alternate" href="https://www.apple.com/me/" hreflang="en-ME" /><link rel="alternate" href="https://www.apple.com/mg/" hreflang="en-MG" /><link rel="alternate" href="https://www.apple.com/mk/" hreflang="en-MK" /><link rel="alternate" href="https://www.apple.com/ml/" hreflang="fr-ML" /><link rel="alternate" href="https://www.apple.com/mo/" hreflang="zh-MO" /><link rel="alternate" href="https://www.apple.com/mt/" hreflang="en-MT" /><link rel="alternate" href="https://www.apple.com/mu/" hreflang="fr-MU" /><link rel="alternate" href="https://www.apple.com/mx/" hreflang="es-MX" /><link rel="alternate" href="https://www.apple.com/my/" hreflang="en-MY" /><link rel="alternate" href="https://www.apple.com/mz/" hreflang="en-MZ" /><link rel="alternate" href="https://www.apple.com/ne/" hreflang="fr-NE" /><link rel="alternate" href="https://www.apple.com/ng/" hreflang="en-NG" /><link rel="alternate" href="https://www.apple.com/nl/" hreflang="nl-NL" /><link rel="alternate" href="https://www.apple.com/no/" hreflang="no-NO" /><link rel="alternate" href="https://www.apple.com/nz/" hreflang="en-NZ" /><link rel="alternate" href="https://www.apple.com/om-ar/" hreflang="ar-OM" /><link rel="alternate" href="https://www.apple.com/om/" hreflang="en-OM" /><link rel="alternate" href="https://www.apple.com/ph/" hreflang="en-PH" /><link rel="alternate" href="https://www.apple.com/pl/" hreflang="pl-PL" /><link rel="alternate" href="https://www.apple.com/pt/" hreflang="pt-PT" /><link rel="alternate" href="https://www.apple.com/qa-ar/" hreflang="ar-QA" /><link rel="alternate" href="https://www.apple.com/qa/" hreflang="en-QA" /><link rel="alternate" href="https://www.apple.com/ro/" hreflang="ro-RO" /><link rel="alternate" href="https://www.apple.com/sa-ar/" hreflang="ar-SA" /><link rel="alternate" href="https://www.apple.com/sa/" hreflang="en-SA" /><link rel="alternate" href="https://www.apple.com/se/" hreflang="sv-SE" /><link rel="alternate" href="https://www.apple.com/sg/" hreflang="en-SG" /><link rel="alternate" href="https://www.apple.com/si/" hreflang="en-SI" /><link rel="alternate" href="https://www.apple.com/sk/" hreflang="sk-SK" /><link rel="alternate" href="https://www.apple.com/sn/" hreflang="fr-SN" /><link rel="alternate" href="https://www.apple.com/th/" hreflang="th-TH" /><link rel="alternate" href="https://www.apple.com/tj/" hreflang="en-TJ" /><link rel="alternate" href="https://www.apple.com/tm/" hreflang="en-TM" /><link rel="alternate" href="https://www.apple.com/tn/" hreflang="fr-TN" /><link rel="alternate" href="https://www.apple.com/tr/" hreflang="tr-TR" /><link rel="alternate" href="https://www.apple.com/tw/" hreflang="zh-TW" /><link rel="alternate" href="https://www.apple.com/ua/" hreflang="uk-UA" /><link rel="alternate" href="https://www.apple.com/ug/" hreflang="en-UG" /><link rel="alternate" href="https://www.apple.com/uk/" hreflang="en-GB" /><link rel="alternate" href="https://www.apple.com/uz/" hreflang="en-UZ" /><link rel="alternate" href="https://www.apple.com/vn/" hreflang="vi-VN" /><link rel="alternate" href="https://www.apple.com/za/" hreflang="en-ZA" />
+
+
+
+
+	
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+	
+	
+		<link rel="stylesheet" type="text/css" href="/api-www/global-elements/global-header/v1/assets/globalheader.css" />
+		<link rel="stylesheet" type="text/css" href="/ac/globalfooter/8/da_DK/styles/ac-globalfooter.built.css" />
+	
+	<link rel="stylesheet" type="text/css" href="/ac/localnav/9/styles/ac-localnav.built.css" />
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="ac:pricing-endpoint" href="/dk/shop/mcm/product-price">
+<link rel="ac:edupricing-endpoint" href="/dk-edu/shop/mcm/product-price">
+<link rel="ac:tradein-endpoint" href="/dk/shop/mcm/tradein-credit">
+
+
+
+
+
+	<meta name="ac:tradein-alias" content="iphone15promax-tradein=slug:model_iphone_15_pro_max">
+	<meta name="ac:tradein-alias" content="iphone12-tradein=slug:model_iphone_12">
+	<title>Apple (Danmark)</title>
+	<meta property="analytics-track" content="Apple - Index/Tab" />
+	<meta property="analytics-s-channel" content="homepage" />
+
+	<meta property="analytics-s-bucket-0" content="applestoreww" />
+	<meta property="analytics-s-bucket-1" content="applestoreww" />
+	<meta property="analytics-s-bucket-2" content="applestoreww" />
+
+	<meta name="Description" content="Dyk ned i Apples innovative verden. Køb iPhone, iPad, Apple Watch, Mac og Apple TV. Se nærmere på tilbehør, underholdning og ekspert-support." />
+	<meta property="og:title" content="Apple (Danmark)" />
+	<meta property="og:description" content="Dyk ned i Apples innovative verden. Køb iPhone, iPad, Apple Watch, Mac og Apple TV. Se nærmere på tilbehør, underholdning og ekspert-support." />
+	<meta property="og:url" content="https://www.apple.com/dk/" />
+	<meta property="og:locale" content="da_DK" />
+	<meta property="og:image" content="https://www.apple.com/ac/structured-data/images/open_graph_logo.png?202409130300" />
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content="Apple (Danmark)" />
+	
+	
+	
+
+
+	
+	
+	
+
+
+
+
+	
+
+
+
+<link rel="stylesheet" href="/v/energy-rating/a/built/styles/main.built.css" type="text/css" />
+<link rel="stylesheet" href="/euro/energy-rating/a/shared/styles/main.css" type="text/css" />
+<script src="/v/energy-rating/a/built/scripts/overview/head.built.js" type="text/javascript" charset="utf-8"></script>
+
+	<link rel="stylesheet" href="/wss/fonts?families=SF+Pro,v3|SF+Pro+Icons,v3" type="text/css" media="all" />
+	<link rel="stylesheet" href="/v/home/cf/built/styles/main.built.css" type="text/css" />
+	<link rel="stylesheet" href="/dk/home/styles/main.css" type="text/css" />
+	<script src="/v/home/cf/built/scripts/head.built.js" type="text/javascript" charset="utf-8"></script>
+</head>
+<body class="page-home ac-nav-overlap globalnav-scrim globalheader-light">
+
+	<h1 class="visuallyhidden">Apple</h1>
+
+	
+<meta name="globalnav-store-key" content="SFX9YPYY9PPXCU9KH" />
+
+    <div id="globalheader"><aside id="globalmessage-segment" lang="da-DK" dir="ltr" class="globalmessage-segment"><ul data-strings="{&quot;view&quot;:&quot;{%STOREFRONT%} Store-startside&quot;,&quot;segments&quot;:{&quot;smb&quot;:&quot;Store til erhvervslivet, startside&quot;,&quot;eduInd&quot;:&quot;Store til uddannelsen, startside&quot;,&quot;other&quot;:&quot;Store-startside&quot;},&quot;exit&quot;:&quot;Luk&quot;}" class="globalmessage-segment-content"></ul></aside><nav id="globalnav" lang="da-DK" dir="ltr" aria-label="Global" data-analytics-element-engagement-start="globalnav:onFlyoutOpen" data-analytics-element-engagement-end="globalnav:onFlyoutClose" data-store-api="/[storefront]/shop/bag/status" data-analytics-activitymap-region-id="global nav" data-analytics-region="global nav" class="globalnav no-js   "><div class="globalnav-content"><div class="globalnav-item globalnav-menuback"><button aria-label="Hovedmenu" class="globalnav-menuback-button"><span class="globalnav-chevron-icon"><svg height="48" viewBox="0 0 9 48" width="9" xmlns="http://www.w3.org/2000/svg"><path d="m1.5618 24.0621 6.5581-6.4238c.2368-.2319.2407-.6118.0088-.8486-.2324-.2373-.6123-.2407-.8486-.0088l-7 6.8569c-.1157.1138-.1807.2695-.1802.4316.001.1621.0674.3174.1846.4297l7 6.7241c.1162.1118.2661.1675.4155.1675.1577 0 .3149-.062.4326-.1846.2295-.2388.2222-.6187-.0171-.8481z"/></svg></span></button></div><ul id="globalnav-list" class="globalnav-list"><li data-analytics-element-engagement="globalnav hover - apple" class="
+				globalnav-item
+				globalnav-item-apple
+				
+				
+			"><a href="/dk/" data-globalnav-item-name="apple" data-analytics-title="apple home" aria-label="Apple" class="globalnav-link globalnav-link-apple"><span class="globalnav-image-regular globalnav-link-image"><svg height="44" viewBox="0 0 14 44" width="14" xmlns="http://www.w3.org/2000/svg"><path d="m13.0729 17.6825a3.61 3.61 0 0 0 -1.7248 3.0365 3.5132 3.5132 0 0 0 2.1379 3.2223 8.394 8.394 0 0 1 -1.0948 2.2618c-.6816.9812-1.3943 1.9623-2.4787 1.9623s-1.3633-.63-2.613-.63c-1.2187 0-1.6525.6507-2.644.6507s-1.6834-.9089-2.4787-2.0243a9.7842 9.7842 0 0 1 -1.6628-5.2776c0-3.0984 2.014-4.7405 3.9969-4.7405 1.0535 0 1.9314.6919 2.5924.6919.63 0 1.6112-.7333 2.8092-.7333a3.7579 3.7579 0 0 1 3.1604 1.5802zm-3.7284-2.8918a3.5615 3.5615 0 0 0 .8469-2.22 1.5353 1.5353 0 0 0 -.031-.32 3.5686 3.5686 0 0 0 -2.3445 1.2084 3.4629 3.4629 0 0 0 -.8779 2.1585 1.419 1.419 0 0 0 .031.2892 1.19 1.19 0 0 0 .2169.0207 3.0935 3.0935 0 0 0 2.1586-1.1368z"/></svg></span><span class="globalnav-image-compact globalnav-link-image"><svg height="48" viewBox="0 0 17 48" width="17" xmlns="http://www.w3.org/2000/svg"><path d="m15.5752 19.0792a4.2055 4.2055 0 0 0 -2.01 3.5376 4.0931 4.0931 0 0 0 2.4908 3.7542 9.7779 9.7779 0 0 1 -1.2755 2.6351c-.7941 1.1431-1.6244 2.2862-2.8878 2.2862s-1.5883-.734-3.0443-.734c-1.42 0-1.9252.7581-3.08.7581s-1.9611-1.0589-2.8876-2.3584a11.3987 11.3987 0 0 1 -1.9373-6.1487c0-3.61 2.3464-5.523 4.6566-5.523 1.2274 0 2.25.8062 3.02.8062.734 0 1.8771-.8543 3.2729-.8543a4.3778 4.3778 0 0 1 3.6822 1.841zm-6.8586-2.0456a1.3865 1.3865 0 0 1 -.2527-.024 1.6557 1.6557 0 0 1 -.0361-.337 4.0341 4.0341 0 0 1 1.0228-2.5148 4.1571 4.1571 0 0 1 2.7314-1.4078 1.7815 1.7815 0 0 1 .0361.373 4.1487 4.1487 0 0 1 -.9867 2.587 3.6039 3.6039 0 0 1 -2.5148 1.3236z"/></svg></span><span class="globalnav-link-text">Apple</span></a></li><li data-topnav-flyout-item="menu" data-topnav-flyout-label="Menu" role="none" class="globalnav-item globalnav-menu"><div data-topnav-flyout="menu" class="globalnav-flyout"><div class="globalnav-menu-list"><div data-analytics-element-engagement="globalnav hover - store" class="
+				globalnav-item
+				globalnav-item-store
+				globalnav-item-menu
+				
+			"><ul role="none" class="globalnav-submenu-trigger-group"><li class="globalnav-submenu-trigger-item"><a href="/dk/shop/goto/store" data-globalnav-item-name="store" data-topnav-flyout-trigger-compact="true" data-analytics-title="store" data-analytics-element-engagement="hover - store" aria-label="Store" class="globalnav-link globalnav-submenu-trigger-link globalnav-link-store"><span class="globalnav-link-text-container"><span class="globalnav-image-regular globalnav-link-image"><svg height="44" viewBox="0 0 30 44" width="30" xmlns="http://www.w3.org/2000/svg"><path d="m26.5679 20.4629c1.002 0 1.67.738 1.693 1.857h-3.48c.076-1.119.779-1.857 1.787-1.857zm2.754 2.672v-.387c0-1.963-1.037-3.176-2.742-3.176-1.735 0-2.848 1.289-2.848 3.276 0 1.998 1.096 3.263 2.848 3.263 1.383 0 2.367-.668 2.66-1.746h-1.008c-.264.557-.814.856-1.629.856-1.072 0-1.769-.791-1.822-2.039v-.047zm-9.547-3.451h.96v.937h.094c.188-.615.914-1.049 1.752-1.049.164 0 .375.012.504.03v1.007c-.082-.023-.445-.058-.644-.058-.961 0-1.659 1.098-1.659 1.535v3.914h-1.007zm-4.27 5.519c-1.195 0-1.869-.867-1.869-2.361 0-1.5.674-2.361 1.869-2.361 1.196 0 1.87.861 1.87 2.361 0 1.494-.674 2.361-1.87 2.361zm0-5.631c-1.798 0-2.912 1.237-2.912 3.27 0 2.027 1.114 3.269 2.912 3.269 1.799 0 2.913-1.242 2.913-3.269 0-2.033-1.114-3.27-2.913-3.27zm-5.478-1.475v1.635h1.407v.843h-1.407v3.575c0 .744.282 1.06.938 1.06.182 0 .281-.006.469-.023v.849c-.199.035-.393.059-.592.059-1.301 0-1.822-.481-1.822-1.688v-3.832h-1.02v-.843h1.02v-1.635zm-8.103 5.694c.129.885.973 1.447 2.174 1.447 1.137 0 1.975-.615 1.975-1.453 0-.72-.527-1.177-1.693-1.47l-1.084-.282c-1.53-.386-2.192-1.078-2.192-2.279 0-1.436 1.201-2.408 2.988-2.408 1.635 0 2.854.972 2.942 2.338h-1.061c-.146-.867-.861-1.383-1.916-1.383-1.125 0-1.869.562-1.869 1.418 0 .662.463 1.043 1.629 1.342l.885.234c1.752.439 2.455 1.119 2.455 2.361 0 1.553-1.225 2.543-3.158 2.543-1.793 0-3.03-.949-3.141-2.408z"/></svg></span><span class="globalnav-link-text">Store</span></span></a></li></ul></div><div data-analytics-element-engagement="globalnav hover - mac" class="
+				globalnav-item
+				globalnav-item-mac
+				globalnav-item-menu
+				
+			"><ul role="none" class="globalnav-submenu-trigger-group"><li class="globalnav-submenu-trigger-item"><a href="/dk/mac/" data-globalnav-item-name="mac" data-topnav-flyout-trigger-compact="true" data-analytics-title="mac" data-analytics-element-engagement="hover - mac" aria-label="Mac" class="globalnav-link globalnav-submenu-trigger-link globalnav-link-mac"><span class="globalnav-link-text-container"><span class="globalnav-image-regular globalnav-link-image"><svg height="44" viewBox="0 0 23 44" width="23" xmlns="http://www.w3.org/2000/svg"><path d="m8.1558 25.9987v-6.457h-.0703l-2.666 6.457h-.8907l-2.666-6.457h-.0703v6.457h-.9844v-8.4551h1.2246l2.8945 7.0547h.0938l2.8945-7.0547h1.2246v8.4551zm2.5166-1.7696c0-1.1309.832-1.7812 2.3027-1.8691l1.8223-.1113v-.5742c0-.7793-.4863-1.207-1.4297-1.207-.7559 0-1.2832.2871-1.4238.7852h-1.0195c.1348-1.0137 1.1309-1.6816 2.4785-1.6816 1.541 0 2.4023.791 2.4023 2.1035v4.3242h-.9609v-.9318h-.0938c-.4102.6738-1.1016 1.043-1.9453 1.043-1.2246 0-2.1328-.7266-2.1328-1.8809zm4.125-.5859v-.5801l-1.6992.1113c-.9609.0645-1.3828.3984-1.3828 1.0312 0 .6445.5449 1.0195 1.2773 1.0195 1.0371.0001 1.8047-.6796 1.8047-1.5819zm6.958-2.0273c-.1641-.627-.7207-1.1367-1.6289-1.1367-1.1367 0-1.8516.9082-1.8516 2.3379 0 1.459.7266 2.3848 1.8516 2.3848.8496 0 1.4414-.3926 1.6289-1.1074h1.0195c-.1816 1.1602-1.125 2.0156-2.6426 2.0156-1.7695 0-2.9004-1.2832-2.9004-3.293 0-1.9688 1.125-3.2461 2.8945-3.2461 1.5352 0 2.4727.9199 2.6484 2.0449z"/></svg></span><span class="globalnav-link-text">Mac</span></span></a></li></ul></div><div data-analytics-element-engagement="globalnav hover - ipad" class="
+				globalnav-item
+				globalnav-item-ipad
+				globalnav-item-menu
+				
+			"><ul role="none" class="globalnav-submenu-trigger-group"><li class="globalnav-submenu-trigger-item"><a href="/dk/ipad/" data-globalnav-item-name="ipad" data-topnav-flyout-trigger-compact="true" data-analytics-title="ipad" data-analytics-element-engagement="hover - ipad" aria-label="iPad" class="globalnav-link globalnav-submenu-trigger-link globalnav-link-ipad"><span class="globalnav-link-text-container"><span class="globalnav-image-regular globalnav-link-image"><svg height="44" viewBox="0 0 24 44" width="24" xmlns="http://www.w3.org/2000/svg"><path d="m14.9575 23.7002c0 .902-.768 1.582-1.805 1.582-.732 0-1.277-.375-1.277-1.02 0-.632.422-.966 1.383-1.031l1.699-.111zm-1.395-4.072c-1.347 0-2.343.668-2.478 1.681h1.019c.141-.498.668-.785 1.424-.785.944 0 1.43.428 1.43 1.207v.574l-1.822.112c-1.471.088-2.303.738-2.303 1.869 0 1.154.908 1.881 2.133 1.881.844 0 1.535-.369 1.945-1.043h.094v.931h.961v-4.324c0-1.312-.862-2.103-2.403-2.103zm6.769 5.575c-1.155 0-1.846-.885-1.846-2.361 0-1.471.697-2.362 1.846-2.362 1.142 0 1.857.914 1.857 2.362 0 1.459-.709 2.361-1.857 2.361zm1.834-8.027v3.503h-.088c-.358-.691-1.102-1.107-1.981-1.107-1.605 0-2.654 1.289-2.654 3.27 0 1.986 1.037 3.269 2.654 3.269.873 0 1.623-.416 2.022-1.119h.093v1.008h.961v-8.824zm-15.394 4.869h-1.863v-3.563h1.863c1.225 0 1.899.639 1.899 1.799 0 1.119-.697 1.764-1.899 1.764zm.276-4.5h-3.194v8.455h1.055v-3.018h2.127c1.588 0 2.719-1.119 2.719-2.701 0-1.611-1.108-2.736-2.707-2.736zm-6.064 8.454h1.008v-6.316h-1.008zm-.199-8.237c0-.387.316-.704.703-.704s.703.317.703.704c0 .386-.316.703-.703.703s-.703-.317-.703-.703z"/></svg></span><span class="globalnav-link-text">iPad</span></span></a></li></ul></div><div data-analytics-element-engagement="globalnav hover - iphone" class="
+				globalnav-item
+				globalnav-item-iphone
+				globalnav-item-menu
+				
+			"><ul role="none" class="globalnav-submenu-trigger-group"><li class="globalnav-submenu-trigger-item"><a href="/dk/iphone/" data-globalnav-item-name="iphone" data-topnav-flyout-trigger-compact="true" data-analytics-title="iphone" data-analytics-element-engagement="hover - iphone" aria-label="iPhone" class="globalnav-link globalnav-submenu-trigger-link globalnav-link-iphone"><span class="globalnav-link-text-container"><span class="globalnav-image-regular globalnav-link-image"><svg height="44" viewBox="0 0 38 44" width="38" xmlns="http://www.w3.org/2000/svg"><path d="m32.7129 22.3203h3.48c-.023-1.119-.691-1.857-1.693-1.857-1.008 0-1.711.738-1.787 1.857zm4.459 2.045c-.293 1.078-1.277 1.746-2.66 1.746-1.752 0-2.848-1.266-2.848-3.264 0-1.986 1.113-3.275 2.848-3.275 1.705 0 2.742 1.213 2.742 3.176v.386h-4.541v.047c.053 1.248.75 2.039 1.822 2.039.815 0 1.366-.298 1.629-.855zm-12.282-4.682h.961v.996h.094c.316-.697.932-1.107 1.898-1.107 1.418 0 2.209.838 2.209 2.338v4.09h-1.007v-3.844c0-1.137-.481-1.676-1.489-1.676s-1.658.674-1.658 1.781v3.739h-1.008zm-2.499 3.158c0-1.5-.674-2.361-1.869-2.361-1.196 0-1.87.861-1.87 2.361 0 1.495.674 2.362 1.87 2.362 1.195 0 1.869-.867 1.869-2.362zm-4.782 0c0-2.033 1.114-3.269 2.913-3.269 1.798 0 2.912 1.236 2.912 3.269 0 2.028-1.114 3.27-2.912 3.27-1.799 0-2.913-1.242-2.913-3.27zm-6.636-5.666h1.008v3.504h.093c.317-.697.979-1.107 1.946-1.107 1.336 0 2.179.855 2.179 2.338v4.09h-1.007v-3.844c0-1.119-.504-1.676-1.459-1.676-1.131 0-1.752.715-1.752 1.781v3.739h-1.008zm-6.015 4.87h1.863c1.202 0 1.899-.645 1.899-1.764 0-1.16-.674-1.799-1.899-1.799h-1.863zm2.139-4.5c1.599 0 2.707 1.125 2.707 2.736 0 1.582-1.131 2.701-2.719 2.701h-2.127v3.018h-1.055v-8.455zm-6.114 8.454h1.008v-6.316h-1.008zm-.2-8.238c0-.386.317-.703.703-.703.387 0 .704.317.704.703 0 .387-.317.704-.704.704-.386 0-.703-.317-.703-.704z"/></svg></span><span class="globalnav-link-text">iPhone</span></span></a></li></ul></div><div data-analytics-element-engagement="globalnav hover - watch" class="
+				globalnav-item
+				globalnav-item-watch
+				globalnav-item-menu
+				
+			"><ul role="none" class="globalnav-submenu-trigger-group"><li class="globalnav-submenu-trigger-item"><a href="/dk/watch/" data-globalnav-item-name="watch" data-topnav-flyout-trigger-compact="true" data-analytics-title="watch" data-analytics-element-engagement="hover - watch" aria-label="Watch" class="globalnav-link globalnav-submenu-trigger-link globalnav-link-watch"><span class="globalnav-link-text-container"><span class="globalnav-image-regular globalnav-link-image"><svg height="44" viewBox="0 0 35 44" width="35" xmlns="http://www.w3.org/2000/svg"><path d="m28.9819 17.1758h1.008v3.504h.094c.316-.697.978-1.108 1.945-1.108 1.336 0 2.18.856 2.18 2.338v4.09h-1.008v-3.844c0-1.119-.504-1.675-1.459-1.675-1.131 0-1.752.715-1.752 1.781v3.738h-1.008zm-2.42 4.441c-.164-.627-.721-1.136-1.629-1.136-1.137 0-1.852.908-1.852 2.338 0 1.459.727 2.384 1.852 2.384.849 0 1.441-.392 1.629-1.107h1.019c-.182 1.16-1.125 2.016-2.642 2.016-1.77 0-2.901-1.284-2.901-3.293 0-1.969 1.125-3.247 2.895-3.247 1.535 0 2.472.92 2.648 2.045zm-6.533-3.568v1.635h1.407v.844h-1.407v3.574c0 .744.282 1.06.938 1.06.182 0 .281-.006.469-.023v.85c-.2.035-.393.058-.592.058-1.301 0-1.822-.48-1.822-1.687v-3.832h-1.02v-.844h1.02v-1.635zm-4.2 5.596v-.58l-1.699.111c-.961.064-1.383.398-1.383 1.031 0 .645.545 1.02 1.277 1.02 1.038 0 1.805-.68 1.805-1.582zm-4.125.586c0-1.131.832-1.782 2.303-1.869l1.822-.112v-.574c0-.779-.486-1.207-1.43-1.207-.755 0-1.283.287-1.423.785h-1.02c.135-1.014 1.131-1.682 2.479-1.682 1.541 0 2.402.792 2.402 2.104v4.324h-.961v-.931h-.094c-.41.673-1.101 1.043-1.945 1.043-1.225 0-2.133-.727-2.133-1.881zm-7.684 1.769h-.996l-2.303-8.455h1.101l1.682 6.873h.07l1.893-6.873h1.066l1.893 6.873h.07l1.682-6.873h1.101l-2.302 8.455h-.996l-1.946-6.674h-.07z"/></svg></span><span class="globalnav-link-text">Watch</span></span></a></li></ul></div><div data-analytics-element-engagement="globalnav hover - airpods" class="
+				globalnav-item
+				globalnav-item-airpods
+				globalnav-item-menu
+				
+			"><ul role="none" class="globalnav-submenu-trigger-group"><li class="globalnav-submenu-trigger-item"><a href="/dk/airpods/" data-globalnav-item-name="airpods" data-topnav-flyout-trigger-compact="true" data-analytics-title="airpods" data-analytics-element-engagement="hover - airpods" aria-label="AirPods" class="globalnav-link globalnav-submenu-trigger-link globalnav-link-airpods"><span class="globalnav-link-text-container"><span class="globalnav-image-regular globalnav-link-image"><svg height="44" viewBox="0 0 43 44" width="43" xmlns="http://www.w3.org/2000/svg"><path d="m11.7153 19.6836h.961v.937h.094c.187-.615.914-1.048 1.752-1.048.164 0 .375.011.504.029v1.008c-.082-.024-.446-.059-.645-.059-.961 0-1.658.645-1.658 1.535v3.914h-1.008zm28.135-.111c1.324 0 2.244.656 2.379 1.693h-.996c-.135-.504-.627-.838-1.389-.838-.75 0-1.336.381-1.336.943 0 .434.352.704 1.096.885l.973.235c1.189.287 1.763.802 1.763 1.711 0 1.13-1.095 1.91-2.531 1.91-1.406 0-2.373-.674-2.484-1.723h1.037c.17.533.674.873 1.482.873.85 0 1.459-.404 1.459-.984 0-.434-.328-.727-1.002-.891l-1.084-.264c-1.183-.287-1.722-.796-1.722-1.71 0-1.049 1.013-1.84 2.355-1.84zm-6.665 5.631c-1.155 0-1.846-.885-1.846-2.362 0-1.471.697-2.361 1.846-2.361 1.142 0 1.857.914 1.857 2.361 0 1.459-.709 2.362-1.857 2.362zm1.834-8.028v3.504h-.088c-.358-.691-1.102-1.107-1.981-1.107-1.605 0-2.654 1.289-2.654 3.269 0 1.987 1.037 3.27 2.654 3.27.873 0 1.623-.416 2.022-1.119h.094v1.007h.961v-8.824zm-9.001 8.028c-1.195 0-1.869-.868-1.869-2.362 0-1.5.674-2.361 1.869-2.361 1.196 0 1.869.861 1.869 2.361 0 1.494-.673 2.362-1.869 2.362zm0-5.631c-1.799 0-2.912 1.236-2.912 3.269 0 2.028 1.113 3.27 2.912 3.27s2.912-1.242 2.912-3.27c0-2.033-1.113-3.269-2.912-3.269zm-17.071 6.427h1.008v-6.316h-1.008zm-.199-8.238c0-.387.317-.703.703-.703.387 0 .703.316.703.703s-.316.703-.703.703c-.386 0-.703-.316-.703-.703zm-6.137 4.922 1.324-3.773h.093l1.325 3.773zm1.892-5.139h-1.043l-3.117 8.455h1.107l.85-2.42h3.363l.85 2.42h1.107zm14.868 4.5h-1.864v-3.562h1.864c1.224 0 1.898.639 1.898 1.799 0 1.119-.697 1.763-1.898 1.763zm.275-4.5h-3.193v8.455h1.054v-3.017h2.127c1.588 0 2.719-1.119 2.719-2.701 0-1.612-1.107-2.737-2.707-2.737z"/></svg></span><span class="globalnav-link-text">AirPods</span></span></a></li></ul></div><div data-analytics-element-engagement="globalnav hover - tv-home" class="
+				globalnav-item
+				globalnav-item-tv-home
+				globalnav-item-menu
+				
+			"><ul role="none" class="globalnav-submenu-trigger-group"><li class="globalnav-submenu-trigger-item"><a href="/dk/tv-home/" data-globalnav-item-name="tv-home" data-topnav-flyout-trigger-compact="true" data-analytics-title="tv &amp; home" data-analytics-element-engagement="hover - tv &amp; home" aria-label="TV og hjem" class="globalnav-link globalnav-submenu-trigger-link globalnav-link-tv-home"><span class="globalnav-link-text-container"><span class="globalnav-image-regular globalnav-link-image"><svg xmlns="http://www.w3.org/2000/svg" width="64" height="44" viewBox="0 0 64 44"><path d="M4.0039,26V18.4941H1.2793v-.9492H7.7832v.9492H5.0586V26Zm7.7315,0L8.6182,17.5449H9.7256l2.4844,7.09h.0937l2.4844-7.09h1.1074L12.7783,26ZM20.08,22.8418c0-2.0332,1.1133-3.27,2.9121-3.27s2.9121,1.2363,2.9121,3.27c0,2.0273-1.1133,3.27-2.9121,3.27S20.08,24.8691,20.08,22.8418Zm4.7812,0c0-1.5-.6738-2.3613-1.8691-2.3613s-1.8691.8613-1.8691,2.3613c0,1.4941.6738,2.3613,1.8691,2.3613S24.8608,24.3359,24.8608,22.8418Zm2.458,3.8555h1.0665c.1113.5156.6738.85,1.582.85,1.1308,0,1.8047-.5567,1.8047-1.4883V24.8164h-.0938a2.1911,2.1911,0,0,1-1.98,1.09c-1.6348,0-2.6485-1.2656-2.6485-3.1582s1.0254-3.1757,2.6485-3.1757a2.2615,2.2615,0,0,1,2.0273,1.1132h.0937V19.6836h.961v6.4277c0,1.4121-1.09,2.3145-2.8125,2.3145C28.4438,28.4258,27.4712,27.74,27.3188,26.6973Zm4.4766-3.9493c0-1.3769-.709-2.2675-1.875-2.2675-1.1719,0-1.8281.8906-1.8281,2.2675s.6562,2.2676,1.8281,2.2676S31.7954,24.125,31.7954,22.748Zm6.0879-5.5722h1.0078V20.68h.0938A1.9661,1.9661,0,0,1,40.93,19.5723,2.084,2.084,0,0,1,43.11,21.91V26H42.1021V22.1562c0-1.1191-.504-1.6757-1.459-1.6757a1.63,1.63,0,0,0-1.752,1.7812V26H37.8833Zm7.978,9.1347c0,1.3008-.6093,1.8575-1.9336,1.8575H43.752v-.8614h.1523c.7148,0,.9492-.2812.9492-.9785V19.6836h1.0078ZM44.666,17.7617a.7032.7032,0,1,1,.7031.7031A.7052.7052,0,0,1,44.666,17.7617Zm8.1885,6.6035a2.5223,2.5223,0,0,1-2.66,1.7461c-1.7519,0-2.8476-1.2656-2.8476-3.2636,0-1.9864,1.1133-3.2754,2.8476-3.2754,1.7051,0,2.7422,1.2129,2.7422,3.1757v.3868h-4.541v.0468c.0527,1.2481.75,2.0391,1.8223,2.0391a1.6363,1.6363,0,0,0,1.6289-.8555ZM48.3955,22.32h3.48a1.7,1.7,0,0,0-1.6934-1.8574A1.7992,1.7992,0,0,0,48.3955,22.32Zm6.0029-2.6367h.961V20.68h.0937a1.7872,1.7872,0,0,1,1.7637-1.1074A1.8234,1.8234,0,0,1,58.9629,20.68h.0937A2.1147,2.1147,0,0,1,60.99,19.5723,1.8426,1.8426,0,0,1,63,21.6348V26H61.9922V21.8691c0-.9316-.4395-1.3886-1.33-1.3886a1.4209,1.4209,0,0,0-1.4648,1.459V26H58.19V21.7109a1.1969,1.1969,0,0,0-1.3184-1.23,1.5264,1.5264,0,0,0-1.4649,1.6054V26H54.3984Z"/></svg></span><span class="globalnav-link-text">TV og hjem</span></span></a></li></ul></div><div data-analytics-element-engagement="globalnav hover - entertainment" class="
+				globalnav-item
+				globalnav-item-entertainment
+				globalnav-item-menu
+				
+			"><ul role="none" class="globalnav-submenu-trigger-group"><li class="globalnav-submenu-trigger-item"><a href="/dk/entertainment/" data-globalnav-item-name="entertainment" data-topnav-flyout-trigger-compact="true" data-analytics-title="entertainment" data-analytics-element-engagement="hover - entertainment" aria-label="Underholdning" class="globalnav-link globalnav-submenu-trigger-link globalnav-link-entertainment"><span class="globalnav-link-text-container"><span class="globalnav-image-regular globalnav-link-image"><svg height="44" viewBox="0 0 82 44" width="82" xmlns="http://www.w3.org/2000/svg"><path d="m1.0664 23.0938v-5.5488h1.0547v5.4785c0 1.3008.8438 2.2031 2.3086 2.2031s2.2969-.9023 2.2969-2.2031v-5.4785h1.0547v5.5488c0 1.8398-1.2539 3.1055-3.3516 3.1055s-3.3633-1.2656-3.3633-3.1055zm8.6104-3.4102h1.0195v.9492h.0938c.3164-.668.9082-1.0605 1.8398-1.0605 1.418 0 2.209.8379 2.209 2.3379v4.0898h-1.0195v-3.8438c0-1.1367-.4688-1.6816-1.4766-1.6816s-1.6465.6797-1.6465 1.7871v3.7383h-1.0195zm6.5654 3.1641v-.0117c0-1.9805 1.043-3.2637 2.6484-3.2637.8672 0 1.623.4336 1.9688 1.1074h.0938v-3.5039h1.0195v8.8242h-1.0195v-1.0078h-.0938c-.3867.7031-1.0898 1.1191-1.9688 1.1191-1.5996 0-2.6484-1.2949-2.6484-3.2637zm4.7344 0v-.0117c0-1.459-.7031-2.3613-1.8516-2.3613-1.1543 0-1.8398.8906-1.8398 2.3613v.0117c0 1.4707.6855 2.3613 1.8398 2.3613 1.1484 0 1.8516-.9023 1.8516-2.3613zm2.5176.0176v-.0059c0-1.9512 1.1133-3.2871 2.8301-3.2871s2.7598 1.2773 2.7598 3.1641v.3984h-4.5469c.0293 1.3066.75 2.0684 1.875 2.0684.8555 0 1.3828-.4043 1.5527-.7852l.0234-.0527h1.0195l-.0117.0469c-.2168.8555-1.1191 1.6992-2.6074 1.6992-1.8047 0-2.8945-1.2656-2.8945-3.2461zm1.0605-.5449h3.4922c-.1055-1.248-.7969-1.8398-1.7285-1.8398-.9375 0-1.6523.6387-1.7637 1.8398zm5.9912-2.6367h1.0195v.9375h.0938c.2402-.6621.832-1.0488 1.6875-1.0488.1934 0 .4102.0234.5098.041v.9902c-.2109-.0352-.4043-.0586-.627-.0586-.9727 0-1.6641.6152-1.6641 1.541v3.9141h-1.0195zm4.5088-2.5078h1.0195v3.457h.0938c.3164-.668.9082-1.0605 1.8398-1.0605 1.418 0 2.209.8379 2.209 2.3379v4.0898h-1.0195v-3.8438c0-1.1367-.4688-1.6816-1.4766-1.6816s-1.6465.6797-1.6465 1.7871v3.7383h-1.0195zm6.5654 5.6719v-.0117c0-2.0273 1.1133-3.2637 2.9121-3.2637s2.9121 1.2363 2.9121 3.2637v.0117c0 2.0215-1.1133 3.2637-2.9121 3.2637s-2.9121-1.2422-2.9121-3.2637zm4.7812 0v-.0117c0-1.4941-.6738-2.3613-1.8691-2.3613s-1.8691.8672-1.8691 2.3613v.0117c0 1.4883.6738 2.3613 1.8691 2.3613s1.8691-.873 1.8691-2.3613zm2.5635-5.6719h1.0195v8.8242h-1.0195zm2.54 5.6719v-.0117c0-1.9805 1.043-3.2637 2.6484-3.2637.8672 0 1.623.4336 1.9688 1.1074h.0938v-3.5039h1.0195v8.8242h-1.0195v-1.0078h-.0938c-.3867.7031-1.0898 1.1191-1.9688 1.1191-1.5996 0-2.6484-1.2949-2.6484-3.2637zm4.7344 0v-.0117c0-1.459-.7031-2.3613-1.8516-2.3613-1.1543 0-1.8398.8906-1.8398 2.3613v.0117c0 1.4707.6855 2.3613 1.8398 2.3613 1.1484 0 1.8516-.9023 1.8516-2.3613zm2.833-3.1641h1.0195v.9492h.0938c.3164-.668.9082-1.0605 1.8398-1.0605 1.418 0 2.209.8379 2.209 2.3379v4.0898h-1.0195v-3.8438c0-1.1367-.4688-1.6816-1.4766-1.6816s-1.6465.6797-1.6465 1.7871v3.7383h-1.0195zm6.7178-1.9219c0-.3867.3164-.7031.7031-.7031s.7031.3164.7031.7031-.3164.7031-.7031.7031-.7031-.3164-.7031-.7031zm.1875 1.9219h1.0195v6.3164h-1.0195zm2.8223 0h1.0195v.9492h.0938c.3164-.668.9082-1.0605 1.8398-1.0605 1.418 0 2.209.8379 2.209 2.3379v4.0898h-1.0195v-3.8438c0-1.1367-.4688-1.6816-1.4766-1.6816s-1.6465.6797-1.6465 1.7871v3.7383h-1.0195zm6.8291 6.8203.0117-.0059h1.0547l.0059.0059c.1113.4805.6738.8203 1.582.8203 1.1309 0 1.8047-.5332 1.8047-1.4648v-1.2773h-.0938c-.3984.6973-1.1133 1.0898-1.9805 1.0898-1.6348 0-2.6484-1.2656-2.6484-3.0352v-.0117c0-1.7695 1.0195-3.0527 2.6719-3.0527.8906 0 1.582.4395 1.9688 1.1543h.0703v-1.043h1.0195v6.2285c0 1.4121-1.0898 2.3145-2.8125 2.3145-1.5234 0-2.4961-.6855-2.6543-1.7227zm4.4824-3.8672v-.0117c0-1.2539-.709-2.1504-1.875-2.1504-1.1719 0-1.8281.8965-1.8281 2.1504v.0117c0 1.2539.6562 2.1328 1.8281 2.1328s1.875-.8789 1.875-2.1328z"/></svg></span><span class="globalnav-link-text">Underholdning</span></span></a></li></ul></div><div data-analytics-element-engagement="globalnav hover - accessories" class="
+				globalnav-item
+				globalnav-item-accessories
+				globalnav-item-menu
+				
+			"><ul role="none" class="globalnav-submenu-trigger-group"><li class="globalnav-submenu-trigger-item"><a href="/dk/shop/goto/buy_accessories" data-globalnav-item-name="accessories" data-topnav-flyout-trigger-compact="true" data-analytics-title="accessories" data-analytics-element-engagement="hover - accessories" aria-label="Tilbehør" class="globalnav-link globalnav-submenu-trigger-link globalnav-link-accessories"><span class="globalnav-link-text-container"><span class="globalnav-image-regular globalnav-link-image"><svg height="44" viewBox="0 0 46 44" width="46" xmlns="http://www.w3.org/2000/svg"><path d="m2.9746 25.9914v-7.5059h-2.7246v-.9492h6.5039v.9492h-2.7246v7.5059zm4.8662-8.2383c0-.3867.3164-.7031.7031-.7031s.7031.3164.7031.7031-.3164.7031-.7031.7031-.7031-.3164-.7031-.7031zm.1992 1.9219h1.0078v6.3164h-1.0078zm2.8682-2.5078h1.0078v8.8242h-1.0078zm3.9585 7.8164h-.0938v1.0078h-.9609v-8.8242h1.0078v3.5039h.0938c.3457-.6797 1.1133-1.1074 1.9805-1.1074 1.6055 0 2.6484 1.2832 2.6484 3.2695 0 1.9746-1.0488 3.2695-2.6484 3.2695-.879 0-1.629-.416-2.0274-1.1191zm-.0703-2.1504c0 1.459.7148 2.3613 1.8633 2.3613 1.1543 0 1.8398-.8848 1.8398-2.3613s-.6855-2.3613-1.8398-2.3613c-1.1485 0-1.8633.9023-1.8633 2.3613zm11.3994 1.5234c-.293 1.0781-1.2773 1.7461-2.6602 1.7461-1.752 0-2.8477-1.2656-2.8477-3.2637 0-1.9863 1.1133-3.2754 2.8477-3.2754 1.7051 0 2.7422 1.2129 2.7422 3.1758v.3867h-4.541v.0469c.0527 1.248.75 2.0391 1.8223 2.0391.8145 0 1.3652-.2988 1.6289-.8555zm-4.459-2.0449h3.4805c-.0234-1.1191-.6914-1.8574-1.6934-1.8574-1.0078 0-1.7109.7383-1.7871 1.8574zm6.0615-5.1445h1.0078v3.5039h.0938c.3164-.6973.9785-1.1074 1.9453-1.1074 1.3359 0 2.1797.8555 2.1797 2.3379v4.0898h-1.0078v-3.8438c0-1.1191-.5039-1.6758-1.459-1.6758-1.1309 0-1.752.7148-1.752 1.7812v3.7383h-1.0078zm7.7139 8.3437-.5156.5918-.5508-.5391.5449-.6211c-.3633-.5449-.5625-1.2598-.5625-2.1094 0-2.0332 1.1133-3.2695 2.9121-3.2695.7324 0 1.3535.2051 1.8281.5859l.5156-.5859.5508.5391-.5391.6211c.3574.5391.5566 1.2539.5566 2.1094 0 2.0215-1.1133 3.2695-2.9121 3.2695-.7323 0-1.3534-.205-1.828-.5918zm.1465-1.3418 2.9062-3.3223c-.3164-.2695-.7266-.416-1.2246-.416-1.2305 0-1.9219.873-1.9219 2.4023.0001.5274.0821.9728.2403 1.336zm3.6035-1.3359c0-.5273-.082-.9785-.2402-1.3418l-2.9004 3.3223c.3105.2754.7207.4219 1.2188.4219 1.2304-.0001 1.9218-.8848 1.9218-2.4024zm2.4526-3.1582h.9609v.9375h.0938c.1875-.6152.9141-1.0488 1.752-1.0488.1641 0 .375.0117.5039.0293v1.0078c-.082-.0234-.4453-.0586-.6445-.0586-.9609 0-1.6582.6445-1.6582 1.5352v3.9141h-1.0078v-6.3165z"/></svg></span><span class="globalnav-link-text">Tilbehør</span></span></a></li></ul></div><div data-analytics-element-engagement="globalnav hover - support" class="
+				globalnav-item
+				globalnav-item-support
+				globalnav-item-menu
+				
+			"><ul role="none" class="globalnav-submenu-trigger-group"><li class="globalnav-submenu-trigger-item"><a href="https://support.apple.com/da-dk/?cid=gn-ols-home-hp-tab" data-globalnav-item-name="support" data-topnav-flyout-trigger-compact="true" data-analytics-title="support" data-analytics-element-engagement="hover - support" data-analytics-exit-link="true" aria-label="Support" class="globalnav-link globalnav-submenu-trigger-link globalnav-link-support"><span class="globalnav-link-text-container"><span class="globalnav-image-regular globalnav-link-image"><svg height="44" viewBox="0 0 44 44" width="44" xmlns="http://www.w3.org/2000/svg"><path d="m42.1206 18.0337v1.635h1.406v.844h-1.406v3.574c0 .744.281 1.06.937 1.06.182 0 .282-.006.469-.023v.849c-.199.036-.392.059-.592.059-1.3 0-1.822-.48-1.822-1.687v-3.832h-1.019v-.844h1.019v-1.635zm-6.131 1.635h.961v.937h.093c.188-.615.914-1.049 1.752-1.049.164 0 .375.012.504.03v1.008c-.082-.024-.445-.059-.644-.059-.961 0-1.659.644-1.659 1.535v3.914h-1.007zm-2.463 3.158c0-1.5-.674-2.361-1.869-2.361s-1.869.861-1.869 2.361c0 1.494.674 2.361 1.869 2.361s1.869-.867 1.869-2.361zm-4.781 0c0-2.033 1.113-3.27 2.912-3.27s2.912 1.237 2.912 3.27c0 2.027-1.113 3.27-2.912 3.27s-2.912-1.243-2.912-3.27zm-2.108 0c0-1.477-.692-2.361-1.846-2.361-1.143 0-1.863.908-1.863 2.361 0 1.447.72 2.361 1.857 2.361 1.16 0 1.852-.884 1.852-2.361zm1.043 0c0 1.975-1.049 3.27-2.655 3.27-.902 0-1.629-.393-1.974-1.061h-.094v3.059h-1.008v-8.426h.961v1.054h.094c.404-.726 1.16-1.166 2.021-1.166 1.612 0 2.655 1.284 2.655 3.27zm-8.048 0c0-1.477-.691-2.361-1.845-2.361-1.143 0-1.864.908-1.864 2.361 0 1.447.721 2.361 1.858 2.361 1.16 0 1.851-.884 1.851-2.361zm1.043 0c0 1.975-1.049 3.27-2.654 3.27-.902 0-1.629-.393-1.975-1.061h-.093v3.059h-1.008v-8.426h.961v1.054h.093c.405-.726 1.161-1.166 2.022-1.166 1.611 0 2.654 1.284 2.654 3.27zm-7.645 3.158h-.961v-.99h-.094c-.316.703-.99 1.102-1.957 1.102-1.418 0-2.156-.844-2.156-2.338v-4.09h1.008v3.844c0 1.136.422 1.664 1.43 1.664 1.113 0 1.722-.663 1.722-1.77v-3.738h1.008zm-11.69-2.209c.129.885.972 1.447 2.174 1.447 1.136 0 1.974-.615 1.974-1.453 0-.72-.527-1.177-1.693-1.47l-1.084-.282c-1.529-.386-2.192-1.078-2.192-2.279 0-1.435 1.202-2.408 2.989-2.408 1.634 0 2.853.973 2.941 2.338h-1.06c-.147-.867-.862-1.383-1.916-1.383-1.125 0-1.87.562-1.87 1.418 0 .662.463 1.043 1.629 1.342l.885.234c1.752.44 2.455 1.119 2.455 2.361 0 1.553-1.224 2.543-3.158 2.543-1.793 0-3.029-.949-3.141-2.408z"/></svg></span><span class="globalnav-link-text">Support</span></span></a></li></ul></div></div></div></li><li data-topnav-flyout-label="Søg apple.com" data-analytics-title="open - search field" class="globalnav-item globalnav-search"><a role="button" id="globalnav-menubutton-link-search" href="/dk/search" data-topnav-flyout-trigger-regular="true" data-topnav-flyout-trigger-compact="true" aria-label="Søg apple.com" data-analytics-title="open - search field" class="globalnav-link globalnav-link-search"><span class="globalnav-image-regular"><svg xmlns="http://www.w3.org/2000/svg" width="15px" height="44px" viewBox="0 0 15 44">
+<path d="M14.298,27.202l-3.87-3.87c0.701-0.929,1.122-2.081,1.122-3.332c0-3.06-2.489-5.55-5.55-5.55c-3.06,0-5.55,2.49-5.55,5.55 c0,3.061,2.49,5.55,5.55,5.55c1.251,0,2.403-0.421,3.332-1.122l3.87,3.87c0.151,0.151,0.35,0.228,0.548,0.228 s0.396-0.076,0.548-0.228C14.601,27.995,14.601,27.505,14.298,27.202z M1.55,20c0-2.454,1.997-4.45,4.45-4.45 c2.454,0,4.45,1.997,4.45,4.45S8.454,24.45,6,24.45C3.546,24.45,1.55,22.454,1.55,20z"/>
+</svg>
+</span><span class="globalnav-image-compact"><svg height="48" viewBox="0 0 17 48" width="17" xmlns="http://www.w3.org/2000/svg"><path d="m16.2294 29.9556-4.1755-4.0821a6.4711 6.4711 0 1 0 -1.2839 1.2625l4.2005 4.1066a.9.9 0 1 0 1.2588-1.287zm-14.5294-8.0017a5.2455 5.2455 0 1 1 5.2455 5.2527 5.2549 5.2549 0 0 1 -5.2455-5.2527z"/></svg></span></a><div id="globalnav-submenu-search" aria-labelledby="globalnav-menubutton-link-search" class="globalnav-flyout globalnav-submenu"><div class="globalnav-flyout-scroll-container"><div class="globalnav-flyout-content globalnav-submenu-content"><form action="/dk/search" method="get" class="globalnav-searchfield"><div class="globalnav-searchfield-wrapper"><input placeholder="Søg på apple.com/dk" aria-label="Søg apple.com" autocorrect="off" autocapitalize="off" autocomplete="off" spellcheck="false" class="globalnav-searchfield-input"/><input id="globalnav-searchfield-src" type="hidden" name="src" value/><input type="hidden" name="type" value/><input type="hidden" name="page" value/><input type="hidden" name="locale" value/><button aria-label="Ryd søgning" tabindex="-1" type="button" class="globalnav-searchfield-reset"><span class="globalnav-image-regular"><svg height="14" viewBox="0 0 14 14" width="14" xmlns="http://www.w3.org/2000/svg"><path d="m7 .0339a6.9661 6.9661 0 1 0 6.9661 6.9661 6.9661 6.9661 0 0 0 -6.9661-6.9661zm2.798 8.9867a.55.55 0 0 1 -.778.7774l-2.02-2.02-2.02 2.02a.55.55 0 0 1 -.7784-.7774l2.0206-2.0206-2.0204-2.02a.55.55 0 0 1 .7782-.7778l2.02 2.02 2.02-2.02a.55.55 0 0 1 .778.7778l-2.0203 2.02z"/></svg></span><span class="globalnav-image-compact"><svg height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg"><path d="m0 8a8.0474 8.0474 0 0 1 7.9922-8 8.0609 8.0609 0 0 1 8.0078 8 8.0541 8.0541 0 0 1 -8 8 8.0541 8.0541 0 0 1 -8-8zm5.6549 3.2863 2.3373-2.353 2.3451 2.353a.6935.6935 0 0 0 .4627.1961.6662.6662 0 0 0 .6667-.6667.6777.6777 0 0 0 -.1961-.4706l-2.3451-2.3373 2.3529-2.3607a.5943.5943 0 0 0 .1961-.4549.66.66 0 0 0 -.6667-.6589.6142.6142 0 0 0 -.447.1961l-2.3686 2.3606-2.353-2.3527a.6152.6152 0 0 0 -.447-.1883.6529.6529 0 0 0 -.6667.651.6264.6264 0 0 0 .1961.4549l2.3451 2.3529-2.3451 2.353a.61.61 0 0 0 -.1961.4549.6661.6661 0 0 0 .6667.6667.6589.6589 0 0 0 .4627-.1961z" /></svg></span></button><button aria-label="Søg" tabindex="-1" aria-hidden="true" type="submit" class="globalnav-searchfield-submit"><span class="globalnav-image-regular"><svg height="32" viewBox="0 0 30 32" width="30" xmlns="http://www.w3.org/2000/svg"><path d="m23.3291 23.3066-4.35-4.35c-.0105-.0105-.0247-.0136-.0355-.0235a6.8714 6.8714 0 1 0 -1.5736 1.4969c.0214.0256.03.0575.0542.0815l4.35 4.35a1.1 1.1 0 1 0 1.5557-1.5547zm-15.4507-8.582a5.6031 5.6031 0 1 1 5.603 5.61 5.613 5.613 0 0 1 -5.603-5.61z"/></svg></span><span class="globalnav-image-compact"><svg width="38" height="40" viewBox="0 0 38 40" xmlns="http://www.w3.org/2000/svg"><path d="m28.6724 27.8633-5.07-5.07c-.0095-.0095-.0224-.0122-.032-.0213a7.9967 7.9967 0 1 0 -1.8711 1.7625c.0254.03.0357.0681.0642.0967l5.07 5.07a1.3 1.3 0 0 0 1.8389-1.8379zm-18.0035-10.0033a6.5447 6.5447 0 1 1 6.545 6.5449 6.5518 6.5518 0 0 1 -6.545-6.5449z"/></svg></span></button></div><div role="status" aria-live="polite" data-topnav-searchresults-label="total results" class="globalnav-searchresults-count"></div></form><div class="globalnav-searchresults"></div></div></div></div></li><li id="globalnav-bag" data-analytics-region="bag" class="globalnav-item globalnav-bag"><div class="globalnav-bag-wrapper"><a role="button" id="globalnav-menubutton-link-bag" href="/dk/shop/goto/bag" aria-label="Shoppingpose" data-globalnav-item-name="bag" data-topnav-flyout-trigger-regular="true" data-topnav-flyout-trigger-compact="true" data-analytics-title="open - bag" class="globalnav-link globalnav-link-bag"><span class="globalnav-image-regular"><svg height="44" viewBox="0 0 14 44" width="14" xmlns="http://www.w3.org/2000/svg"><path d="m11.3535 16.0283h-1.0205a3.4229 3.4229 0 0 0 -3.333-2.9648 3.4229 3.4229 0 0 0 -3.333 2.9648h-1.02a2.1184 2.1184 0 0 0 -2.117 2.1162v7.7155a2.1186 2.1186 0 0 0 2.1162 2.1167h8.707a2.1186 2.1186 0 0 0 2.1168-2.1167v-7.7155a2.1184 2.1184 0 0 0 -2.1165-2.1162zm-4.3535-1.8652a2.3169 2.3169 0 0 1 2.2222 1.8652h-4.4444a2.3169 2.3169 0 0 1 2.2222-1.8652zm5.37 11.6969a1.0182 1.0182 0 0 1 -1.0166 1.0171h-8.7069a1.0182 1.0182 0 0 1 -1.0165-1.0171v-7.7155a1.0178 1.0178 0 0 1 1.0166-1.0166h8.707a1.0178 1.0178 0 0 1 1.0164 1.0166z"/></svg></span><span class="globalnav-image-compact"><svg height="48" viewBox="0 0 17 48" width="17" xmlns="http://www.w3.org/2000/svg"><path d="m13.4575 16.9268h-1.1353a3.8394 3.8394 0 0 0 -7.6444 0h-1.1353a2.6032 2.6032 0 0 0 -2.6 2.6v8.9232a2.6032 2.6032 0 0 0 2.6 2.6h9.915a2.6032 2.6032 0 0 0 2.6-2.6v-8.9231a2.6032 2.6032 0 0 0 -2.6-2.6001zm-4.9575-2.2768a2.658 2.658 0 0 1 2.6221 2.2764h-5.2442a2.658 2.658 0 0 1 2.6221-2.2764zm6.3574 13.8a1.4014 1.4014 0 0 1 -1.4 1.4h-9.9149a1.4014 1.4014 0 0 1 -1.4-1.4v-8.9231a1.4014 1.4014 0 0 1 1.4-1.4h9.915a1.4014 1.4014 0 0 1 1.4 1.4z"/></svg></span></a><span aria-hidden="true" data-analytics-title="open - bag" class="globalnav-bag-badge"><span class="globalnav-bag-badge-separator"></span><span class="globalnav-bag-badge-number">0</span><span class="globalnav-bag-badge-unit">+</span></span></div><div id="globalnav-submenu-bag" aria-labelledby="globalnav-menubutton-link-bag" class="globalnav-flyout globalnav-submenu"><div class="globalnav-flyout-scroll-container"><div class="globalnav-flyout-content globalnav-submenu-content"></div></div></div></li></ul><div class="globalnav-menutrigger"><button id="globalnav-menutrigger-button" aria-controls="globalnav-list" aria-label="Menu" data-topnav-menu-label-open="Menu" data-topnav-menu-label-close="Close" data-topnav-flyout-trigger-compact="menu" class="globalnav-menutrigger-button"><svg width="18" height="18" viewBox="0 0 18 18"><polyline id="globalnav-menutrigger-bread-bottom" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" points="2 12, 16 12" class="globalnav-menutrigger-bread globalnav-menutrigger-bread-bottom"><animate id="globalnav-anim-menutrigger-bread-bottom-open" attributeName="points" keyTimes="0;0.5;1" dur="0.24s" begin="indefinite" fill="freeze" calcMode="spline" keySplines="0.42, 0, 1, 1;0, 0, 0.58, 1" values=" 2 12, 16 12; 2 9, 16 9; 3.5 15, 15 3.5"></animate><animate id="globalnav-anim-menutrigger-bread-bottom-close" attributeName="points" keyTimes="0;0.5;1" dur="0.24s" begin="indefinite" fill="freeze" calcMode="spline" keySplines="0.42, 0, 1, 1;0, 0, 0.58, 1" values=" 3.5 15, 15 3.5; 2 9, 16 9; 2 12, 16 12"></animate></polyline><polyline id="globalnav-menutrigger-bread-top" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" points="2 5, 16 5" class="globalnav-menutrigger-bread globalnav-menutrigger-bread-top"><animate id="globalnav-anim-menutrigger-bread-top-open" attributeName="points" keyTimes="0;0.5;1" dur="0.24s" begin="indefinite" fill="freeze" calcMode="spline" keySplines="0.42, 0, 1, 1;0, 0, 0.58, 1" values=" 2 5, 16 5; 2 9, 16 9; 3.5 3.5, 15 15"></animate><animate id="globalnav-anim-menutrigger-bread-top-close" attributeName="points" keyTimes="0;0.5;1" dur="0.24s" begin="indefinite" fill="freeze" calcMode="spline" keySplines="0.42, 0, 1, 1;0, 0, 0.58, 1" values=" 3.5 3.5, 15 15; 2 9, 16 9; 2 5, 16 5"></animate></polyline></svg></button></div></div></nav><div id="globalnav-curtain" class="globalnav-curtain"></div><div id="globalnav-placeholder" class="globalnav-placeholder"></div></div><script id="__ACGH_DATA__" type="application/json">{"props":{"globalNavData":{"locale":"da_DK","ariaLabel":"Global","analyticsAttributes":[{"name":"data-analytics-activitymap-region-id","value":"global nav"},{"name":"data-analytics-region","value":"global nav"}],"links":[{"id":"fe247351da68c55eedf1b0e5bd71da4ede5d312e1ad738a6040aa7228d911ffd","name":"apple","text":"Apple","url":"/dk/","ariaLabel":"Apple","submenuAriaLabel":"Apple-menu","images":[{"name":"regular","assetInline":"<svg height=\"44\" viewBox=\"0 0 14 44\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m13.0729 17.6825a3.61 3.61 0 0 0 -1.7248 3.0365 3.5132 3.5132 0 0 0 2.1379 3.2223 8.394 8.394 0 0 1 -1.0948 2.2618c-.6816.9812-1.3943 1.9623-2.4787 1.9623s-1.3633-.63-2.613-.63c-1.2187 0-1.6525.6507-2.644.6507s-1.6834-.9089-2.4787-2.0243a9.7842 9.7842 0 0 1 -1.6628-5.2776c0-3.0984 2.014-4.7405 3.9969-4.7405 1.0535 0 1.9314.6919 2.5924.6919.63 0 1.6112-.7333 2.8092-.7333a3.7579 3.7579 0 0 1 3.1604 1.5802zm-3.7284-2.8918a3.5615 3.5615 0 0 0 .8469-2.22 1.5353 1.5353 0 0 0 -.031-.32 3.5686 3.5686 0 0 0 -2.3445 1.2084 3.4629 3.4629 0 0 0 -.8779 2.1585 1.419 1.419 0 0 0 .031.2892 1.19 1.19 0 0 0 .2169.0207 3.0935 3.0935 0 0 0 2.1586-1.1368z\"/></svg>"},{"name":"compact","assetInline":"<svg height=\"48\" viewBox=\"0 0 17 48\" width=\"17\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m15.5752 19.0792a4.2055 4.2055 0 0 0 -2.01 3.5376 4.0931 4.0931 0 0 0 2.4908 3.7542 9.7779 9.7779 0 0 1 -1.2755 2.6351c-.7941 1.1431-1.6244 2.2862-2.8878 2.2862s-1.5883-.734-3.0443-.734c-1.42 0-1.9252.7581-3.08.7581s-1.9611-1.0589-2.8876-2.3584a11.3987 11.3987 0 0 1 -1.9373-6.1487c0-3.61 2.3464-5.523 4.6566-5.523 1.2274 0 2.25.8062 3.02.8062.734 0 1.8771-.8543 3.2729-.8543a4.3778 4.3778 0 0 1 3.6822 1.841zm-6.8586-2.0456a1.3865 1.3865 0 0 1 -.2527-.024 1.6557 1.6557 0 0 1 -.0361-.337 4.0341 4.0341 0 0 1 1.0228-2.5148 4.1571 4.1571 0 0 1 2.7314-1.4078 1.7815 1.7815 0 0 1 .0361.373 4.1487 4.1487 0 0 1 -.9867 2.587 3.6039 3.6039 0 0 1 -2.5148 1.3236z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-title","value":"apple home"}]},{"id":"ebf0aa59ed491d5b2c4dd0030b7c559244c881dd0502f65671e1cd9fe1d1cf6c","name":"store","text":"Store","url":"/dk/shop/goto/store","ariaLabel":"Store","submenuAriaLabel":"Store-menu","images":[{"name":"regular","assetInline":"<svg height=\"44\" viewBox=\"0 0 30 44\" width=\"30\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m26.5679 20.4629c1.002 0 1.67.738 1.693 1.857h-3.48c.076-1.119.779-1.857 1.787-1.857zm2.754 2.672v-.387c0-1.963-1.037-3.176-2.742-3.176-1.735 0-2.848 1.289-2.848 3.276 0 1.998 1.096 3.263 2.848 3.263 1.383 0 2.367-.668 2.66-1.746h-1.008c-.264.557-.814.856-1.629.856-1.072 0-1.769-.791-1.822-2.039v-.047zm-9.547-3.451h.96v.937h.094c.188-.615.914-1.049 1.752-1.049.164 0 .375.012.504.03v1.007c-.082-.023-.445-.058-.644-.058-.961 0-1.659 1.098-1.659 1.535v3.914h-1.007zm-4.27 5.519c-1.195 0-1.869-.867-1.869-2.361 0-1.5.674-2.361 1.869-2.361 1.196 0 1.87.861 1.87 2.361 0 1.494-.674 2.361-1.87 2.361zm0-5.631c-1.798 0-2.912 1.237-2.912 3.27 0 2.027 1.114 3.269 2.912 3.269 1.799 0 2.913-1.242 2.913-3.269 0-2.033-1.114-3.27-2.913-3.27zm-5.478-1.475v1.635h1.407v.843h-1.407v3.575c0 .744.282 1.06.938 1.06.182 0 .281-.006.469-.023v.849c-.199.035-.393.059-.592.059-1.301 0-1.822-.481-1.822-1.688v-3.832h-1.02v-.843h1.02v-1.635zm-8.103 5.694c.129.885.973 1.447 2.174 1.447 1.137 0 1.975-.615 1.975-1.453 0-.72-.527-1.177-1.693-1.47l-1.084-.282c-1.53-.386-2.192-1.078-2.192-2.279 0-1.436 1.201-2.408 2.988-2.408 1.635 0 2.854.972 2.942 2.338h-1.061c-.146-.867-.861-1.383-1.916-1.383-1.125 0-1.869.562-1.869 1.418 0 .662.463 1.043 1.629 1.342l.885.234c1.752.439 2.455 1.119 2.455 2.361 0 1.553-1.225 2.543-3.158 2.543-1.793 0-3.03-.949-3.141-2.408z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-title","value":"store"},{"name":"data-analytics-element-engagement","value":"hover - store"}]},{"id":"141f5f2685a28a80436212f837d5fb1ccde6d0dc34de850c720e7153e8688230","name":"mac","text":"Mac","url":"/dk/mac/","ariaLabel":"Mac","submenuAriaLabel":"Mac-menu","images":[{"name":"regular","assetInline":"<svg height=\"44\" viewBox=\"0 0 23 44\" width=\"23\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m8.1558 25.9987v-6.457h-.0703l-2.666 6.457h-.8907l-2.666-6.457h-.0703v6.457h-.9844v-8.4551h1.2246l2.8945 7.0547h.0938l2.8945-7.0547h1.2246v8.4551zm2.5166-1.7696c0-1.1309.832-1.7812 2.3027-1.8691l1.8223-.1113v-.5742c0-.7793-.4863-1.207-1.4297-1.207-.7559 0-1.2832.2871-1.4238.7852h-1.0195c.1348-1.0137 1.1309-1.6816 2.4785-1.6816 1.541 0 2.4023.791 2.4023 2.1035v4.3242h-.9609v-.9318h-.0938c-.4102.6738-1.1016 1.043-1.9453 1.043-1.2246 0-2.1328-.7266-2.1328-1.8809zm4.125-.5859v-.5801l-1.6992.1113c-.9609.0645-1.3828.3984-1.3828 1.0312 0 .6445.5449 1.0195 1.2773 1.0195 1.0371.0001 1.8047-.6796 1.8047-1.5819zm6.958-2.0273c-.1641-.627-.7207-1.1367-1.6289-1.1367-1.1367 0-1.8516.9082-1.8516 2.3379 0 1.459.7266 2.3848 1.8516 2.3848.8496 0 1.4414-.3926 1.6289-1.1074h1.0195c-.1816 1.1602-1.125 2.0156-2.6426 2.0156-1.7695 0-2.9004-1.2832-2.9004-3.293 0-1.9688 1.125-3.2461 2.8945-3.2461 1.5352 0 2.4727.9199 2.6484 2.0449z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-title","value":"mac"},{"name":"data-analytics-element-engagement","value":"hover - mac"}]},{"id":"0808002c09f2c622509a63ffb9cac79c57587f861764537ba9526c5f9209d8d8","name":"ipad","text":"iPad","url":"/dk/ipad/","ariaLabel":"iPad","submenuAriaLabel":"iPad-menu","images":[{"name":"regular","assetInline":"<svg height=\"44\" viewBox=\"0 0 24 44\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m14.9575 23.7002c0 .902-.768 1.582-1.805 1.582-.732 0-1.277-.375-1.277-1.02 0-.632.422-.966 1.383-1.031l1.699-.111zm-1.395-4.072c-1.347 0-2.343.668-2.478 1.681h1.019c.141-.498.668-.785 1.424-.785.944 0 1.43.428 1.43 1.207v.574l-1.822.112c-1.471.088-2.303.738-2.303 1.869 0 1.154.908 1.881 2.133 1.881.844 0 1.535-.369 1.945-1.043h.094v.931h.961v-4.324c0-1.312-.862-2.103-2.403-2.103zm6.769 5.575c-1.155 0-1.846-.885-1.846-2.361 0-1.471.697-2.362 1.846-2.362 1.142 0 1.857.914 1.857 2.362 0 1.459-.709 2.361-1.857 2.361zm1.834-8.027v3.503h-.088c-.358-.691-1.102-1.107-1.981-1.107-1.605 0-2.654 1.289-2.654 3.27 0 1.986 1.037 3.269 2.654 3.269.873 0 1.623-.416 2.022-1.119h.093v1.008h.961v-8.824zm-15.394 4.869h-1.863v-3.563h1.863c1.225 0 1.899.639 1.899 1.799 0 1.119-.697 1.764-1.899 1.764zm.276-4.5h-3.194v8.455h1.055v-3.018h2.127c1.588 0 2.719-1.119 2.719-2.701 0-1.611-1.108-2.736-2.707-2.736zm-6.064 8.454h1.008v-6.316h-1.008zm-.199-8.237c0-.387.316-.704.703-.704s.703.317.703.704c0 .386-.316.703-.703.703s-.703-.317-.703-.703z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-title","value":"ipad"},{"name":"data-analytics-element-engagement","value":"hover - ipad"}]},{"id":"da44b47c44f2a0d338920488a45eb61ae7cec8418bf3bf706d54152715ed9239","name":"iphone","text":"iPhone","url":"/dk/iphone/","ariaLabel":"iPhone","submenuAriaLabel":"iPhone-menu","images":[{"name":"regular","assetInline":"<svg height=\"44\" viewBox=\"0 0 38 44\" width=\"38\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m32.7129 22.3203h3.48c-.023-1.119-.691-1.857-1.693-1.857-1.008 0-1.711.738-1.787 1.857zm4.459 2.045c-.293 1.078-1.277 1.746-2.66 1.746-1.752 0-2.848-1.266-2.848-3.264 0-1.986 1.113-3.275 2.848-3.275 1.705 0 2.742 1.213 2.742 3.176v.386h-4.541v.047c.053 1.248.75 2.039 1.822 2.039.815 0 1.366-.298 1.629-.855zm-12.282-4.682h.961v.996h.094c.316-.697.932-1.107 1.898-1.107 1.418 0 2.209.838 2.209 2.338v4.09h-1.007v-3.844c0-1.137-.481-1.676-1.489-1.676s-1.658.674-1.658 1.781v3.739h-1.008zm-2.499 3.158c0-1.5-.674-2.361-1.869-2.361-1.196 0-1.87.861-1.87 2.361 0 1.495.674 2.362 1.87 2.362 1.195 0 1.869-.867 1.869-2.362zm-4.782 0c0-2.033 1.114-3.269 2.913-3.269 1.798 0 2.912 1.236 2.912 3.269 0 2.028-1.114 3.27-2.912 3.27-1.799 0-2.913-1.242-2.913-3.27zm-6.636-5.666h1.008v3.504h.093c.317-.697.979-1.107 1.946-1.107 1.336 0 2.179.855 2.179 2.338v4.09h-1.007v-3.844c0-1.119-.504-1.676-1.459-1.676-1.131 0-1.752.715-1.752 1.781v3.739h-1.008zm-6.015 4.87h1.863c1.202 0 1.899-.645 1.899-1.764 0-1.16-.674-1.799-1.899-1.799h-1.863zm2.139-4.5c1.599 0 2.707 1.125 2.707 2.736 0 1.582-1.131 2.701-2.719 2.701h-2.127v3.018h-1.055v-8.455zm-6.114 8.454h1.008v-6.316h-1.008zm-.2-8.238c0-.386.317-.703.703-.703.387 0 .704.317.704.703 0 .387-.317.704-.704.704-.386 0-.703-.317-.703-.704z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-title","value":"iphone"},{"name":"data-analytics-element-engagement","value":"hover - iphone"}]},{"id":"acb10dca7e3786b4780644b7091f4b722948bdd4bdd2f5c7564c814d9c666431","name":"watch","text":"Watch","url":"/dk/watch/","ariaLabel":"Watch","submenuAriaLabel":"Watch-menu","images":[{"name":"regular","assetInline":"<svg height=\"44\" viewBox=\"0 0 35 44\" width=\"35\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m28.9819 17.1758h1.008v3.504h.094c.316-.697.978-1.108 1.945-1.108 1.336 0 2.18.856 2.18 2.338v4.09h-1.008v-3.844c0-1.119-.504-1.675-1.459-1.675-1.131 0-1.752.715-1.752 1.781v3.738h-1.008zm-2.42 4.441c-.164-.627-.721-1.136-1.629-1.136-1.137 0-1.852.908-1.852 2.338 0 1.459.727 2.384 1.852 2.384.849 0 1.441-.392 1.629-1.107h1.019c-.182 1.16-1.125 2.016-2.642 2.016-1.77 0-2.901-1.284-2.901-3.293 0-1.969 1.125-3.247 2.895-3.247 1.535 0 2.472.92 2.648 2.045zm-6.533-3.568v1.635h1.407v.844h-1.407v3.574c0 .744.282 1.06.938 1.06.182 0 .281-.006.469-.023v.85c-.2.035-.393.058-.592.058-1.301 0-1.822-.48-1.822-1.687v-3.832h-1.02v-.844h1.02v-1.635zm-4.2 5.596v-.58l-1.699.111c-.961.064-1.383.398-1.383 1.031 0 .645.545 1.02 1.277 1.02 1.038 0 1.805-.68 1.805-1.582zm-4.125.586c0-1.131.832-1.782 2.303-1.869l1.822-.112v-.574c0-.779-.486-1.207-1.43-1.207-.755 0-1.283.287-1.423.785h-1.02c.135-1.014 1.131-1.682 2.479-1.682 1.541 0 2.402.792 2.402 2.104v4.324h-.961v-.931h-.094c-.41.673-1.101 1.043-1.945 1.043-1.225 0-2.133-.727-2.133-1.881zm-7.684 1.769h-.996l-2.303-8.455h1.101l1.682 6.873h.07l1.893-6.873h1.066l1.893 6.873h.07l1.682-6.873h1.101l-2.302 8.455h-.996l-1.946-6.674h-.07z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-title","value":"watch"},{"name":"data-analytics-element-engagement","value":"hover - watch"}]},{"id":"d3b345af038a53fd2ab841638e9963c2467e09318b23e795622c259abf0f2351","name":"airpods","text":"AirPods","url":"/dk/airpods/","ariaLabel":"AirPods","submenuAriaLabel":"AirPods-menu","images":[{"name":"regular","assetInline":"<svg height=\"44\" viewBox=\"0 0 43 44\" width=\"43\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m11.7153 19.6836h.961v.937h.094c.187-.615.914-1.048 1.752-1.048.164 0 .375.011.504.029v1.008c-.082-.024-.446-.059-.645-.059-.961 0-1.658.645-1.658 1.535v3.914h-1.008zm28.135-.111c1.324 0 2.244.656 2.379 1.693h-.996c-.135-.504-.627-.838-1.389-.838-.75 0-1.336.381-1.336.943 0 .434.352.704 1.096.885l.973.235c1.189.287 1.763.802 1.763 1.711 0 1.13-1.095 1.91-2.531 1.91-1.406 0-2.373-.674-2.484-1.723h1.037c.17.533.674.873 1.482.873.85 0 1.459-.404 1.459-.984 0-.434-.328-.727-1.002-.891l-1.084-.264c-1.183-.287-1.722-.796-1.722-1.71 0-1.049 1.013-1.84 2.355-1.84zm-6.665 5.631c-1.155 0-1.846-.885-1.846-2.362 0-1.471.697-2.361 1.846-2.361 1.142 0 1.857.914 1.857 2.361 0 1.459-.709 2.362-1.857 2.362zm1.834-8.028v3.504h-.088c-.358-.691-1.102-1.107-1.981-1.107-1.605 0-2.654 1.289-2.654 3.269 0 1.987 1.037 3.27 2.654 3.27.873 0 1.623-.416 2.022-1.119h.094v1.007h.961v-8.824zm-9.001 8.028c-1.195 0-1.869-.868-1.869-2.362 0-1.5.674-2.361 1.869-2.361 1.196 0 1.869.861 1.869 2.361 0 1.494-.673 2.362-1.869 2.362zm0-5.631c-1.799 0-2.912 1.236-2.912 3.269 0 2.028 1.113 3.27 2.912 3.27s2.912-1.242 2.912-3.27c0-2.033-1.113-3.269-2.912-3.269zm-17.071 6.427h1.008v-6.316h-1.008zm-.199-8.238c0-.387.317-.703.703-.703.387 0 .703.316.703.703s-.316.703-.703.703c-.386 0-.703-.316-.703-.703zm-6.137 4.922 1.324-3.773h.093l1.325 3.773zm1.892-5.139h-1.043l-3.117 8.455h1.107l.85-2.42h3.363l.85 2.42h1.107zm14.868 4.5h-1.864v-3.562h1.864c1.224 0 1.898.639 1.898 1.799 0 1.119-.697 1.763-1.898 1.763zm.275-4.5h-3.193v8.455h1.054v-3.017h2.127c1.588 0 2.719-1.119 2.719-2.701 0-1.612-1.107-2.737-2.707-2.737z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-title","value":"airpods"},{"name":"data-analytics-element-engagement","value":"hover - airpods"}]},{"id":"8861472645a8d92bee6bfac013cc0c7f5da41146eb2f5edadaceb755a89c2e76","name":"tv-home","text":"TV og hjem","url":"/dk/tv-home/","ariaLabel":"TV og hjem","submenuAriaLabel":"TV og hjem-menu","images":[{"name":"regular","assetInline":"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"44\" viewBox=\"0 0 64 44\"><path d=\"M4.0039,26V18.4941H1.2793v-.9492H7.7832v.9492H5.0586V26Zm7.7315,0L8.6182,17.5449H9.7256l2.4844,7.09h.0937l2.4844-7.09h1.1074L12.7783,26ZM20.08,22.8418c0-2.0332,1.1133-3.27,2.9121-3.27s2.9121,1.2363,2.9121,3.27c0,2.0273-1.1133,3.27-2.9121,3.27S20.08,24.8691,20.08,22.8418Zm4.7812,0c0-1.5-.6738-2.3613-1.8691-2.3613s-1.8691.8613-1.8691,2.3613c0,1.4941.6738,2.3613,1.8691,2.3613S24.8608,24.3359,24.8608,22.8418Zm2.458,3.8555h1.0665c.1113.5156.6738.85,1.582.85,1.1308,0,1.8047-.5567,1.8047-1.4883V24.8164h-.0938a2.1911,2.1911,0,0,1-1.98,1.09c-1.6348,0-2.6485-1.2656-2.6485-3.1582s1.0254-3.1757,2.6485-3.1757a2.2615,2.2615,0,0,1,2.0273,1.1132h.0937V19.6836h.961v6.4277c0,1.4121-1.09,2.3145-2.8125,2.3145C28.4438,28.4258,27.4712,27.74,27.3188,26.6973Zm4.4766-3.9493c0-1.3769-.709-2.2675-1.875-2.2675-1.1719,0-1.8281.8906-1.8281,2.2675s.6562,2.2676,1.8281,2.2676S31.7954,24.125,31.7954,22.748Zm6.0879-5.5722h1.0078V20.68h.0938A1.9661,1.9661,0,0,1,40.93,19.5723,2.084,2.084,0,0,1,43.11,21.91V26H42.1021V22.1562c0-1.1191-.504-1.6757-1.459-1.6757a1.63,1.63,0,0,0-1.752,1.7812V26H37.8833Zm7.978,9.1347c0,1.3008-.6093,1.8575-1.9336,1.8575H43.752v-.8614h.1523c.7148,0,.9492-.2812.9492-.9785V19.6836h1.0078ZM44.666,17.7617a.7032.7032,0,1,1,.7031.7031A.7052.7052,0,0,1,44.666,17.7617Zm8.1885,6.6035a2.5223,2.5223,0,0,1-2.66,1.7461c-1.7519,0-2.8476-1.2656-2.8476-3.2636,0-1.9864,1.1133-3.2754,2.8476-3.2754,1.7051,0,2.7422,1.2129,2.7422,3.1757v.3868h-4.541v.0468c.0527,1.2481.75,2.0391,1.8223,2.0391a1.6363,1.6363,0,0,0,1.6289-.8555ZM48.3955,22.32h3.48a1.7,1.7,0,0,0-1.6934-1.8574A1.7992,1.7992,0,0,0,48.3955,22.32Zm6.0029-2.6367h.961V20.68h.0937a1.7872,1.7872,0,0,1,1.7637-1.1074A1.8234,1.8234,0,0,1,58.9629,20.68h.0937A2.1147,2.1147,0,0,1,60.99,19.5723,1.8426,1.8426,0,0,1,63,21.6348V26H61.9922V21.8691c0-.9316-.4395-1.3886-1.33-1.3886a1.4209,1.4209,0,0,0-1.4648,1.459V26H58.19V21.7109a1.1969,1.1969,0,0,0-1.3184-1.23,1.5264,1.5264,0,0,0-1.4649,1.6054V26H54.3984Z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-title","value":"tv & home"},{"name":"data-analytics-element-engagement","value":"hover - tv & home"}]},{"id":"162153238a114857a76811973dae89ea4c64972de696245f336bc5dc3110cc34","name":"entertainment","text":"Underholdning","url":"/dk/entertainment/","ariaLabel":"Underholdning","submenuAriaLabel":"Underholdning-menu","images":[{"name":"regular","assetInline":"<svg height=\"44\" viewBox=\"0 0 82 44\" width=\"82\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m1.0664 23.0938v-5.5488h1.0547v5.4785c0 1.3008.8438 2.2031 2.3086 2.2031s2.2969-.9023 2.2969-2.2031v-5.4785h1.0547v5.5488c0 1.8398-1.2539 3.1055-3.3516 3.1055s-3.3633-1.2656-3.3633-3.1055zm8.6104-3.4102h1.0195v.9492h.0938c.3164-.668.9082-1.0605 1.8398-1.0605 1.418 0 2.209.8379 2.209 2.3379v4.0898h-1.0195v-3.8438c0-1.1367-.4688-1.6816-1.4766-1.6816s-1.6465.6797-1.6465 1.7871v3.7383h-1.0195zm6.5654 3.1641v-.0117c0-1.9805 1.043-3.2637 2.6484-3.2637.8672 0 1.623.4336 1.9688 1.1074h.0938v-3.5039h1.0195v8.8242h-1.0195v-1.0078h-.0938c-.3867.7031-1.0898 1.1191-1.9688 1.1191-1.5996 0-2.6484-1.2949-2.6484-3.2637zm4.7344 0v-.0117c0-1.459-.7031-2.3613-1.8516-2.3613-1.1543 0-1.8398.8906-1.8398 2.3613v.0117c0 1.4707.6855 2.3613 1.8398 2.3613 1.1484 0 1.8516-.9023 1.8516-2.3613zm2.5176.0176v-.0059c0-1.9512 1.1133-3.2871 2.8301-3.2871s2.7598 1.2773 2.7598 3.1641v.3984h-4.5469c.0293 1.3066.75 2.0684 1.875 2.0684.8555 0 1.3828-.4043 1.5527-.7852l.0234-.0527h1.0195l-.0117.0469c-.2168.8555-1.1191 1.6992-2.6074 1.6992-1.8047 0-2.8945-1.2656-2.8945-3.2461zm1.0605-.5449h3.4922c-.1055-1.248-.7969-1.8398-1.7285-1.8398-.9375 0-1.6523.6387-1.7637 1.8398zm5.9912-2.6367h1.0195v.9375h.0938c.2402-.6621.832-1.0488 1.6875-1.0488.1934 0 .4102.0234.5098.041v.9902c-.2109-.0352-.4043-.0586-.627-.0586-.9727 0-1.6641.6152-1.6641 1.541v3.9141h-1.0195zm4.5088-2.5078h1.0195v3.457h.0938c.3164-.668.9082-1.0605 1.8398-1.0605 1.418 0 2.209.8379 2.209 2.3379v4.0898h-1.0195v-3.8438c0-1.1367-.4688-1.6816-1.4766-1.6816s-1.6465.6797-1.6465 1.7871v3.7383h-1.0195zm6.5654 5.6719v-.0117c0-2.0273 1.1133-3.2637 2.9121-3.2637s2.9121 1.2363 2.9121 3.2637v.0117c0 2.0215-1.1133 3.2637-2.9121 3.2637s-2.9121-1.2422-2.9121-3.2637zm4.7812 0v-.0117c0-1.4941-.6738-2.3613-1.8691-2.3613s-1.8691.8672-1.8691 2.3613v.0117c0 1.4883.6738 2.3613 1.8691 2.3613s1.8691-.873 1.8691-2.3613zm2.5635-5.6719h1.0195v8.8242h-1.0195zm2.54 5.6719v-.0117c0-1.9805 1.043-3.2637 2.6484-3.2637.8672 0 1.623.4336 1.9688 1.1074h.0938v-3.5039h1.0195v8.8242h-1.0195v-1.0078h-.0938c-.3867.7031-1.0898 1.1191-1.9688 1.1191-1.5996 0-2.6484-1.2949-2.6484-3.2637zm4.7344 0v-.0117c0-1.459-.7031-2.3613-1.8516-2.3613-1.1543 0-1.8398.8906-1.8398 2.3613v.0117c0 1.4707.6855 2.3613 1.8398 2.3613 1.1484 0 1.8516-.9023 1.8516-2.3613zm2.833-3.1641h1.0195v.9492h.0938c.3164-.668.9082-1.0605 1.8398-1.0605 1.418 0 2.209.8379 2.209 2.3379v4.0898h-1.0195v-3.8438c0-1.1367-.4688-1.6816-1.4766-1.6816s-1.6465.6797-1.6465 1.7871v3.7383h-1.0195zm6.7178-1.9219c0-.3867.3164-.7031.7031-.7031s.7031.3164.7031.7031-.3164.7031-.7031.7031-.7031-.3164-.7031-.7031zm.1875 1.9219h1.0195v6.3164h-1.0195zm2.8223 0h1.0195v.9492h.0938c.3164-.668.9082-1.0605 1.8398-1.0605 1.418 0 2.209.8379 2.209 2.3379v4.0898h-1.0195v-3.8438c0-1.1367-.4688-1.6816-1.4766-1.6816s-1.6465.6797-1.6465 1.7871v3.7383h-1.0195zm6.8291 6.8203.0117-.0059h1.0547l.0059.0059c.1113.4805.6738.8203 1.582.8203 1.1309 0 1.8047-.5332 1.8047-1.4648v-1.2773h-.0938c-.3984.6973-1.1133 1.0898-1.9805 1.0898-1.6348 0-2.6484-1.2656-2.6484-3.0352v-.0117c0-1.7695 1.0195-3.0527 2.6719-3.0527.8906 0 1.582.4395 1.9688 1.1543h.0703v-1.043h1.0195v6.2285c0 1.4121-1.0898 2.3145-2.8125 2.3145-1.5234 0-2.4961-.6855-2.6543-1.7227zm4.4824-3.8672v-.0117c0-1.2539-.709-2.1504-1.875-2.1504-1.1719 0-1.8281.8965-1.8281 2.1504v.0117c0 1.2539.6562 2.1328 1.8281 2.1328s1.875-.8789 1.875-2.1328z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-title","value":"entertainment"},{"name":"data-analytics-element-engagement","value":"hover - entertainment"}]},{"id":"6d6fbd02832bdcacd3fc30fbb494c9279a9dcc0c087f6587e8c8c7cf23cb7277","name":"accessories","text":"Tilbehør","url":"/dk/shop/goto/buy_accessories","ariaLabel":"Tilbehør","submenuAriaLabel":"Tilbehør-menu","images":[{"name":"regular","assetInline":"<svg height=\"44\" viewBox=\"0 0 46 44\" width=\"46\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m2.9746 25.9914v-7.5059h-2.7246v-.9492h6.5039v.9492h-2.7246v7.5059zm4.8662-8.2383c0-.3867.3164-.7031.7031-.7031s.7031.3164.7031.7031-.3164.7031-.7031.7031-.7031-.3164-.7031-.7031zm.1992 1.9219h1.0078v6.3164h-1.0078zm2.8682-2.5078h1.0078v8.8242h-1.0078zm3.9585 7.8164h-.0938v1.0078h-.9609v-8.8242h1.0078v3.5039h.0938c.3457-.6797 1.1133-1.1074 1.9805-1.1074 1.6055 0 2.6484 1.2832 2.6484 3.2695 0 1.9746-1.0488 3.2695-2.6484 3.2695-.879 0-1.629-.416-2.0274-1.1191zm-.0703-2.1504c0 1.459.7148 2.3613 1.8633 2.3613 1.1543 0 1.8398-.8848 1.8398-2.3613s-.6855-2.3613-1.8398-2.3613c-1.1485 0-1.8633.9023-1.8633 2.3613zm11.3994 1.5234c-.293 1.0781-1.2773 1.7461-2.6602 1.7461-1.752 0-2.8477-1.2656-2.8477-3.2637 0-1.9863 1.1133-3.2754 2.8477-3.2754 1.7051 0 2.7422 1.2129 2.7422 3.1758v.3867h-4.541v.0469c.0527 1.248.75 2.0391 1.8223 2.0391.8145 0 1.3652-.2988 1.6289-.8555zm-4.459-2.0449h3.4805c-.0234-1.1191-.6914-1.8574-1.6934-1.8574-1.0078 0-1.7109.7383-1.7871 1.8574zm6.0615-5.1445h1.0078v3.5039h.0938c.3164-.6973.9785-1.1074 1.9453-1.1074 1.3359 0 2.1797.8555 2.1797 2.3379v4.0898h-1.0078v-3.8438c0-1.1191-.5039-1.6758-1.459-1.6758-1.1309 0-1.752.7148-1.752 1.7812v3.7383h-1.0078zm7.7139 8.3437-.5156.5918-.5508-.5391.5449-.6211c-.3633-.5449-.5625-1.2598-.5625-2.1094 0-2.0332 1.1133-3.2695 2.9121-3.2695.7324 0 1.3535.2051 1.8281.5859l.5156-.5859.5508.5391-.5391.6211c.3574.5391.5566 1.2539.5566 2.1094 0 2.0215-1.1133 3.2695-2.9121 3.2695-.7323 0-1.3534-.205-1.828-.5918zm.1465-1.3418 2.9062-3.3223c-.3164-.2695-.7266-.416-1.2246-.416-1.2305 0-1.9219.873-1.9219 2.4023.0001.5274.0821.9728.2403 1.336zm3.6035-1.3359c0-.5273-.082-.9785-.2402-1.3418l-2.9004 3.3223c.3105.2754.7207.4219 1.2188.4219 1.2304-.0001 1.9218-.8848 1.9218-2.4024zm2.4526-3.1582h.9609v.9375h.0938c.1875-.6152.9141-1.0488 1.752-1.0488.1641 0 .375.0117.5039.0293v1.0078c-.082-.0234-.4453-.0586-.6445-.0586-.9609 0-1.6582.6445-1.6582 1.5352v3.9141h-1.0078v-6.3165z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-title","value":"accessories"},{"name":"data-analytics-element-engagement","value":"hover - accessories"}]},{"id":"c4124742c1643867b467ac729141f0337bfe37ca64df697c6f7b2b7ead85b60f","name":"support","text":"Support","url":"https://support.apple.com/da-dk/?cid=gn-ols-home-hp-tab","ariaLabel":"Support","submenuAriaLabel":"Support-menu","images":[{"name":"regular","assetInline":"<svg height=\"44\" viewBox=\"0 0 44 44\" width=\"44\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m42.1206 18.0337v1.635h1.406v.844h-1.406v3.574c0 .744.281 1.06.937 1.06.182 0 .282-.006.469-.023v.849c-.199.036-.392.059-.592.059-1.3 0-1.822-.48-1.822-1.687v-3.832h-1.019v-.844h1.019v-1.635zm-6.131 1.635h.961v.937h.093c.188-.615.914-1.049 1.752-1.049.164 0 .375.012.504.03v1.008c-.082-.024-.445-.059-.644-.059-.961 0-1.659.644-1.659 1.535v3.914h-1.007zm-2.463 3.158c0-1.5-.674-2.361-1.869-2.361s-1.869.861-1.869 2.361c0 1.494.674 2.361 1.869 2.361s1.869-.867 1.869-2.361zm-4.781 0c0-2.033 1.113-3.27 2.912-3.27s2.912 1.237 2.912 3.27c0 2.027-1.113 3.27-2.912 3.27s-2.912-1.243-2.912-3.27zm-2.108 0c0-1.477-.692-2.361-1.846-2.361-1.143 0-1.863.908-1.863 2.361 0 1.447.72 2.361 1.857 2.361 1.16 0 1.852-.884 1.852-2.361zm1.043 0c0 1.975-1.049 3.27-2.655 3.27-.902 0-1.629-.393-1.974-1.061h-.094v3.059h-1.008v-8.426h.961v1.054h.094c.404-.726 1.16-1.166 2.021-1.166 1.612 0 2.655 1.284 2.655 3.27zm-8.048 0c0-1.477-.691-2.361-1.845-2.361-1.143 0-1.864.908-1.864 2.361 0 1.447.721 2.361 1.858 2.361 1.16 0 1.851-.884 1.851-2.361zm1.043 0c0 1.975-1.049 3.27-2.654 3.27-.902 0-1.629-.393-1.975-1.061h-.093v3.059h-1.008v-8.426h.961v1.054h.093c.405-.726 1.161-1.166 2.022-1.166 1.611 0 2.654 1.284 2.654 3.27zm-7.645 3.158h-.961v-.99h-.094c-.316.703-.99 1.102-1.957 1.102-1.418 0-2.156-.844-2.156-2.338v-4.09h1.008v3.844c0 1.136.422 1.664 1.43 1.664 1.113 0 1.722-.663 1.722-1.77v-3.738h1.008zm-11.69-2.209c.129.885.972 1.447 2.174 1.447 1.136 0 1.974-.615 1.974-1.453 0-.72-.527-1.177-1.693-1.47l-1.084-.282c-1.529-.386-2.192-1.078-2.192-2.279 0-1.435 1.202-2.408 2.989-2.408 1.634 0 2.853.973 2.941 2.338h-1.06c-.147-.867-.862-1.383-1.916-1.383-1.125 0-1.87.562-1.87 1.418 0 .662.463 1.043 1.629 1.342l.885.234c1.752.44 2.455 1.119 2.455 2.361 0 1.553-1.224 2.543-3.158 2.543-1.793 0-3.029-.949-3.141-2.408z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-title","value":"support"},{"name":"data-analytics-element-engagement","value":"hover - support"},{"name":"data-analytics-exit-link","value":"true"}]}],"bag":{"analyticsAttributes":[{"name":"data-analytics-region","value":"bag"}],"open":{"url":"/dk/shop/goto/bag","images":[{"name":"regular","assetInline":"<svg height=\"44\" viewBox=\"0 0 14 44\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m11.3535 16.0283h-1.0205a3.4229 3.4229 0 0 0 -3.333-2.9648 3.4229 3.4229 0 0 0 -3.333 2.9648h-1.02a2.1184 2.1184 0 0 0 -2.117 2.1162v7.7155a2.1186 2.1186 0 0 0 2.1162 2.1167h8.707a2.1186 2.1186 0 0 0 2.1168-2.1167v-7.7155a2.1184 2.1184 0 0 0 -2.1165-2.1162zm-4.3535-1.8652a2.3169 2.3169 0 0 1 2.2222 1.8652h-4.4444a2.3169 2.3169 0 0 1 2.2222-1.8652zm5.37 11.6969a1.0182 1.0182 0 0 1 -1.0166 1.0171h-8.7069a1.0182 1.0182 0 0 1 -1.0165-1.0171v-7.7155a1.0178 1.0178 0 0 1 1.0166-1.0166h8.707a1.0178 1.0178 0 0 1 1.0164 1.0166z\"/></svg>"},{"name":"compact","assetInline":"<svg height=\"48\" viewBox=\"0 0 17 48\" width=\"17\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m13.4575 16.9268h-1.1353a3.8394 3.8394 0 0 0 -7.6444 0h-1.1353a2.6032 2.6032 0 0 0 -2.6 2.6v8.9232a2.6032 2.6032 0 0 0 2.6 2.6h9.915a2.6032 2.6032 0 0 0 2.6-2.6v-8.9231a2.6032 2.6032 0 0 0 -2.6-2.6001zm-4.9575-2.2768a2.658 2.658 0 0 1 2.6221 2.2764h-5.2442a2.658 2.658 0 0 1 2.6221-2.2764zm6.3574 13.8a1.4014 1.4014 0 0 1 -1.4 1.4h-9.9149a1.4014 1.4014 0 0 1 -1.4-1.4v-8.9231a1.4014 1.4014 0 0 1 1.4-1.4h9.915a1.4014 1.4014 0 0 1 1.4 1.4z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-title","value":"open - bag"}],"ariaLabel":"Shoppingpose"},"close":{"analyticsAttributes":[{"name":"data-analytics-click","value":"prop3:close - bag"},{"name":"data-analytics-title","value":"close - bag"}],"ariaLabel":"Luk"},"badge":{"ariaLabel":"Shoppingpose med vareoptælling: {%BAGITEMCOUNT%}"},"storeApiUrl":"/[storefront]/shop/bag/status"},"search":{"analyticsAttributes":[{"name":"data-analytics-region","value":"search"}],"open":{"url":"/dk/search","images":[{"name":"regular","assetInline":"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"15px\" height=\"44px\" viewBox=\"0 0 15 44\">\n<path d=\"M14.298,27.202l-3.87-3.87c0.701-0.929,1.122-2.081,1.122-3.332c0-3.06-2.489-5.55-5.55-5.55c-3.06,0-5.55,2.49-5.55,5.55 c0,3.061,2.49,5.55,5.55,5.55c1.251,0,2.403-0.421,3.332-1.122l3.87,3.87c0.151,0.151,0.35,0.228,0.548,0.228 s0.396-0.076,0.548-0.228C14.601,27.995,14.601,27.505,14.298,27.202z M1.55,20c0-2.454,1.997-4.45,4.45-4.45 c2.454,0,4.45,1.997,4.45,4.45S8.454,24.45,6,24.45C3.546,24.45,1.55,22.454,1.55,20z\"/>\n</svg>\n"},{"name":"compact","assetInline":"<svg height=\"48\" viewBox=\"0 0 17 48\" width=\"17\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m16.2294 29.9556-4.1755-4.0821a6.4711 6.4711 0 1 0 -1.2839 1.2625l4.2005 4.1066a.9.9 0 1 0 1.2588-1.287zm-14.5294-8.0017a5.2455 5.2455 0 1 1 5.2455 5.2527 5.2549 5.2549 0 0 1 -5.2455-5.2527z\"/></svg>"}],"ariaLabel":"Søg apple.com","analyticsAttributes":[{"name":"data-analytics-title","value":"open - search field"}]},"close":{"ariaLabel":"Luk"},"input":{"placeholderTextRegular":"Søg på apple.com/dk","placeholderTextCompact":"Søg","ariaLabel":"Søg på apple.com/dk"},"submit":{"images":[{"name":"regular","assetInline":"<svg height=\"32\" viewBox=\"0 0 30 32\" width=\"30\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m23.3291 23.3066-4.35-4.35c-.0105-.0105-.0247-.0136-.0355-.0235a6.8714 6.8714 0 1 0 -1.5736 1.4969c.0214.0256.03.0575.0542.0815l4.35 4.35a1.1 1.1 0 1 0 1.5557-1.5547zm-15.4507-8.582a5.6031 5.6031 0 1 1 5.603 5.61 5.613 5.613 0 0 1 -5.603-5.61z\"/></svg>"},{"name":"compact","assetInline":"<svg width=\"38\" height=\"40\" viewBox=\"0 0 38 40\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m28.6724 27.8633-5.07-5.07c-.0095-.0095-.0224-.0122-.032-.0213a7.9967 7.9967 0 1 0 -1.8711 1.7625c.0254.03.0357.0681.0642.0967l5.07 5.07a1.3 1.3 0 0 0 1.8389-1.8379zm-18.0035-10.0033a6.5447 6.5447 0 1 1 6.545 6.5449 6.5518 6.5518 0 0 1 -6.545-6.5449z\"/></svg>"}],"ariaLabel":"Søg"},"reset":{"images":[{"name":"regular","assetInline":"<svg height=\"14\" viewBox=\"0 0 14 14\" width=\"14\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m7 .0339a6.9661 6.9661 0 1 0 6.9661 6.9661 6.9661 6.9661 0 0 0 -6.9661-6.9661zm2.798 8.9867a.55.55 0 0 1 -.778.7774l-2.02-2.02-2.02 2.02a.55.55 0 0 1 -.7784-.7774l2.0206-2.0206-2.0204-2.02a.55.55 0 0 1 .7782-.7778l2.02 2.02 2.02-2.02a.55.55 0 0 1 .778.7778l-2.0203 2.02z\"/></svg>"},{"name":"compact","assetInline":"<svg height=\"16\" viewBox=\"0 0 16 16\" width=\"16\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m0 8a8.0474 8.0474 0 0 1 7.9922-8 8.0609 8.0609 0 0 1 8.0078 8 8.0541 8.0541 0 0 1 -8 8 8.0541 8.0541 0 0 1 -8-8zm5.6549 3.2863 2.3373-2.353 2.3451 2.353a.6935.6935 0 0 0 .4627.1961.6662.6662 0 0 0 .6667-.6667.6777.6777 0 0 0 -.1961-.4706l-2.3451-2.3373 2.3529-2.3607a.5943.5943 0 0 0 .1961-.4549.66.66 0 0 0 -.6667-.6589.6142.6142 0 0 0 -.447.1961l-2.3686 2.3606-2.353-2.3527a.6152.6152 0 0 0 -.447-.1883.6529.6529 0 0 0 -.6667.651.6264.6264 0 0 0 .1961.4549l2.3451 2.3529-2.3451 2.353a.61.61 0 0 0 -.1961.4549.6661.6661 0 0 0 .6667.6667.6589.6589 0 0 0 .4627-.1961z\" /></svg>"}],"ariaLabel":"Ryd søgning"},"results":{"ariaLabel":"total results"},"defaultLinks":{"title":"Genveje","images":[{"name":"regular","assetInline":"<svg height=\"16\" viewBox=\"0 0 9 16\" width=\"9\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m8.6124 8.1035-2.99 2.99a.5.5 0 0 1 -.7071-.7071l2.1366-2.1364h-6.316a.5.5 0 0 1 0-1h6.316l-2.1368-2.1367a.5.5 0 0 1 .7071-.7071l2.99 2.99a.5.5 0 0 1 .0002.7073z\"/></svg>"},{"name":"compact","assetInline":"<svg height=\"25\" viewBox=\"0 0 13 25\" width=\"13\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m12.3577 13.4238-4.4444 4.4444a.6.6 0 0 1 -.8486-.8477l3.37-3.37h-9.3231a.65.65 0 0 1 0-1.3008h9.3232l-3.37-3.37a.6.6 0 0 1 .8486-.8477l4.4444 4.4444a.5989.5989 0 0 1 -.0001.8474z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-region","value":"defaultlinks search"}]},"defaultLinksApiUrl":"/search-services/suggestions/defaultlinks/","suggestedLinks":{"title":"Foreslåede links","images":[{"name":"regular","assetInline":"<svg height=\"16\" viewBox=\"0 0 9 16\" width=\"9\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m8.6124 8.1035-2.99 2.99a.5.5 0 0 1 -.7071-.7071l2.1366-2.1364h-6.316a.5.5 0 0 1 0-1h6.316l-2.1368-2.1367a.5.5 0 0 1 .7071-.7071l2.99 2.99a.5.5 0 0 1 .0002.7073z\"/></svg>"},{"name":"compact","assetInline":"<svg height=\"25\" viewBox=\"0 0 13 25\" width=\"13\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m12.3577 13.4238-4.4444 4.4444a.6.6 0 0 1 -.8486-.8477l3.37-3.37h-9.3231a.65.65 0 0 1 0-1.3008h9.3232l-3.37-3.37a.6.6 0 0 1 .8486-.8477l4.4444 4.4444a.5989.5989 0 0 1 -.0001.8474z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-region","value":"suggested links"}]},"suggestedSearches":{"title":"Foreslåede søgninger","images":[{"name":"regular","assetInline":"<svg height=\"16\" viewBox=\"0 0 9 16\" width=\"9\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m8.6235 11.2266-2.2141-2.2142a3.43 3.43 0 0 0 .7381-2.1124 3.469 3.469 0 1 0 -1.5315 2.8737l2.23 2.23a.55.55 0 0 0 .7773-.7773zm-7.708-4.3266a2.7659 2.7659 0 1 1 2.7657 2.766 2.7694 2.7694 0 0 1 -2.7657-2.766z\"/></svg>"},{"name":"compact","assetInline":"<svg height=\"25\" viewBox=\"0 0 13 25\" width=\"13\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m12.3936 17.7969-3.1231-3.1231a4.83 4.83 0 0 0 1.023-2.9541 4.89 4.89 0 1 0 -2.1806 4.059v.0006l3.1484 3.1484a.8.8 0 0 0 1.1319-1.1308zm-10.9536-6.0769a3.9768 3.9768 0 1 1 3.976 3.9773 3.981 3.981 0 0 1 -3.976-3.9773z\"/></svg>"}],"analyticsAttributes":[{"name":"data-analytics-region","value":"suggested search"}]},"suggestionsApiUrl":"/search-services/suggestions/"},"segmentbar":{"dataStrings":{"view":"{%STOREFRONT%} Store-startside","exit":"Luk","segments":{"smb":"Store til erhvervslivet, startside","eduInd":"Store til uddannelsen, startside","other":"Store-startside"}}},"menu":{"open":{"ariaLabel":"Menu"},"close":{"ariaLabel":"Luk"},"back":{"ariaLabel":"Hovedmenu","images":[{"name":"compact","assetInline":"<svg height=\"48\" viewBox=\"0 0 9 48\" width=\"9\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m1.5618 24.0621 6.5581-6.4238c.2368-.2319.2407-.6118.0088-.8486-.2324-.2373-.6123-.2407-.8486-.0088l-7 6.8569c-.1157.1138-.1807.2695-.1802.4316.001.1621.0674.3174.1846.4297l7 6.7241c.1162.1118.2661.1675.4155.1675.1577 0 .3149-.062.4326-.1846.2295-.2388.2222-.6187-.0171-.8481z\"/></svg>"}]}},"submenu":{"open":{"images":[{"name":"regular","assetInline":"<svg height=\"10\" viewBox=\"0 0 10 10\" width=\"10\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m4.6725 6.635-2.655-2.667a.445.445 0 0 1 -.123-.304.4331.4331 0 0 1 .427-.439h.006a.447.447 0 0 1 .316.135l2.357 2.365 2.356-2.365a.458.458 0 0 1 .316-.135.433.433 0 0 1 .433.433v.006a.4189.4189 0 0 1 -.123.3l-2.655 2.671a.4451.4451 0 0 1 -.327.14.464.464 0 0 1 -.328-.14z\"/></svg>"},{"name":"compact","assetInline":"<svg height=\"48\" viewBox=\"0 0 9 48\" width=\"9\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m7.4382 24.0621-6.5581-6.4238c-.2368-.2319-.2407-.6118-.0088-.8486.2324-.2373.6123-.2407.8486-.0088l7 6.8569c.1157.1138.1807.2695.1802.4316-.001.1621-.0674.3174-.1846.4297l-7 6.7242c-.1162.1118-.2661.1675-.4155.1675-.1577 0-.3149-.062-.4326-.1846-.2295-.2388-.2222-.6187.0171-.8481l6.5537-6.2959z\"/></svg>"}]}},"hasAbsoluteUrls":false,"hasShopRedirectUrls":false,"analyticsType":"marcom","storeApiKey":"","wwwDomain":"www.apple.com","textDirection":"ltr","searchUrlPath":"/dk/search","storeRootPath":"/dk","storeUrlPath":"/dk","submenuApiUrl":"/api-www/global-elements/global-header/v1/flyouts"},"config":{"version":"ac-globalheader-192-20240507-154002"}}}</script>
+    <script type="text/javascript" src="/api-www/global-elements/global-header/v1/assets/globalheader.umd.js"></script>
+
+
+	
+
+<script src="/metrics/ac-analytics/2.25.0/scripts/ac-analytics.js" type="text/javascript" charset="utf-8"></script>
+
+
+	<main class="main" role="main">
+		<section class="homepage-section collection-module" data-module-template="heroes" data-analytics-region="hero">
+			
+
+<div data-unit-id="iphone-family" data-analytics-section-engagement="name:hero-iphone-family">
+	<div class="module-content">
+		<div class="unit-wrapper">
+			<a class="unit-link" href="/dk/iphone/" target="_self" rel="follow" data-analytics-region="learn more"> </a>
+			<div class="unit-copy-wrapper">
+				<h2 class="headline">iPhone</h2>
+				<p class="subhead">Hils på iPhone 16-familien.</p>
+				<div class="cta-links">
+					<a class="button button-elevated button-primary" href="/dk/iphone/" target="_self" rel="follow" data-analytics-region="learn more" data-analytics-title="learn more - iphone" aria-label="Læs mere om iPhone">Læs mere</a> <a class="button button-elevated button-tertiary" href="/dk/shop/goto/buy_iphone" target="_self" rel="follow" data-analytics-region="shop" data-analytics-title="shop iphone" aria-label="Køb iPhone">Køb iPhone</a>
+				</div>
+			</div>
+			<div class="unit-image-wrapper">
+				<figure class="unit-image unit-image-iphone-family-hero-iphone-family" aria-label="Tre iPhone-enheder, inklusive en iPhone 16 Pro-model i sandfarvet titanium med tre kameralinser. Ved siden af en iPhone 16-model i ultramarin med to kameralinser, og en iPhone 16e med én kameralinse" data-anim-lazy-image></figure>
+			</div>
+		</div>
+	</div>
+</div>
+
+			
+<link rel="stylesheet" href="/dk/home/includes/heroes/ipad-pro/style.css" type="text/css" />
+<div
+  data-unit-id="ipad-pro"
+  data-analytics-section-engagement="name:hero-ipad-pro"
+>
+  <div class="module-content">
+    <div class="unit-wrapper theme-dark">
+      <a
+        class="unit-link"
+        href="/dk/ipad-pro/"
+        target="_self"
+        rel="follow"
+        data-analytics-region="learn more"
+        > </a>
+      <div class="unit-copy-wrapper">
+        <h2 class="headline">iPad Pro</h2>
+        <p class="subhead">Ubegribeligt tynd.<br class="large-hide medium-hide small-show-inline" /> Utroligt powerfuld.</p>
+
+        <div class="cta-links">
+          <a
+            class="button button-elevated button-primary"
+            href="/dk/ipad-pro/"
+            target="_self"
+            rel="follow"
+            data-analytics-region="learn more"
+            data-analytics-title="learn more - ipad pro"
+            aria-label="Læs mere om iPad Pro"
+            >Læs mere</a
+          >
+
+          <a
+            class="button button-elevated button-tertiary"
+            href="/dk/shop/goto/ipad_pro/select"
+            target="_self"
+            rel="follow"
+            data-analytics-region="buy"
+            data-analytics-title="buy - ipad pro"
+            aria-label="Køb iPad Pro"
+             >Køb</a
+          >
+        </div>
+      </div>
+      <div class="unit-image-wrapper">
+        <figure
+          class="unit-image unit-image-ipad-pro-hero-ipadpro-avail" aria-label="To iPad-enheder i lodret position. Den ene viser bogstaverne PRO dannet af abstrakte former på skærmen, den anden viser enhedens tynde profil."
+          data-anim-lazy-image
+        ></figure>
+      </div>
+    </div>
+  </div>
+</div>
+
+			
+<div data-unit-id="macbook-air" data-analytics-section-engagement="name:hero-macbook-air">
+	<div class="module-content">
+
+		<div class="unit-wrapper split-copy-wrapper">
+			<a class="unit-link" href="/dk/macbook-air/" target="_self" rel="follow"
+				data-analytics-region="learn more"> </a>
+			<div class="unit-copy-wrapper">
+				<div class="split-wrapper-top">
+					<h2 class="headline">MacBook Air</h2>
+					<p class="subhead">Himmelblå. <br />Skyhøj ydeevne med M4.</p>
+
+
+
+					<div class="cta-links">
+						<a class="button button-elevated button-primary" href="/dk/macbook-air/" target="_self"
+							rel="follow" data-analytics-region="learn more"
+							data-analytics-title="learn more - macbook air with m4 chip"
+							aria-label="Læs mere om MacBook Air">Læs mere</a> <a class="button button-elevated button-tertiary"
+							href="/dk/shop/goto/buy_mac/macbook_air" target="_self" rel="follow"
+							data-analytics-region="buy" data-analytics-title="buy - macbook air with m4 chip"
+							aria-label="Køb MacBook Air">Køb</a>
+
+					</div>
+				</div>
+			</div>
+			<div class="unit-image-wrapper">
+				<figure class="unit-image unit-image-macbook-air-hero-macbook-air-avail" aria-label="To MacBook Air-modeller i farven himmelblå åbner sig i en pileform, der understreger den tynde profil"
+					data-anim-lazy-image>
+				</figure>
+			</div>
+		</div>
+	</div>
+</div>
+<link rel="stylesheet" href="/dk/home/includes/heroes/macbook-air/style.css" type="text/css" />
+
+
+
+
+		</section>
+		<section class="homepage-section collection-module" data-module-template="promos" data-analytics-region="promo">
+			<div data-unit-id="wwdc25-os" data-analytics-section-engagement="name:promo-wwdc25-os">
+	<div class="module-content">
+
+		<div class="unit-wrapper bottom-copy-wrapper">
+			<a class="unit-link" href="/dk/os/" target="_self" rel="follow" data-analytics-region="learn more"> </a>
+			<div class="unit-copy-wrapper">
+				<h3 class="headline">Preview af OS </h3>
+				<p class="subhead">Vi præsenterer spændende nye funktioner på tværs af alle vores platforme.</p>
+
+
+				<div class="cta-links">
+					<a class="button button-primary" href="/dk/os/" target="_self" rel="follow"
+						data-analytics-region="learn more" data-analytics-title="explore the os 26 preview"
+						aria-label="Se previewet af OS 26">Se previewet</a>
+				</div>
+			</div>
+			<div class="unit-image-wrapper">
+				<figure class="unit-image unit-image-wwdc25-os-promo-wwdc25-os" aria-label="Tallet 26 svæver halvgennemsigtigt oven på overlappende former i farverne turkis og blå." data-anim-lazy-image>
+				</figure>
+			</div>
+		</div>
+	</div>
+</div>
+			
+<link rel="stylesheet" href="/dk/home/includes/promos/ipad-air/style.css" type="text/css" />
+<div
+  data-unit-id="ipad-air"
+  data-analytics-section-engagement="name:promo-ipad-air"
+>
+  <div class="module-content">
+    <div class="unit-wrapper">
+      <a
+        class="unit-link"
+        href="/dk/ipad-air/"
+        target="_self"
+        rel="follow"
+        data-analytics-region="learn more"
+        > </a
+      >
+      <div class="unit-copy-wrapper">
+        <h3 class="logo-image logo-image-ipad-air-promo-logo-ipadair headline">
+          <span class="visuallyhidden">iPad Air</span>
+        </h3>
+        <p class="subhead">Nu med superkræfter fra M3-chippen.</p>
+
+        <div class="cta-links">
+          <a
+            class="button"
+            href="/dk/ipad-air/"
+            target="_self"
+            rel="follow"
+            data-analytics-region="learn more"
+            data-analytics-title="learn more - ipad air"
+            aria-label="Læs mere om iPad Air"
+            >Læs mere</a
+          >
+
+          <a
+            class="button button-tertiary"
+            href="/dk/shop/goto/buy_ipad/ipad_air"
+            target="_self"
+            rel="follow"
+            data-analytics-region="buy"
+            data-analytics-title="buy - ipad air"
+            aria-label="Køb iPad Air"
+             >Køb</a
+          >
+        </div>
+      </div>
+      <div class="unit-image-wrapper">
+        <figure class="unit-image unit-image-ipad-air-promo-ipad-air" aria-label="En stak iPad-enheder i forskellige farver. iPad-enhederne er vinklet lidt forskudt af hinanden, hvilket skaber en rumlig effekt." data-anim-lazy-image>
+				</figure>
+      </div>
+    </div>
+  </div>
+</div>
+			<div data-unit-id="apple-watch-series-10" data-analytics-section-engagement="name:promo-apple-watch-series-10">
+	<div class="module-content">
+		<div class="unit-wrapper">
+			<a class="unit-link" href="/dk/apple-watch-series-10/" target="_self" rel="follow" data-analytics-region="learn more"> </a>
+			<div class="unit-copy-wrapper">
+				<h3 class="logo-image logo-image-apple-watch-series-10-promo-logo-apple-watch-series-10 headline"><span class="visuallyhidden">Apple Watch Series 10</span></h3>
+				<p class="subhead">Tyndere. Og endnu federe.</p>
+				<div class="cta-links">
+					<a class="button button-primary" href="/dk/apple-watch-series-10/" target="_self" rel="follow" data-analytics-region="learn more" data-analytics-title="learn more - apple watch series 10" aria-label="Læs mere, Apple Watch Series 10">Læs mere</a> <a class="button button-tertiary" href="/dk/shop/goto/buy_watch/apple_watch_series_10" target="_self" rel="follow" data-analytics-region="buy" data-analytics-title="buy - apple watch series 10" aria-label="Køb, Apple Watch Series 10">Køb</a>
+				</div>
+			</div>
+			<div class="unit-image-wrapper">
+				<figure class="unit-image unit-image-apple-watch-series-10-promo-apple-watch-series-10-avail-lte" aria-label="Et nærbillede med fokus på skærmen på Apple Watch Series 10" data-anim-lazy-image></figure>
+			</div>
+		</div>
+	</div>
+</div>
+			<div data-unit-id="airpods-pro-2" data-analytics-section-engagement="name:promo-airpods-pro-2">
+	<div class="module-content">
+		<div class="unit-wrapper theme-dark bottom-copy-wrapper">
+			<a class="unit-link" href="/dk/airpods-pro/hearing-health/" target="_self" rel="follow" data-analytics-region="learn more"> </a>
+			<div class="unit-copy-wrapper">
+				<h3 class="headline">AirPods Pro 2</h3>
+				<p class="subhead">Nu med en høreapparatsfunktion.<sup class="footnote footnote-number" aria-label="Fodnote 1">1</sup></p>
+				<div class="cta-links">
+					<a class="button button-primary" data-analytics-title="learn more - airpods pro 2 hearing health" href="/dk/airpods-pro/hearing-health/" target="_self" rel="follow" data-analytics-region="learn more" data-analytics-title="learn more - airpods pro 2" aria-label="Læs mere, AirPods Pro 2">Læs mere</a> <a class="button button-tertiary" href="/dk/shop/goto/buy_airpods/airpods_pro_2" target="_self" rel="follow" data-analytics-region="buy" data-analytics-title="buy - airpods pro 2" aria-label="Køb, AirPods Pro 2">Køb</a>
+				</div>
+			</div>
+			<div class="unit-image-wrapper">
+				<figure class="unit-image unit-image-airpods-pro-2-promo-airpods-pro-2-avail" aria-label="En person med AirPods Pro 2 med lydbølger, der bevæger sig rundt om øret" data-anim-lazy-image>
+				</figure>
+			</div>
+		</div>
+	</div>
+</div>
+
+			<div data-unit-id="airpods-4" data-analytics-section-engagement="name:promo-airpods-4">
+	<div class="module-content">
+		<div class="unit-wrapper theme-dark bottom-copy-wrapper">
+			<a class="unit-link" href="/dk/airpods-4/" target="_self" rel="follow" data-analytics-region="learn more"> </a>
+			<div class="unit-copy-wrapper">
+				<h3 class="headline">AirPods 4</h3>
+				<p class="subhead">Ikoniske. Og nu supersoniske.<br /> Fås med Aktiv støj­reduktion.<sup class="footnote footnote-number" aria-label="Fodnote 2">2</sup></p>
+				<div class="cta-links">
+					<a class="button button-primary" href="/dk/airpods-4/" target="_self" rel="follow" data-analytics-region="learn more" data-analytics-title="learn more - airpods 4" aria-label="Læs mere, AirPods 4">Læs mere</a> <a class="button button-tertiary" href="/dk/shop/goto/buy_airpods/airpods_4" target="_self" rel="follow" data-analytics-region="buy" data-analytics-title="buy - airpods 4" aria-label="Køb, AirPods 4">Køb</a>
+				</div>
+			</div>
+			<div class="unit-image-wrapper">
+				<figure class="unit-image unit-image-airpods-4-promo-airpods-4-avail" aria-label="Silhuet af en kvinde, der danser med AirPods i ørerne" data-anim-lazy-image></figure>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+
+
+			<link rel="stylesheet" href="/dk/home/includes/promos/iphone-tradein/style.css" type="text/css" />
+<div data-unit-id="iphone-tradein" data-analytics-section-engagement="name:promo-iphone-tradein">
+	<div class="module-content">
+		<div class="unit-wrapper">
+			<a class="unit-link" href="/dk/shop/goto/trade_in" target="_self" rel="follow" data-analytics-region="buy"> </a>
+			<div class="unit-copy-wrapper">
+				<h3 class="logo-image logo-image-iphone-tradein-promo-logo-iphone-tradein headline"><span class="visuallyhidden">Apple Trade In</span></h3>
+				<p class="subhead"><span class="pricing-container" data-tradein-hide-all="iphone12-tradein,iphone15promax-tradein"><span data-tradein-product="iphone12-tradein" data-product-template="Få mellem ${credit.display.minValue} og ">Få mellem i tilskud, når du afleverer en iPhone 12 eller nyere.</span><span data-tradein-product="iphone15promax-tradein" data-product-template="${credit.display.maxValue} i tilskud, når du afleverer en iPhone 12 eller nyere."></span></span><span class="pricing-fallback">Få tilskud, når du afleverer en iPhone 12 eller nyere.</span><sup class="footnote footnote-number" aria-label="Fodnote 3">3</sup></p>
+				<div class="cta-links">
+					<a class="button button-primary" href="/dk/shop/goto/trade_in" target="_self" rel="follow" data-analytics-region="buy" data-analytics-title="get your estimate" aria-label="Få et estimat">Få et estimat</a>
+				</div>
+			</div>
+			<div class="unit-image-wrapper">
+				<figure class="unit-image unit-image-iphone-tradein-promo-iphone-tradein" aria-label="To hænder med iPhone-enheder. Den ene hånd holder et lyseblåt etui med klistermærker, og den anden hånd holder en hvid æske med en ny iPhone" data-anim-lazy-image></figure>
+			</div>
+		</div>
+	</div>
+</div>
+
+		</section>
+		<section
+	 class="homepage-section standalone-module"
+
+	data-module-template="tv-plus-gallery"
+	data-analytics-region="tv-plus-gallery"
+>
+	<div class="module-content">
+
+			<script type="text/javascript">
+	window.tvPlusHpData = {"data": {"shelf": {"cachingPolicy": {"cache": true, "maxAge": 0, "type": "RefreshWithCanvas"}, "displayType": "river", "id": "edt.col.62e954d8-10a0-4982-bfb8-0b0ef7c1d677", "items": [{"extendedMetadata": {"images": {"channelSplashWide": {"width": 4320, "height": 1800, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features211/v4/c6/90/ea/c690ea6d-2229-32a8-ded3-fdbb7885112b/86f3ff12-ca91-42ac-ba7b-501ff7936a51.png/{w}x{h}sr.{f}", "joeColor": "b:rgb(110,147,157) p:rgb(9,14,17) s:rgb(16,15,14) t:rgb(29,40,45) q:rgb(34,41,42)", "isP3": true}, "posterArt": {"width": 3840, "height": 2160, "url": "https://is1-ssl.mzstatic.com/image/thumb/gy_-HeK7Awo48x2fPuAy_w/{w}x{h}.{f}", "joeColor": "b:rgb(45,96,117) p:rgb(200,244,246) s:rgb(207,221,235) t:rgb(169,214,220) q:rgb(175,196,211)"}, "channelSplashTall": {"width": 1680, "height": 3636, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features221/v4/46/b5/ab/46b5ab5a-24c1-f201-20f7-9f5a94fd96e3/58b79ce2-33de-4b9f-934a-ad42ca627fec.png/{w}x{h}tc.{f}", "joeColor": "b:rgb(34,52,59) p:rgb(171,229,246) s:rgb(136,213,244) t:rgb(143,193,208) q:rgb(115,181,207)", "isP3": true}, "singleColorContentLogo": {"width": 3398, "height": 934, "url": "https://is1-ssl.mzstatic.com/image/thumb/mtJesicHY0ecNvwFSXnpKg/{w}x{h}.{f}", "joeColor": "b:rgb(255,255,255) p:rgb(12,12,12) s:rgb(25,25,25) t:rgb(61,61,61) q:rgb(71,71,71)"}}, "longNote": "En mor i balance. En datter i krise. En nat, der \u00e6ndrer alt.", "shortNote": "Mor (Julianne Moore) og datter (Sydney Sweeney) m\u00e5 skjule en grum hemmelighed."}, "genres": [{"id": "umc.gnr.mov.thriller", "name": "Thriller", "type": "Genre", "url": "https://tv.apple.com/dk/genre/thriller/umc.gnr.mov.thriller"}], "id": "umc.cmc.1al6pi2y17htw3z98tbacgo55", "images": {"shelfImage": {"height": 2160, "isP3": false, "joeColor": "b:rgb(45,96,117) p:rgb(200,244,246) s:rgb(207,221,235) t:rgb(169,214,220) q:rgb(175,196,211)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/gy_-HeK7Awo48x2fPuAy_w/{w}x{h}.{f}", "width": 3840}, "shelfImageBackground": {"height": 2160, "isP3": false, "joeColor": "b:rgb(119,154,162) p:rgb(11,19,22) s:rgb(23,27,23) t:rgb(32,46,50) q:rgb(42,52,51)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/gBz_-T5mkKgIxbt81My2Kg/{w}x{h}.{f}", "width": 3840}, "transitionImage": {"height": 3240, "isP3": false, "isUber": true, "joeColor": "b:rgb(172,214,206) p:rgb(8,23,32) s:rgb(13,30,41) t:rgb(40,61,67) q:rgb(45,67,74)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/VinqJLmbd1OSqRSJV5xk0g/{w}x{h}sr.{f}", "width": 4320}}, "isAppleOriginal": true, "localizedType": "Film", "releaseDate": 1749772800000, "secondaryActions": ["AddToUpNext"], "title": "Echo Valley", "type": "Movie", "url": "https://tv.apple.com/dk/movie/echo-valley/umc.cmc.1al6pi2y17htw3z98tbacgo55?l=da-DK"}, {"extendedMetadata": {"caption": "Ny episode hver onsdag", "images": {"channelSplashWide": {"width": 4320, "height": 1800, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features211/v4/15/eb/c6/15ebc6d3-2b7c-f305-4ede-04e71c71923e/241df81c-3fa0-4cb0-b15d-60927a5f80f3.png/{w}x{h}sr.{f}", "joeColor": "b:rgb(14,27,17) p:rgb(204,228,246) s:rgb(237,168,0) t:rgb(166,187,200) q:rgb(193,140,3)", "isP3": true}, "posterArt": {"width": 3840, "height": 2160, "url": "https://is1-ssl.mzstatic.com/image/thumb/Axf6fFibiK2puSTzKXvgpA/{w}x{h}.{f}", "joeColor": "b:rgb(182,211,239) p:rgb(24,35,27) s:rgb(44,49,28) t:rgb(55,70,70) q:rgb(72,82,70)"}, "channelSplashTall": {"width": 1680, "height": 3636, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features211/v4/27/d0/28/27d0280b-b9bd-93a8-66e7-f3c696c16b26/170cca06-c5c2-4992-84d2-723b10d56735.png/{w}x{h}tc.{f}", "joeColor": "b:rgb(170,203,230) p:rgb(10,13,23) s:rgb(62,38,23) t:rgb(42,51,64) q:rgb(84,71,65)", "isP3": true}, "singleColorContentLogo": {"width": 2885, "height": 1102, "url": "https://is1-ssl.mzstatic.com/image/thumb/fX9Bus3bPSqNIvzq-d8fSg/{w}x{h}.{f}", "joeColor": "b:rgb(255,255,255) p:rgb(12,12,12) s:rgb(25,25,25) t:rgb(61,61,61) q:rgb(71,71,71)"}}, "longNote": "En komedie om livet og dets faldgruber.", "shortNote": "Hjertevarm golfkomedie med Owen Wilson som mentor for et teenagef\u00e6nomen."}, "genres": [{"id": "umc.gnr.tv.comedy", "name": "Komedie", "type": "Genre", "url": "https://tv.apple.com/dk/genre/komedie/umc.gnr.tv.comedy"}], "id": "umc.cmc.52w04zy67tiv11p8xvbc57wmc", "images": {"shelfImage": {"height": 2160, "isP3": false, "joeColor": "b:rgb(182,211,239) p:rgb(24,35,27) s:rgb(44,49,28) t:rgb(55,70,70) q:rgb(72,82,70)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/Axf6fFibiK2puSTzKXvgpA/{w}x{h}.{f}", "width": 3840}, "shelfImageBackground": {"height": 2160, "isP3": false, "joeColor": "b:rgb(76,96,63) p:rgb(228,242,255) s:rgb(186,225,251) t:rgb(197,212,216) q:rgb(164,199,213)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/E8_fuZhGmY0uePox33pAdg/{w}x{h}.{f}", "width": 3840}, "transitionImage": {"height": 3240, "isP3": false, "isUber": true, "joeColor": "b:rgb(63,89,74) p:rgb(207,235,251) s:rgb(165,209,232) t:rgb(178,206,216) q:rgb(145,185,200)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/ItKkA09lJqZlHoifrjGqyg/{w}x{h}sr.{f}", "width": 4320}}, "isAppleOriginal": true, "localizedType": "TV Show", "releaseDate": 1748995200000, "secondaryActions": ["AddToUpNext"], "title": "Stick", "type": "Show", "url": "https://tv.apple.com/dk/show/stick/umc.cmc.52w04zy67tiv11p8xvbc57wmc?l=da-DK"}, {"extendedMetadata": {"images": {"channelSplashWide": {"width": 4320, "height": 1800, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features221/v4/af/f5/eb/aff5ebc6-85a1-2ea0-8418-6ce9f9e4b492/9ee2767e-80c8-4165-b2ad-2ec6fe6b9059.png/{w}x{h}sr.{f}", "joeColor": "b:rgb(112,140,132) p:rgb(13,8,12) s:rgb(26,20,17) t:rgb(32,35,36) q:rgb(43,44,40)", "isP3": true}, "posterArt": {"width": 3840, "height": 2160, "url": "https://is1-ssl.mzstatic.com/image/thumb/4UEcdeb6Xoc40fhFSAr3Og/{w}x{h}.{f}", "joeColor": "b:rgb(244,242,216) p:rgb(37,30,20) s:rgb(61,44,36) t:rgb(79,72,59) q:rgb(98,84,72)"}, "channelSplashTall": {"width": 1680, "height": 3636, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features221/v4/a1/5e/a5/a15ea5b4-ca40-e15e-e49c-1f50d9c54c58/d48a9a67-4f77-45e5-81e5-8e491d74c79a.png/{w}x{h}tc.{f}", "joeColor": "b:rgb(35,25,29) p:rgb(235,224,190) s:rgb(224,220,192) t:rgb(195,184,158) q:rgb(186,181,159)", "isP3": true}, "singleColorContentLogo": {"width": 2744, "height": 1071, "url": "https://is1-ssl.mzstatic.com/image/thumb/5_OvKjXpgXJyKi11wPoEVw/{w}x{h}.{f}", "joeColor": "b:rgb(255,255,255) p:rgb(12,12,12) s:rgb(25,25,25) t:rgb(61,61,61) q:rgb(71,71,71)"}}, "longNote": "Kun en myte \u2013 indtil sandheden afd\u00e6kkes.", "shortNote": "Et s\u00f8skendepar begiver sig ud p\u00e5 en skattejagt, der kunne \u00e6ndre alt."}, "genres": [{"id": "umc.gnr.mov.action", "name": "Action", "type": "Genre", "url": "https://tv.apple.com/dk/genre/action/umc.gnr.mov.action"}], "id": "umc.cmc.z5xrwbjg3gergiowhrzg61tq", "images": {"shelfImage": {"height": 2160, "isP3": false, "joeColor": "b:rgb(244,242,216) p:rgb(37,30,20) s:rgb(61,44,36) t:rgb(79,72,59) q:rgb(98,84,72)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/4UEcdeb6Xoc40fhFSAr3Og/{w}x{h}.{f}", "width": 3840}, "shelfImageBackground": {"height": 2160, "isP3": false, "joeColor": "b:rgb(215,192,144) p:rgb(13,10,17) s:rgb(49,39,26) t:rgb(53,46,42) q:rgb(82,69,49)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/O2COyR-7zVBE3TWk5dJ_3A/{w}x{h}.{f}", "width": 3840}, "transitionImage": {"height": 3240, "isP3": false, "isUber": true, "joeColor": "b:rgb(28,25,45) p:rgb(239,224,188) s:rgb(234,209,157) t:rgb(196,184,159) q:rgb(193,172,135)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/xEIxiIVRDqaFJ3H3pTGczQ/{w}x{h}sr.{f}", "width": 4320}}, "isAppleOriginal": true, "localizedType": "Film", "releaseDate": 1747958400000, "secondaryActions": ["AddToUpNext"], "title": "Fountain of Youth", "type": "Movie", "url": "https://tv.apple.com/dk/movie/fountain-of-youth/umc.cmc.z5xrwbjg3gergiowhrzg61tq?l=da-DK"}, {"extendedMetadata": {"caption": "Ny episode hver fredag", "images": {"channelSplashWide": {"width": 4320, "height": 1800, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features221/v4/d6/be/e9/d6bee9d0-a30a-6c5e-f6eb-7966e8c90070/e32b3bf1-719c-4af8-a186-4023acb50a83.png/{w}x{h}sr.{f}", "joeColor": "b:rgb(129,122,109) p:rgb(2,2,2) s:rgb(3,3,3) t:rgb(28,26,24) q:rgb(28,27,24)", "isP3": true}, "posterArt": {"width": 3840, "height": 2160, "url": "https://is1-ssl.mzstatic.com/image/thumb/Wk5tKXFA4Zr4in8sDkQeYA/{w}x{h}.{f}", "joeColor": "b:rgb(197,189,170) p:rgb(11,12,13) s:rgb(23,25,24) t:rgb(48,47,44) q:rgb(58,58,53)"}, "channelSplashTall": {"width": 1680, "height": 3636, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features221/v4/9c/a7/83/9ca783f4-d417-03f5-b00e-fa6cc31a401f/c09e2ecf-84b2-4d4a-b7a4-a349a9023177.png/{w}x{h}tc.{f}", "joeColor": "b:rgb(205,198,179) p:rgb(11,10,12) s:rgb(20,21,20) t:rgb(50,48,45) q:rgb(57,56,52)", "isP3": true}, "singleColorContentLogo": {"width": 5969, "height": 545, "url": "https://is1-ssl.mzstatic.com/image/thumb/-laaoTgcoVaqdpjAA4cVFg/{w}x{h}.{f}", "joeColor": "b:rgb(255,255,255) p:rgb(12,12,12) s:rgb(25,25,25) t:rgb(61,61,61) q:rgb(71,71,71)"}}, "longNote": "En robot skjuler sin frie vilje og hang til s\u00e6beoperaer i en dystert morsom fremtid.", "shortNote": "En robot skjuler sin frie vilje og hang til s\u00e6beoperaer i en dystert morsom fremtid."}, "genres": [{"id": "umc.gnr.tv.scifi", "name": "Sci-fi", "type": "Genre", "url": "https://tv.apple.com/dk/genre/sci-fi/umc.gnr.tv.scifi"}], "id": "umc.cmc.5owrzntj9v1gpg31wshflud03", "images": {"shelfImage": {"height": 2160, "isP3": false, "joeColor": "b:rgb(197,189,170) p:rgb(11,12,13) s:rgb(23,25,24) t:rgb(48,47,44) q:rgb(58,58,53)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/Wk5tKXFA4Zr4in8sDkQeYA/{w}x{h}.{f}", "width": 3840}, "shelfImageBackground": {"height": 2160, "isP3": false, "joeColor": "b:rgb(199,190,170) p:rgb(8,9,9) s:rgb(26,28,26) t:rgb(46,45,41) q:rgb(61,60,55)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/_1EhOfHjlurwF9OGp-lbTg/{w}x{h}.{f}", "width": 3840}, "transitionImage": {"height": 3240, "isP3": false, "isUber": true, "joeColor": "b:rgb(23,24,23) p:rgb(230,242,230) s:rgb(232,235,200) t:rgb(189,198,189) q:rgb(190,193,164)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/7aFj8HmZmS1U-ebdRFOPAg/{w}x{h}sr.{f}", "width": 4320}}, "isAppleOriginal": true, "localizedType": "TV Show", "releaseDate": 1747353600000, "secondaryActions": ["AddToUpNext"], "title": "Murderbot", "type": "Show", "url": "https://tv.apple.com/dk/show/murderbot/umc.cmc.5owrzntj9v1gpg31wshflud03?l=da-DK"}, {"extendedMetadata": {"images": {"channelSplashWide": {"width": 4320, "height": 1800, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features221/v4/84/b9/8b/84b98b65-f80d-477b-61bf-bad385a90ad1/1159322c-3d3a-45ec-9989-3672b7debf74.png/{w}x{h}sr.{f}", "joeColor": "b:rgb(45,85,104) p:rgb(220,226,232) s:rgb(251,202,181) t:rgb(185,197,207) q:rgb(210,179,165)", "isP3": true}, "posterArt": {"width": 3840, "height": 2160, "url": "https://is1-ssl.mzstatic.com/image/thumb/YOgobsksqgV_waAIE0-63A/{w}x{h}.{f}", "joeColor": "b:rgb(53,89,106) p:rgb(250,206,186) s:rgb(205,216,227) t:rgb(210,183,170) q:rgb(174,191,203)"}, "channelSplashTall": {"width": 1680, "height": 3636, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features221/v4/1c/b7/11/1cb711aa-1fbd-2540-e45d-b6d68075c0ea/97c0c19f-7a3c-4a76-ae3f-7e1a29654d7d.png/{w}x{h}tc.{f}", "joeColor": "b:rgb(37,23,26) p:rgb(172,199,221) s:rgb(148,187,214) t:rgb(145,164,182) q:rgb(125,154,176)", "isP3": true}, "singleColorContentLogo": {"width": 4080, "height": 921, "url": "https://is1-ssl.mzstatic.com/image/thumb/nce2Su-4dOukcyiZlJjbmw/{w}x{h}.{f}", "joeColor": "b:rgb(255,255,255) p:rgb(12,12,12) s:rgb(25,25,25) t:rgb(61,61,61) q:rgb(71,71,71)"}}, "longNote": "Lev din bedste l\u00f8gn.", "shortNote": "Han vil g\u00f8re alt for at forblive rig \u2013 herunder stj\u00e6le fra sine venner."}, "genres": [{"id": "umc.gnr.tv.drama", "name": "Drama", "type": "Genre", "url": "https://tv.apple.com/dk/genre/drama/umc.gnr.tv.drama"}], "id": "umc.cmc.74o37kzay0yuuub8iumddjsg", "images": {"shelfImage": {"height": 2160, "isP3": false, "joeColor": "b:rgb(53,89,106) p:rgb(250,206,186) s:rgb(205,216,227) t:rgb(210,183,170) q:rgb(174,191,203)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/YOgobsksqgV_waAIE0-63A/{w}x{h}.{f}", "width": 3840}, "shelfImageBackground": {"height": 2160, "isP3": false, "joeColor": "b:rgb(46,79,98) p:rgb(224,228,236) s:rgb(191,209,225) t:rgb(188,199,208) q:rgb(162,183,199)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/tHasdzjj80D1PZNIbWj48A/{w}x{h}.{f}", "width": 3840}, "transitionImage": {"height": 3240, "isP3": false, "isUber": true, "joeColor": "b:rgb(3,17,26) p:rgb(193,209,231) s:rgb(138,187,221) t:rgb(155,170,190) q:rgb(111,153,182)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/xgmyxKCnxBEpCJmLwQc2sg/{w}x{h}sr.{f}", "width": 4320}}, "isAppleOriginal": true, "localizedType": "TV Show", "releaseDate": 1744329600000, "secondaryActions": ["AddToUpNext"], "title": "Your Friends & Neighbours", "type": "Show", "url": "https://tv.apple.com/dk/show/your-friends--neighbours/umc.cmc.74o37kzay0yuuub8iumddjsg?l=da-DK"}, {"extendedMetadata": {"images": {"channelSplashWide": {"width": 4320, "height": 1800, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features211/v4/6b/89/3e/6b893e46-fbcc-609b-df17-5bd507f09af0/3de35be5-1846-4d5d-b671-79e8e41fdb23.png/{w}x{h}sr.{f}", "joeColor": "b:rgb(107,147,173) p:rgb(2,3,5) s:rgb(1,4,7) t:rgb(23,32,38) q:rgb(22,33,40)", "isP3": true}, "posterArt": {"width": 3840, "height": 2160, "url": "https://is1-ssl.mzstatic.com/image/thumb/EUeDAPovZrBtOcrP2Da5Lw/{w}x{h}.{f}", "joeColor": "b:rgb(109,150,173) p:rgb(14,15,18) s:rgb(10,26,37) t:rgb(33,42,49) q:rgb(30,51,64)"}, "channelSplashTall": {"width": 1680, "height": 3636, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features211/v4/99/4b/48/994b48b4-1053-88a4-3176-a7cd98cd430e/56e57fd6-65b7-4dd4-b38e-dc58f703fb85.png/{w}x{h}tc.{f}", "joeColor": "b:rgb(116,168,194) p:rgb(4,12,22) s:rgb(8,21,19) t:rgb(26,43,56) q:rgb(30,50,54)", "isP3": true}, "singleColorContentLogo": {"width": 7095, "height": 1176, "url": "https://is1-ssl.mzstatic.com/image/thumb/l9HZvLGoIYC_wGWFjIniIA/{w}x{h}.{f}", "joeColor": "b:rgb(255,255,255) p:rgb(12,12,12) s:rgb(25,25,25) t:rgb(61,61,61) q:rgb(71,71,71)"}}, "longNote": "Husk at arbejde, mens du lever.", "shortNote": "Oplev Adam Scott i den gribende thrillerserie fra instrukt\u00f8r Ben Stiller."}, "genres": [{"id": "umc.gnr.tv.thriller", "name": "Thriller", "type": "Genre", "url": "https://tv.apple.com/dk/genre/thriller/umc.gnr.tv.thriller"}], "id": "umc.cmc.1srk2goyh2q2zdxcx605w8vtx", "images": {"shelfImage": {"height": 2160, "isP3": false, "joeColor": "b:rgb(109,150,173) p:rgb(14,15,18) s:rgb(10,26,37) t:rgb(33,42,49) q:rgb(30,51,64)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/EUeDAPovZrBtOcrP2Da5Lw/{w}x{h}.{f}", "width": 3840}, "shelfImageBackground": {"height": 2160, "isP3": false, "joeColor": "b:rgb(90,131,158) p:rgb(0,2,4) s:rgb(2,4,5) t:rgb(18,28,35) q:rgb(20,30,36)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/R8-NyavUNgWqAfUoUtUjNA/{w}x{h}.{f}", "width": 3840}, "transitionImage": {"height": 3240, "isP3": false, "isUber": true, "joeColor": "b:rgb(0,1,15) p:rgb(196,222,233) s:rgb(145,194,205) t:rgb(156,178,189) q:rgb(116,155,167)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/sWbO9RKGr81f6-iTFF9d4g/{w}x{h}sr.{f}", "width": 4320}}, "isAppleOriginal": true, "localizedType": "TV Show", "releaseDate": 1645142400000, "secondaryActions": ["AddToUpNext"], "title": "Severance", "type": "Show", "url": "https://tv.apple.com/dk/show/severance/umc.cmc.1srk2goyh2q2zdxcx605w8vtx?l=da-DK&ctx_agid=f057198a22b35b8e"}, {"extendedMetadata": {"images": {"channelSplashWide": {"width": 4320, "height": 1800, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features221/v4/8f/c1/c8/8fc1c865-d2b1-575e-e648-3cf46c1536f1/3d731dfd-7695-4322-9167-3fff1a398730.png/{w}x{h}sr.{f}", "joeColor": "b:rgb(213,222,215) p:rgb(53,36,28) s:rgb(64,48,40) t:rgb(85,73,66) q:rgb(94,83,75)", "isP3": true}, "posterArt": {"width": 3840, "height": 2160, "url": "https://is1-ssl.mzstatic.com/image/thumb/5geoozRQUAjDnWF2KLHyJg/{w}x{h}.{f}", "joeColor": "b:rgb(252,251,247) p:rgb(57,41,30) s:rgb(53,44,35) t:rgb(96,83,73) q:rgb(92,85,78)"}, "channelSplashTall": {"width": 1680, "height": 3636, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features211/v4/96/84/42/9684422a-c0a5-cee3-4f2d-6629774aa983/ad3bc62b-51bc-42ff-993c-978744adc711.png/{w}x{h}tc.{f}", "joeColor": "b:rgb(208,220,209) p:rgb(35,21,16) s:rgb(55,32,26) t:rgb(70,61,54) q:rgb(85,69,62)", "isP3": true}, "singleColorContentLogo": {"width": 4804, "height": 582, "url": "https://is1-ssl.mzstatic.com/image/thumb/zN89OCcVdgPk0r8fPqoAzw/{w}x{h}.{f}", "joeColor": "b:rgb(255,255,255) p:rgb(12,12,12) s:rgb(25,25,25) t:rgb(61,61,61) q:rgb(71,71,71)"}}, "longNote": "Dyk ned i Hollywoods vilde kaos i denne stjernesp\u00e6kkede satire.", "shortNote": "Dyk ned i Hollywoods vilde kaos i denne stjernesp\u00e6kkede satire."}, "genres": [{"id": "umc.gnr.tv.comedy", "name": "Komedie", "type": "Genre", "url": "https://tv.apple.com/dk/genre/komedie/umc.gnr.tv.comedy"}], "id": "umc.cmc.7518algxc4lsoobtsx30dqb52", "images": {"shelfImage": {"height": 2160, "isP3": false, "joeColor": "b:rgb(252,251,247) p:rgb(57,41,30) s:rgb(53,44,35) t:rgb(96,83,73) q:rgb(92,85,78)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/5geoozRQUAjDnWF2KLHyJg/{w}x{h}.{f}", "width": 3840}, "shelfImageBackground": {"height": 2160, "isP3": false, "joeColor": "b:rgb(232,238,232) p:rgb(55,40,32) s:rgb(56,45,40) t:rgb(90,79,72) q:rgb(91,83,78)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/h96-CBywL6mX-WabwZwCeA/{w}x{h}.{f}", "width": 3840}, "transitionImage": {"height": 3240, "isP3": false, "isUber": true, "joeColor": "b:rgb(20,23,11) p:rgb(229,225,202) s:rgb(210,179,133) t:rgb(187,185,164) q:rgb(172,148,109)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/5fF2vNTh4Bo1hT1Mcbmggw/{w}x{h}sr.{f}", "width": 4320}}, "isAppleOriginal": true, "localizedType": "TV Show", "releaseDate": 1742947200000, "secondaryActions": ["AddToUpNext"], "title": "The Studio", "type": "Show", "url": "https://tv.apple.com/dk/show/the-studio/umc.cmc.7518algxc4lsoobtsx30dqb52?l=da-DK"}, {"extendedMetadata": {"caption": "Ny episode hver fredag", "images": {"channelSplashWide": {"width": 4320, "height": 1800, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features211/v4/23/6f/f1/236ff194-6dec-dbb2-4925-757571759bfc/03896760-19c0-4c1f-9b74-81452d39e9a9.png/{w}x{h}sr.{f}", "joeColor": "b:rgb(198,189,173) p:rgb(27,25,24) s:rgb(32,30,24) t:rgb(61,58,54) q:rgb(65,62,54)", "isP3": true}, "posterArt": {"width": 3840, "height": 2160, "url": "https://is1-ssl.mzstatic.com/image/thumb/GqtEVQMUxjX2CgqfrhW9hQ/{w}x{h}.{f}", "joeColor": "b:rgb(181,184,164) p:rgb(9,8,11) s:rgb(21,22,19) t:rgb(43,44,41) q:rgb(53,54,48)"}, "channelSplashTall": {"width": 1680, "height": 3636, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features211/v4/b4/80/12/b48012ae-69ef-900a-7056-ed7030e7d4f2/d38742f3-ee4a-4984-9584-f5a508cc0a0c.png/{w}x{h}tc.{f}", "joeColor": "b:rgb(232,224,208) p:rgb(24,20,17) s:rgb(31,27,25) t:rgb(65,61,55) q:rgb(71,67,62)", "isP3": true}, "singleColorContentLogo": {"width": 5007, "height": 1080, "url": "https://is1-ssl.mzstatic.com/image/thumb/o0RP2rM_yopz-YEexY2sVw/{w}x{h}.{f}", "joeColor": "b:rgb(255,255,255) p:rgb(12,12,12) s:rgb(25,25,25) t:rgb(61,61,61) q:rgb(71,71,71)"}}, "longNote": "17 lande. Endnu et storsl\u00e5et eventyr.", "shortNote": "Ewan McGregor og Charley Boorman g\u00f8r klar til en episk rejse gennem Europa."}, "genres": [{"id": "umc.gnr.tv.documentary", "name": "Dokumentar", "type": "Genre", "url": "https://tv.apple.com/dk/genre/dokumentar/umc.gnr.tv.documentary"}], "id": "umc.cmc.26p8x4co2wl0ztetek4gmkf6r", "images": {"shelfImage": {"height": 2160, "isP3": false, "joeColor": "b:rgb(181,184,164) p:rgb(9,8,11) s:rgb(21,22,19) t:rgb(43,44,41) q:rgb(53,54,48)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/GqtEVQMUxjX2CgqfrhW9hQ/{w}x{h}.{f}", "width": 3840}, "shelfImageBackground": {"height": 2160, "isP3": false, "joeColor": "b:rgb(226,217,201) p:rgb(33,29,26) s:rgb(49,44,36) t:rgb(71,67,61) q:rgb(84,79,69)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/8QXUkP9In6vs7vOi_gDz8w/{w}x{h}.{f}", "width": 3840}, "transitionImage": {"height": 3240, "isP3": false, "isUber": true, "joeColor": "b:rgb(224,215,199) p:rgb(29,26,22) s:rgb(44,40,39) t:rgb(68,64,58) q:rgb(80,75,71)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/VAEa4ZHKRyZL51fYiLEugg/{w}x{h}sr.{f}", "width": 4320}}, "isAppleOriginal": true, "localizedType": "TV Show", "releaseDate": 1746748800000, "secondaryActions": ["AddToUpNext"], "title": "Long Way Home", "type": "Show", "url": "https://tv.apple.com/dk/show/long-way-home/umc.cmc.26p8x4co2wl0ztetek4gmkf6r?l=da-DK"}, {"extendedMetadata": {"images": {"channelSplashWide": {"width": 4320, "height": 1800, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features/v4/60/6c/97/606c97eb-2a90-3044-d35a-b76ce1e18acd/64aacd1b-8c34-4e52-bd46-626a95473107.png/{w}x{h}sr.{f}", "joeColor": "b:rgb(7,6,8) p:rgb(237,211,211) s:rgb(220,186,197) t:rgb(191,170,170) q:rgb(178,150,159)", "isP3": true}, "posterArt": {"width": 3840, "height": 2160, "url": "https://is1-ssl.mzstatic.com/image/thumb/3pfG0GJkoI0OFlPiIDdvUQ/{w}x{h}.{f}", "joeColor": "b:rgb(26,18,22) p:rgb(223,224,242) s:rgb(214,157,156) t:rgb(184,183,198) q:rgb(177,129,129)"}, "channelSplashTall": {"width": 1680, "height": 3636, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features/v4/77/db/bc/77dbbc7e-336a-38d8-323d-8af92f7d21a2/910d2485-44e1-4d72-995f-bd91ab7508bc.png/{w}x{h}tc.{f}", "joeColor": "b:rgb(14,13,36) p:rgb(218,181,194) s:rgb(206,177,202) t:rgb(177,148,162) q:rgb(168,144,169)", "isP3": true}, "singleColorContentLogo": {"width": 4285, "height": 2309, "url": "https://is1-ssl.mzstatic.com/image/thumb/bH8SF2KXtkagMFaw2BXnXQ/{w}x{h}.{f}", "joeColor": "b:rgb(255,255,255) p:rgb(12,12,12) s:rgb(25,25,25) t:rgb(61,61,61) q:rgb(71,71,71)"}}, "longNote": "Mellem dem er verdens farligste hemmelighed.", "shortNote": "Miles Teller og Anya Taylor-Joy finder k\u00e6rligheden p\u00e5 en tophemmelig mission."}, "genres": [{"id": "umc.gnr.mov.thriller", "name": "Thriller", "type": "Genre", "url": "https://tv.apple.com/dk/genre/thriller/umc.gnr.mov.thriller"}], "id": "umc.cmc.26o403koqo2klixc0jtqy6tmc", "images": {"shelfImage": {"height": 2160, "isP3": false, "joeColor": "b:rgb(26,18,22) p:rgb(223,224,242) s:rgb(214,157,156) t:rgb(184,183,198) q:rgb(177,129,129)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/3pfG0GJkoI0OFlPiIDdvUQ/{w}x{h}.{f}", "width": 3840}, "shelfImageBackground": {"height": 2160, "isP3": false, "joeColor": "b:rgb(10,10,32) p:rgb(223,189,196) s:rgb(211,180,200) t:rgb(181,153,163) q:rgb(171,146,166)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/C87f9kbBZI4WQOUrh5uikQ/{w}x{h}.{f}", "width": 3840}, "transitionImage": {"height": 3240, "isP3": false, "isUber": true, "joeColor": "b:rgb(26,26,41) p:rgb(211,157,149) s:rgb(154,160,220) t:rgb(174,131,128) q:rgb(128,133,184)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/1yccMF-r5KnerGwioaubNA/{w}x{h}sr.{f}", "width": 4320}}, "isAppleOriginal": true, "localizedType": "Film", "releaseDate": 1739491200000, "secondaryActions": ["AddToUpNext"], "title": "The Gorge", "type": "Movie", "url": "https://tv.apple.com/dk/movie/the-gorge/umc.cmc.26o403koqo2klixc0jtqy6tmc?l=da-DK&ctx_agid=f71e83ec87ea8755"}, {"extendedMetadata": {"images": {"channelSplashWide": {"width": 4320, "height": 1800, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features221/v4/e5/5e/97/e55e9709-d2df-aa09-3b80-1fa306986fd7/25bd28a5-91b4-4116-a45a-4d0224d61da5.png/{w}x{h}sr.{f}", "joeColor": "b:rgb(18,48,58) p:rgb(239,200,100) s:rgb(237,173,63) t:rgb(195,169,91) q:rgb(193,148,62)", "isP3": true}, "posterArt": {"width": 3840, "height": 2160, "url": "https://is1-ssl.mzstatic.com/image/thumb/LEDx4gCVQd_lTJt81zQq8w/{w}x{h}.{f}", "joeColor": "b:rgb(185,191,172) p:rgb(18,22,14) s:rgb(25,26,20) t:rgb(51,56,46) q:rgb(57,59,50)"}, "channelSplashTall": {"width": 1680, "height": 3636, "url": "https://is1-ssl.mzstatic.com/image/thumb/Features211/v4/79/f8/50/79f850b0-cb6e-e10c-7017-2e49739d2a42/ae46775e-da1a-4b8f-8403-3dc83afcf841.png/{w}x{h}tc.{f}", "joeColor": "b:rgb(18,23,25) p:rgb(230,191,87) s:rgb(223,166,63) t:rgb(188,158,74) q:rgb(182,137,55)", "isP3": true}, "singleColorContentLogo": {"width": 2394, "height": 425, "url": "https://is1-ssl.mzstatic.com/image/thumb/w6iOdqXGZLugnUgKmWZp0g/{w}x{h}.{f}", "joeColor": "b:rgb(255,255,255) p:rgb(12,12,12) s:rgb(25,25,25) t:rgb(61,61,61) q:rgb(71,71,71)"}}, "longNote": "Man lever ikke, f\u00f8r man har noget at d\u00f8 for.", "shortNote": "En ingeni\u00f8r efterforsker et mord i et dystopisk samfund under jorden."}, "genres": [{"id": "umc.gnr.tv.scifi", "name": "Sci-fi", "type": "Genre", "url": "https://tv.apple.com/dk/genre/sci-fi/umc.gnr.tv.scifi"}], "id": "umc.cmc.3yksgc857px0k0rqe5zd4jice", "images": {"shelfImage": {"height": 2160, "isP3": false, "joeColor": "b:rgb(185,191,172) p:rgb(18,22,14) s:rgb(25,26,20) t:rgb(51,56,46) q:rgb(57,59,50)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/LEDx4gCVQd_lTJt81zQq8w/{w}x{h}.{f}", "width": 3840}, "shelfImageBackground": {"height": 2160, "isP3": false, "joeColor": "b:rgb(190,193,177) p:rgb(26,27,21) s:rgb(32,37,33) t:rgb(59,60,52) q:rgb(64,68,62)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/LuqXrQhUbnNIV-9cdPaMAQ/{w}x{h}.{f}", "width": 3840}, "transitionImage": {"height": 3240, "isP3": false, "isUber": true, "joeColor": "b:rgb(16,34,39) p:rgb(238,194,116) s:rgb(219,185,130) t:rgb(194,162,101) q:rgb(178,154,111)", "supportsLayeredImage": false, "url": "https://is1-ssl.mzstatic.com/image/thumb/zaxin710Cia1XCPsrs3-iQ/{w}x{h}sr.{f}", "width": 4320}}, "isAppleOriginal": true, "localizedType": "TV Show", "releaseDate": 1683244800000, "secondaryActions": ["AddToUpNext"], "title": "Silo", "type": "Show", "url": "https://tv.apple.com/dk/show/silo/umc.cmc.3yksgc857px0k0rqe5zd4jice?l=da-DK"}], "metrics": {"data.uts.shelfCategoryId": "edt.cat.unknown.edt.col.62e954d8-10a0-4982-bfb8-0b0ef7c1d677", "data.uts.shelfCategoryName": "uts.category.unknown.edt.col.62e954d8-10a0-4982-bfb8-0b0ef7c1d677", "data.uts.responseId": "b6024d63-7180-4484-8268-3d720c990ad9", "data.uts.displayType": "River"}, "url": "https://tv.apple.com/dk/collection/edt.col.62e954d8-10a0-4982-bfb8-0b0ef7c1d677?ctx_dt=river"}}, "utsk": "6e3013c6d6fae3c2::::::235656c069bb0efb", "marcom": {"timestamp_utc": "2025-07-01T13:30:09.984Z", "locale": "da-DK", "storefront": "143458", "collection_id": "edt.col.62e954d8-10a0-4982-bfb8-0b0ef7c1d677", "url": "https://uts-api-web-marketing.itunes.apple.com/uts/v3/shelves/edt.col.62e954d8-10a0-4982-bfb8-0b0ef7c1d677?caller=web-marketing&ctx_dt=river&v=66&pfm=web&profile=Full&sf=143458&locale=da-DK"}}
+</script>
+
+
+			<div id="tv-plus-gallery"
+				data-analytics-gallery-id="Tv Plus Gallery"
+				data-analytics-section-engagement="name:tv-plus-gallery"
+				aria-label="TV Plus-galleri"
+				role="group"
+				class="gallery"
+
+				data-watch-now="Stream nu"
+				data-preview-now="Se preview nu"
+				data-watch-now-aria="Stream nu, {title}"
+				data-preview-now-aria="Se preview nu, {title}"
+				data-token="itscg=10000&itsct=atv-apl_hp-stream_now--220622"
+				data-play-aria="Afspil Apple TV Plus-galleri"
+				data-pause-aria="Sæt Apple TV Plus-galleri på pause"
+				data-dotnav-item-aria="Element {n}"
+				data-prev-aria-template="Vis forrige TV-serie, ${title}"
+				data-next-aria-template="Vis næste TV-serie, ${title}"
+			>
+				<h4 class="visuallyhidden">Apple TV+</h4>
+				<div class="item-container"></div>
+
+				<div data-analytics-gallery-interaction-type="paddlenav" class="paddlenav paddlenav-framed">
+					<ul>
+						<li class="previous"><button aria-label="Forrige" class="paddlenav-arrow paddlenav-arrow-previous"></button></li>
+						<li class="next"><button aria-label="Næste" class="paddlenav-arrow paddlenav-arrow-next"></button></li>
+					</ul>
+				</div>
+
+				<div class="tablist-wrapper">
+					<div data-analytics-gallery-interaction-type="dotnav" class="dotnav">
+						<ul role="tablist" class="dotnav-items"></ul>
+					</div>
+				</div>
+
+				<button class="tv-plus-gallery-play-pause"></button>
+
+			</div>
+
+	</div>
+</section>
+
+		
+
+
+
+
+	<div data-modal-component-list="Modal" id="modal-ipad-air-11-inch-m3-wifi" aria-label="Energiinformation om 11&quot; iPad Air (M3) (Wi-Fi)" aria-modal="true" role="dialog" tabindex="-1" class="ric-modal ric-modal-scrim ric-modal-scrim-blur ric-modal-page-overlay energy-modal-container ric-modal-scrollable" data-modal-container="" data-modal-close="" >
+	<div class="ric-modal-overlay-container" data-modal-overlay-container="" data-modal-close="">
+		<div class="ric-modal-overlay" data-modal-overlay="" style="opacity: 1;">
+			<div class="ric-modal-content-wrapper" data-modal-content-wrapper="" data-analytics-activitymap-region-id="Energy Class modal" data-modal-scroll-group-name="iPad Air 11″ (M3) (Wi-Fi) - energy modal">
+				<div id="modal-content-modal-ipad-air-11-inch-m3-wifi" class="energy-modal-content modal-content">
+					<h3 class="energy-modal-header typography-headline-reduced">Energiinformation om 11" iPad Air (M3) (Wi‑Fi)</h3>
+					<div class="energy-modal-tile">
+						<picture class="image-energy-label energy-label-image">
+							<img src="/euro/energy-rating/a/shared/images/energy-labels/ipad/ipad-air-11-inch-m3-wifi/energy_label_ipad_air_11-inch_m3_wi-fi_a3266.png" loading="lazy" onload="window.__lp?.(event)" alt="EU-energimærke, QR-kode og information, Apple-model A3266, klasse G, energieffektivitetsklasser (med en skala fra A til G), A (mest effektiv) til G (mindst effektiv), batteriholdbarhed pr. cyklus: 62 timer og 0 minutter pr. fuld batteriopladning, klasse E for holdbarhed ved gentagne frie fald, A (mest robust) til E (mindst robust), klasse C for reparerbarhed, A (mest reparerbar) til E (mindst reparerbar), batteriholdbarhed på 1000 cyklusser, IP-klassificering for støv- og vandbeskyttelse: IP42, forordning 2023/1669" />
+						</picture>
+						<noscript>
+					<picture class="image-energy-label energy-label-image">
+						<img src="/euro/energy-rating/a/shared/images/energy-labels/ipad/ipad-air-11-inch-m3-wifi/energy_label_ipad_air_11-inch_m3_wi-fi_a3266.png" alt="EU-energimærke, QR-kode og information, Apple-model A3266, klasse G, energieffektivitetsklasser (med en skala fra A til G), A (mest effektiv) til G (mindst effektiv), batteriholdbarhed pr. cyklus: 62 timer og 0 minutter pr. fuld batteriopladning, klasse E for holdbarhed ved gentagne frie fald, A (mest robust) til E (mindst robust), klasse C for reparerbarhed, A (mest reparerbar) til E (mindst reparerbar), batteriholdbarhed på 1000 cyklusser, IP-klassificering for støv- og vandbeskyttelse: IP42, forordning 2023/1669" />
+					</picture>
+				</noscript>
+					</div>
+					<div class="energy-info-image-wrapper">
+						<picture class="image-energy-info energy-info-image">
+							<img src="/euro/energy-rating/a/local/dk/ipad/ipad-air-11-inch-m3-wifi/images/product_information_sheet_ipad_air_11-inch_m3_wi-fi_a3266.png" loading="lazy" onload="window.__lp?.(event)" alt="Produktdatablad til 11&quot; iPad Air Wi-Fi. Model A3266. Leveret af Apple UK Ltd, 100 New Bridge Street, London EC4V 6JA. Enhedstype: tablet. Styresystem: iOS. Energieffektivitetsklasse for standard dynamikområde: G. Batterilevetid: 72 timer. Batterilevetid i cyklusser: ≥ 1000. Nominel batterikapacitet: 7606 mAh. Holdbarhedstest ved gentagne fald – fald uden defekt: ≥ 0. Holdbarhedsklasse ved gentagne fald: E. Kapslingsklasse: IP42. Skærmens ridsefasthed på Mohs' hårdhedsskala: 4. Påkrævet udgangseffekt for oplader: 15 W. Opladerstiktype: USB-C. Garanteret minimumsperiode for tilgængelighed af sikkerhedsopdateringer, fejlrettelser og funktionsopdateringer til styresystemet: 5 år. Reparerbarhedsklasse: C. Reparationsindeks: 2,59/5. Antal point for demonteringsdybde: 2,95/5. Antal point for fastgørelseselementer (type): 2,70/5. Antal point for værktøj: 2,65/5. Antal point for reservedele: 1,00/5. Antal point for softwareopdateringer: 1,00/5. Antal point for reparationsoplysninger: 5,00/5. Weblink til oplysninger om tilgængeligheden af reservedele for professionelle reparatører og slutbrugere: https://support.apple.com/self-service-repair. Weblink til vejledning i reparation for slutbrugere: https://support.apple.com/self-service-repair. Weblink til vejledende priser før skatter og afgifter: https://support.apple.com/self-service-repair. Produktet er omfattet af 24 måneders garanti." />
+						</picture>
+						<noscript>
+					<picture class="image-energy-info energy-info-image">
+						<img src="/euro/energy-rating/a/local/dk/ipad/ipad-air-11-inch-m3-wifi/images/product_information_sheet_ipad_air_11-inch_m3_wi-fi_a3266.png" alt="Produktdatablad til 11&quot; iPad Air Wi-Fi. Model A3266. Leveret af Apple UK Ltd, 100 New Bridge Street, London EC4V 6JA. Enhedstype: tablet. Styresystem: iOS. Energieffektivitetsklasse for standard dynamikområde: G. Batterilevetid: 72 timer. Batterilevetid i cyklusser: ≥ 1000. Nominel batterikapacitet: 7606 mAh. Holdbarhedstest ved gentagne fald – fald uden defekt: ≥ 0. Holdbarhedsklasse ved gentagne fald: E. Kapslingsklasse: IP42. Skærmens ridsefasthed på Mohs' hårdhedsskala: 4. Påkrævet udgangseffekt for oplader: 15 W. Opladerstiktype: USB-C. Garanteret minimumsperiode for tilgængelighed af sikkerhedsopdateringer, fejlrettelser og funktionsopdateringer til styresystemet: 5 år. Reparerbarhedsklasse: C. Reparationsindeks: 2,59/5. Antal point for demonteringsdybde: 2,95/5. Antal point for fastgørelseselementer (type): 2,70/5. Antal point for værktøj: 2,65/5. Antal point for reservedele: 1,00/5. Antal point for softwareopdateringer: 1,00/5. Antal point for reparationsoplysninger: 5,00/5. Weblink til oplysninger om tilgængeligheden af reservedele for professionelle reparatører og slutbrugere: https://support.apple.com/self-service-repair. Weblink til vejledning i reparation for slutbrugere: https://support.apple.com/self-service-repair. Weblink til vejledende priser før skatter og afgifter: https://support.apple.com/self-service-repair. Produktet er omfattet af 24 måneders garanti." />
+					</picture>
+				</noscript>
+					</div>
+					<p><a href="https://regulatoryinfo.apple.com/cwt/api/ext/file?fileId=energyLabels/A3266_V1/A3266/A3266_Product_Information_Sheet_DK_Danish.pdf" aria-label="Se produktdatabladet (PDF) til 11&quot; iPad Air (M3) (Wi-Fi)" data-analytics-title="ipad air 11-inch m3 wi-fi - download pdf" data-analytics-exit-link="true" target="_blank" class="energy-modal-link typography-energy-modal-link icon icon-after icon-external">Se produktdatabladet (PDF)</a></p>
+				</div>
+			</div>
+			<div class="ric-modal-close-button-wrapper" data-modal-close-button-wrapper="">
+				<button class="ric-modal-close-button" data-modal-close-button="" data-modal-close="" aria-label="Luk" data-analytics-title="close modal - modal-ipad-air-11-inch-m3-wifi" data-analytics-click="prop3:close modal - modal-ipad-air-11-inch-m3-wifi">
+					<span class="ric-modal-close-icon" data-modal-close-icon="">
+						<svg class="icon-control icon-control-close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+							<path d="m20.1211 18 3.4395-3.4395c.5859-.5854.5859-1.5356 0-2.1211-.5859-.5859-1.5352-.5859-2.1211 0l-3.4395 3.4395-3.4395-3.4395c-.5859-.5859-1.5352-.5859-2.1211 0-.5859.5854-.5859 1.5356 0 2.1211l3.4395 3.4395-3.4395 3.4395c-.5859.5854-.5859 1.5356 0 2.1211.293.293.6768.4395 1.0605.4395s.7676-.1465 1.0605-.4395l3.4395-3.4395 3.4395 3.4395c.293.293.6768.4395 1.0605.4395s.7676-.1465 1.0605-.4395c.5859-.5854.5859-1.5356 0-2.1211l-3.4395-3.4395z"></path>
+						</svg>
+					</span>
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+
+
+
+	<div data-modal-component-list="Modal" id="modal-ipad-pro-11-inch-m4-wifi" aria-label="Energiinformation om 11&quot; iPad Pro (M4) (Wi-Fi)" aria-modal="true" role="dialog" tabindex="-1" class="ric-modal ric-modal-scrim ric-modal-scrim-blur ric-modal-page-overlay energy-modal-container ric-modal-scrollable" data-modal-container="" data-modal-close="" >
+	<div class="ric-modal-overlay-container" data-modal-overlay-container="" data-modal-close="">
+		<div class="ric-modal-overlay" data-modal-overlay="" style="opacity: 1;">
+			<div class="ric-modal-content-wrapper" data-modal-content-wrapper="" data-analytics-activitymap-region-id="Energy Class modal" data-modal-scroll-group-name="iPad Pro 11″ (M4) (Wi-Fi) - energy modal">
+				<div id="modal-content-modal-ipad-pro-11-inch-m4-wifi" class="energy-modal-content modal-content">
+					<h3 class="energy-modal-header typography-headline-reduced">Energiinformation om 11" iPad Pro (M4) (Wi‑Fi)</h3>
+					<div class="energy-modal-tile">
+						<picture class="image-energy-label energy-label-image">
+							<img src="/euro/energy-rating/a/shared/images/energy-labels/ipad/ipad-pro-11-inch-m4-wifi/energy_label_ipad_pro_11-inch_m4_wi-fi_a2836.png" loading="lazy" onload="window.__lp?.(event)" alt="EU-energimærke, QR-kode og information, Apple-model A2836, klasse G, energieffektivitetsklasser (med en skala fra A til G), A (mest effektiv) til G (mindst effektiv), batteriholdbarhed pr. cyklus: 73 timer og 0 minutter pr. fuld batteriopladning, klasse E for holdbarhed ved gentagne frie fald, A (mest robust) til E (mindst robust), klasse C for reparerbarhed, A (mest reparerbar) til E (mindst reparerbar), batteriholdbarhed på 1000 cyklusser, IP-klassificering for støv- og vandbeskyttelse: IP42, forordning 2023/1669" />
+						</picture>
+						<noscript>
+					<picture class="image-energy-label energy-label-image">
+						<img src="/euro/energy-rating/a/shared/images/energy-labels/ipad/ipad-pro-11-inch-m4-wifi/energy_label_ipad_pro_11-inch_m4_wi-fi_a2836.png" alt="EU-energimærke, QR-kode og information, Apple-model A2836, klasse G, energieffektivitetsklasser (med en skala fra A til G), A (mest effektiv) til G (mindst effektiv), batteriholdbarhed pr. cyklus: 73 timer og 0 minutter pr. fuld batteriopladning, klasse E for holdbarhed ved gentagne frie fald, A (mest robust) til E (mindst robust), klasse C for reparerbarhed, A (mest reparerbar) til E (mindst reparerbar), batteriholdbarhed på 1000 cyklusser, IP-klassificering for støv- og vandbeskyttelse: IP42, forordning 2023/1669" />
+					</picture>
+				</noscript>
+					</div>
+					<div class="energy-info-image-wrapper">
+						<picture class="image-energy-info energy-info-image">
+							<img src="/euro/energy-rating/a/local/dk/ipad/ipad-pro-11-inch-m4-wifi/images/product_information_sheet_ipad_pro_11-inch_m4_wi-fi_a2836.png" loading="lazy" onload="window.__lp?.(event)" alt="Produktdatablad til 11&quot; iPad Pro Wi-Fi, model A2836. Leveret af Apple Distribution International Ltd, Hollyhill Industrial Estate. Cork, Irland T23 YK84. Enhedstype: tablet. Styresystem: iOS. Energieffektivitetsklasse: G. Batteri kan udskiftes af brugeren: nej. Batteritid: 73 timer. Batterilevetid i cyklusser: ≥ 1000. Nominel batterikapacitet: 8160 mAh. Holdbarhedstest ved gentagne fald – fald uden defekt: ≥ 0. Holdbarhedsklasse ved gentagne fald: E. Kapslingsklasse: IP42. Skærmens ridsefasthed på Mohs' hårdhedsskala: 4. Påkrævet udgangseffekt for oplader: 15 W. Opladerstiktype: USB-C. Garanteret minimumsperiode for tilgængelighed af sikkerhedsopdateringer, fejlrettelser og funktionsopdateringer til styresystemet: 5 år. Reparerbarhedsklasse: C. Reparationsindeks: 2,70/5. Antal point for demonteringsdybde: 3,50/5. Antal point for fastgørelseselementer: 2,70/5. Antal point for værktøj: 2,50/5. Antal point for reservedele: 1,00/5. Antal point for softwareopdateringer: 1,00/5. Antal point for reparationsoplysninger: 5,00/5. Weblink til oplysninger om tilgængeligheden af reservedele for professionelle reparatører og slutbrugere: https://support.apple.com/self-service-repair. Weblink til vejledning i reparation for slutbrugere: https://support.apple.com/self-service-repair. Weblink til vejledende priser før skatter og afgifter: https://support.apple.com/self-service-repair. Produktet er omfattet af 24 måneders garanti." />
+						</picture>
+						<noscript>
+					<picture class="image-energy-info energy-info-image">
+						<img src="/euro/energy-rating/a/local/dk/ipad/ipad-pro-11-inch-m4-wifi/images/product_information_sheet_ipad_pro_11-inch_m4_wi-fi_a2836.png" alt="Produktdatablad til 11&quot; iPad Pro Wi-Fi, model A2836. Leveret af Apple Distribution International Ltd, Hollyhill Industrial Estate. Cork, Irland T23 YK84. Enhedstype: tablet. Styresystem: iOS. Energieffektivitetsklasse: G. Batteri kan udskiftes af brugeren: nej. Batteritid: 73 timer. Batterilevetid i cyklusser: ≥ 1000. Nominel batterikapacitet: 8160 mAh. Holdbarhedstest ved gentagne fald – fald uden defekt: ≥ 0. Holdbarhedsklasse ved gentagne fald: E. Kapslingsklasse: IP42. Skærmens ridsefasthed på Mohs' hårdhedsskala: 4. Påkrævet udgangseffekt for oplader: 15 W. Opladerstiktype: USB-C. Garanteret minimumsperiode for tilgængelighed af sikkerhedsopdateringer, fejlrettelser og funktionsopdateringer til styresystemet: 5 år. Reparerbarhedsklasse: C. Reparationsindeks: 2,70/5. Antal point for demonteringsdybde: 3,50/5. Antal point for fastgørelseselementer: 2,70/5. Antal point for værktøj: 2,50/5. Antal point for reservedele: 1,00/5. Antal point for softwareopdateringer: 1,00/5. Antal point for reparationsoplysninger: 5,00/5. Weblink til oplysninger om tilgængeligheden af reservedele for professionelle reparatører og slutbrugere: https://support.apple.com/self-service-repair. Weblink til vejledning i reparation for slutbrugere: https://support.apple.com/self-service-repair. Weblink til vejledende priser før skatter og afgifter: https://support.apple.com/self-service-repair. Produktet er omfattet af 24 måneders garanti." />
+					</picture>
+				</noscript>
+					</div>
+					<p><a href="https://regulatoryinfo.apple.com/cwt/api/ext/file?fileId=energyLabels/A2836_V1/A2836/A2836_Product_Information_Sheet_DK_Danish.pdf" aria-label="Se produktdatabladet (PDF) til 11&quot; iPad Pro (M4) (Wi-Fi)" data-analytics-title="ipad pro 11-inch m4 wi-fi - download pdf" data-analytics-exit-link="true" target="_blank" class="energy-modal-link typography-energy-modal-link icon icon-after icon-external">Se produktdatabladet (PDF)</a></p>
+				</div>
+			</div>
+			<div class="ric-modal-close-button-wrapper" data-modal-close-button-wrapper="">
+				<button class="ric-modal-close-button" data-modal-close-button="" data-modal-close="" aria-label="Luk" data-analytics-title="close modal - modal-ipad-pro-11-inch-m4-wifi" data-analytics-click="prop3:close modal - modal-ipad-pro-11-inch-m4-wifi">
+					<span class="ric-modal-close-icon" data-modal-close-icon="">
+						<svg class="icon-control icon-control-close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+							<path d="m20.1211 18 3.4395-3.4395c.5859-.5854.5859-1.5356 0-2.1211-.5859-.5859-1.5352-.5859-2.1211 0l-3.4395 3.4395-3.4395-3.4395c-.5859-.5859-1.5352-.5859-2.1211 0-.5859.5854-.5859 1.5356 0 2.1211l3.4395 3.4395-3.4395 3.4395c-.5859.5854-.5859 1.5356 0 2.1211.293.293.6768.4395 1.0605.4395s.7676-.1465 1.0605-.4395l3.4395-3.4395 3.4395 3.4395c.293.293.6768.4395 1.0605.4395s.7676-.1465 1.0605-.4395c.5859-.5854.5859-1.5356 0-2.1211l-3.4395-3.4395z"></path>
+						</svg>
+					</span>
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+	</main>
+
+	<footer
+		 class="no-js"
+		lang="da-DK"
+		id="ac-globalfooter"
+		data-analytics-region="global footer"
+		role="contentinfo"
+		aria-labelledby="ac-gf-label"
+	>
+		<div class="ac-gf-content" data-nosnippet>
+			<h2 class="ac-gf-label" id="ac-gf-label">Apple-bundtekst</h2>
+			<section class="ac-gf-sosumi" aria-label="Fodnoter">
+				
+					<section class="energy-flag-wrapper">
+						<ul class="energy-flag-list">
+							
+
+
+
+
+
+
+
+
+
+
+
+
+	<li data-rating-product="ipad-pro-11-inch-m4-wifi">iPad Pro 11" (M4) (Wi-Fi) 
+	<span class="energy-flag">
+			<img class="energy-flag-img" alt="" src="/v/energy-rating/a/images/arrows/energy_arrow_g.svg" aria-hidden="true" />
+	<button class="energy-flag-cta"
+		aria-label="Energiklasse, 11&quot; iPad Pro (M4) (Wi-Fi), klasse G på en skala fra A til G, få mere at vide"
+		data-modal-open="modal-ipad-pro-11-inch-m4-wifi"
+		data-analytics-title="ipad pro 11-inch m4 wi-fi - energy class g"
+		data-analytics-click="prop3:open modal - Energy Class">
+	</button>
+	</span>
+</li>
+
+
+
+
+
+	<li data-rating-product="ipad-air-11-inch-m3-wifi">iPad Air 11" (M3) (Wi-Fi) 
+	<span class="energy-flag">
+			<img class="energy-flag-img" alt="" src="/v/energy-rating/a/images/arrows/energy_arrow_g.svg" aria-hidden="true" />
+	<button class="energy-flag-cta"
+		aria-label="Energiklasse, 11&quot; iPad Air (M3) (Wi-Fi), klasse G på en skala fra A til G, få mere at vide"
+		data-modal-open="modal-ipad-air-11-inch-m3-wifi"
+		data-analytics-title="ipad air 11-inch m3 wi-fi - energy class g"
+		data-analytics-click="prop3:open modal - Energy Class">
+	</button>
+	</span>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+						</ul>
+					</section>
+				
+				<ul>
+					<li><span id='footnote-1'>1. Funk­tionen Høreapparat er blevet markedsførings­godkendt af internationale sundheds­myndigheder. Funktion­erne Høreprøve og Høreapparat under­støttes på AirPods Pro 2 med den nyeste firmware i kombination med en kompa­tibel iPhone eller iPad med iOS 18 eller iPadOS 18 og nyere og er beregnet til personer, der er fyldt 18 år. Funk­tionen Høreapparat vil også blive under­støttet på en kompa­tibel Mac med macOS Sequoia eller nyere. Den er beregnet til personer med let til moderat hørenedsættelse. Funktioner til Høresundhed kan blive ændret. Visse funktioner er ikke tilgænge­lige på alle sprog eller i alle om­råder. <a href="/dk/airpods-pro/feature-availability/" aria-label="Se en liste over områder med tilgængelige funktioner til Høresundhed">Se hele listen</a>.</span></li>
+					<li><span id='footnote-2'>2. Fås i to modeller: AirPods 4 og AirPods 4 med Aktiv støj­reduktion.</span></li>
+					<li><span id='footnote-3'>3. Den estimerede værdi varierer alt efter din indleverede enheds stand, alder og konfiguration. Du skal være mindst 18 år gammel for at kunne bytte dig til tilskud eller et Apple Gift Card. Du kan få flere oplysninger om ombytning af kvalificerede enheder hos <a href="https://dk-appletradein.likewize.com/">Apples byttepartner</a>. Der kan være restriktioner og begrænsninger. Betalingerne er baseret på, at den modtagne enhed stemmer overens med den beskrivelse, du gav af den, da estimatet blev afgivet. Apple forbeholder sig retten til at afvise eller begrænse antallet af enheder uanset årsag.</span></li>
+					<li>Apple TV+ kræver abonnement.</li>
+				</ul>
+			</section>
+			
+    	<nav class="ac-gf-directory with-5-columns" aria-label="Apple Directory" role="navigation">
+		<div class="ac-gf-directory-column">
+			<div class="ac-gf-directory-column-section">
+				<h3 class="ac-gf-directory-column-section-title">
+					<span class="ac-gf-directory-column-section-title-text">Shop og lær</span>
+					<button class="ac-gf-directory-column-section-title-button" disabled>
+						<span class="ac-gf-directory-column-section-title-text">Shop og lær</span>
+						<span class="ac-gf-directory-column-section-title-icon" aria-hidden="true"></span>
+					</button>
+				</h3>
+				<ul id="footer-directory-column-section-products" class="ac-gf-directory-column-section-list" role="list">
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/shop/goto/store" data-analytics-title="store">Store</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/mac/" data-analytics-title="mac">Mac</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/ipad/" data-analytics-title="ipad">iPad</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/iphone/" data-analytics-title="iphone">iPhone</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/watch/" data-analytics-title="watch">Watch</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/airpods/" data-analytics-title="airpods">AirPods</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/tv-home/" data-analytics-title="tv and home">TV og hjem</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/airtag/" data-analytics-title="airtag">AirTag</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/shop/goto/buy_accessories" data-analytics-title="accessories">Tilbehør</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/shop/goto/giftcards" data-analytics-title="gift cards">Gavekort</a></li>
+				</ul>
+			</div>
+			<div class="ac-gf-directory-column-section">
+				<h3 class="ac-gf-directory-column-section-title">
+					<span class="ac-gf-directory-column-section-title-text">Apple Wallet</span>
+					<button class="ac-gf-directory-column-section-title-button" disabled>
+						<span class="ac-gf-directory-column-section-title-text">Apple Wallet</span>
+						<span class="ac-gf-directory-column-section-title-icon" aria-hidden="true"></span>
+					</button>
+				</h3>
+				<ul id="footer-directory-column-section-applewallet" class="ac-gf-directory-column-section-list" role="list">
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/apple-pay/" data-analytics-title="apple pay">Apple Pay</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="ac-gf-directory-column">
+			<div class="ac-gf-directory-column-section">
+				<h3 class="ac-gf-directory-column-section-title">
+					<span class="ac-gf-directory-column-section-title-text">Konto</span>
+					<button class="ac-gf-directory-column-section-title-button" disabled>
+						<span class="ac-gf-directory-column-section-title-text">Konto</span>
+						<span class="ac-gf-directory-column-section-title-icon" aria-hidden="true"></span>
+					</button>
+				</h3>
+				<ul id="footer-directory-column-section-accounts" class="ac-gf-directory-column-section-list" role="list">
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="https://account.apple.com/dk/" data-analytics-title="apple account" data-analytics-exit-link>Administrer din Apple-konto</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/shop/goto/account" data-analytics-title="apple store account">Apple Store-konto</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="https://www.icloud.com" data-analytics-title="icloud.com" data-analytics-exit-link>iCloud.com</a></li>
+				</ul>
+			</div>
+			<div class="ac-gf-directory-column-section">
+				<h3 class="ac-gf-directory-column-section-title">
+					<span class="ac-gf-directory-column-section-title-text">Underholdning</span>
+					<button class="ac-gf-directory-column-section-title-button" disabled>
+						<span class="ac-gf-directory-column-section-title-text">Underholdning</span>
+						<span class="ac-gf-directory-column-section-title-icon" aria-hidden="true"></span>
+					</button>
+				</h3>
+				<ul id="footer-directory-column-section-entertainment" class="ac-gf-directory-column-section-list" role="list">
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/apple-one/" data-analytics-title="apple one">Apple One</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/apple-tv-plus/" data-analytics-title="apple tv plus">Apple TV+</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/apple-music/" data-analytics-title="apple music">Apple Music</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/apple-arcade/" data-analytics-title="apple arcade">Apple Arcade</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/app-store/" data-analytics-title="app store">App Store</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="ac-gf-directory-column">
+			<div class="ac-gf-directory-column-section">
+				<h3 class="ac-gf-directory-column-section-title">
+					<span class="ac-gf-directory-column-section-title-text">Apple Store</span>
+					<button class="ac-gf-directory-column-section-title-button" disabled>
+						<span class="ac-gf-directory-column-section-title-text">Apple Store</span>
+						<span class="ac-gf-directory-column-section-title-icon" aria-hidden="true"></span>
+					</button>
+				</h3>
+				<ul id="footer-directory-column-section-storeservices" class="ac-gf-directory-column-section-list" role="list">
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="https://apps.apple.com/dk/app/apple-store/id375380948?l&#x3D;da" data-analytics-title="apple store app" data-analytics-exit-link>Apple Store-appen</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/shop/goto/trade_in" data-analytics-title="apple trade in">Apple Trade In</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/shop/goto/order/list" data-analytics-title="order status">Ordrestatus</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/shop/goto/help" data-analytics-title="shopping help">Hjælp til at shoppe</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="ac-gf-directory-column">
+			<div class="ac-gf-directory-column-section">
+				<h3 class="ac-gf-directory-column-section-title">
+					<span class="ac-gf-directory-column-section-title-text">Til erhvervslivet</span>
+					<button class="ac-gf-directory-column-section-title-button" disabled>
+						<span class="ac-gf-directory-column-section-title-text">Til erhvervslivet</span>
+						<span class="ac-gf-directory-column-section-title-icon" aria-hidden="true"></span>
+					</button>
+				</h3>
+				<ul id="footer-directory-column-section-business" class="ac-gf-directory-column-section-list" role="list">
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/business/" data-analytics-title="apple and business">Apple og erhvervslivet</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/retail/business/" data-analytics-title="shop for business">Køb til din virksomhed</a></li>
+				</ul>
+			</div>
+			<div class="ac-gf-directory-column-section">
+				<h3 class="ac-gf-directory-column-section-title">
+					<span class="ac-gf-directory-column-section-title-text">Til uddannelsen</span>
+					<button class="ac-gf-directory-column-section-title-button" disabled>
+						<span class="ac-gf-directory-column-section-title-text">Til uddannelsen</span>
+						<span class="ac-gf-directory-column-section-title-icon" aria-hidden="true"></span>
+					</button>
+				</h3>
+				<ul id="footer-directory-column-section-education" class="ac-gf-directory-column-section-list" role="list">
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/education/" data-analytics-title="apple and education">Apple og uddannelse</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/shop/goto/educationrouting" data-analytics-title="shop for university">Køb til uddannelsen</a></li>
+				</ul>
+			</div>
+			<div class="ac-gf-directory-column-section">
+				<h3 class="ac-gf-directory-column-section-title">
+					<span class="ac-gf-directory-column-section-title-text">Til sundhedssektoren</span>
+					<button class="ac-gf-directory-column-section-title-button" disabled>
+						<span class="ac-gf-directory-column-section-title-text">Til sundhedssektoren</span>
+						<span class="ac-gf-directory-column-section-title-icon" aria-hidden="true"></span>
+					</button>
+				</h3>
+				<ul id="footer-directory-column-section-healthcare" class="ac-gf-directory-column-section-list" role="list">
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/healthcare/" data-analytics-title="apple in healthcare">Apple i sundhedssektoren</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/healthcare/mac/" data-analytics-title="mac in healthcare">Mac i sundhedssektoren</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/healthcare/apple-watch/" data-analytics-title="health on apple watch">Sundhed på Apple Watch</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="ac-gf-directory-column">
+			<div class="ac-gf-directory-column-section">
+				<h3 class="ac-gf-directory-column-section-title">
+					<span class="ac-gf-directory-column-section-title-text">Apples værdier</span>
+					<button class="ac-gf-directory-column-section-title-button" disabled>
+						<span class="ac-gf-directory-column-section-title-text">Apples værdier</span>
+						<span class="ac-gf-directory-column-section-title-icon" aria-hidden="true"></span>
+					</button>
+				</h3>
+				<ul id="footer-directory-column-section-responsibility" class="ac-gf-directory-column-section-list" role="list">
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/accessibility/" data-analytics-title="accessibility">Tilgængelighed</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/environment/" data-analytics-title="environment">Environment</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/privacy/" data-analytics-title="privacy">Anonymitet</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/supply-chain/" data-analytics-title="supply chain innovation">Nye takter i forsyningskæden</a></li>
+				</ul>
+			</div>
+			<div class="ac-gf-directory-column-section">
+				<h3 class="ac-gf-directory-column-section-title">
+					<span class="ac-gf-directory-column-section-title-text">Om Apple</span>
+					<button class="ac-gf-directory-column-section-title-button" disabled>
+						<span class="ac-gf-directory-column-section-title-text">Om Apple</span>
+						<span class="ac-gf-directory-column-section-title-icon" aria-hidden="true"></span>
+					</button>
+				</h3>
+				<ul id="footer-directory-column-section-about" class="ac-gf-directory-column-section-list" role="list">
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/newsroom/" data-analytics-title="newsroom">Newsroom</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/leadership/" data-analytics-title="apple leadership">Apples ledelse</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/careers/dk/" data-analytics-title="career opportunities">Karrieremuligheder</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/legal/warranty/statutoryrights.html" data-analytics-title="warranty">Garanti</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="https://investor.apple.com/" data-analytics-title="investors" data-analytics-exit-link>Investorer</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/compliance/" data-analytics-title="ethics and compliance">Etik og efterlevelse af regler</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/job-creation/" data-analytics-title="european job creation">Jobskabelse i Europa</a></li>
+					<li class="ac-gf-directory-column-section-item" role="listitem"><a class="ac-gf-directory-column-section-link" href="/dk/contact/" data-analytics-title="contact apple">Kontakt Apple</a></li>
+				</ul>
+			</div>
+		</div>
+	</nav>
+
+    	<section class="ac-gf-footer">
+		<div class="ac-gf-footer-shop" x-ms-format-detection="none">
+			Flere måder at shoppe på: <a href="https://locate.apple.com/dk/da/" data-analytics-title="other retailers or resellers" data-analytics-exit-link>Find en forhandler</a> i nærheden. <span class="nowrap">Eller ring <a href="tel:80 24 08 35">80 24 08 35</a>.</span>
+		</div>
+		<div class="ac-gf-footer-locale">
+			<a class="ac-gf-footer-locale-link" href="/choose-country-region/" title="Vælg dit land eller område" aria-label="Danmark. Vælg dit land eller område" data-analytics-title="choose your country">Danmark</a>
+		</div>
+		<div class="ac-gf-footer-legal">
+			<div class="ac-gf-footer-legal-copyright">Copyright ©
+				
+				2025
+				 Apple Inc. Alle rettigheder forbeholdes.
+			</div>
+			<ul class="ac-gf-footer-legal-links" role="list">
+				<li class="ac-gf-footer-legal-links-item" role="listitem">
+					<a class="ac-gf-footer-legal-link" href="/dk/legal/privacy/" data-analytics-title="privacy policy">Anonymitetspolitik</a>
+				</li>
+				<li class="ac-gf-footer-legal-links-item" role="listitem">
+					<a class="ac-gf-footer-legal-link" href="/legal/privacy/dk/cookies/" data-analytics-title="use of cookies">Brug af cookies</a>
+				</li>
+				<li class="ac-gf-footer-legal-links-item" role="listitem">
+					<a class="ac-gf-footer-legal-link" href="/dk/legal/terms/site.html" data-analytics-title="terms of use">Betingelser for brug</a>
+				</li>
+				<li class="ac-gf-footer-legal-links-item" role="listitem">
+					<a class="ac-gf-footer-legal-link" href="/dk/shop/goto/help/sales_refunds" data-analytics-title="sales and refunds">Salg og refundering</a>
+				</li>
+				<li class="ac-gf-footer-legal-links-item" role="listitem">
+					<a class="ac-gf-footer-legal-link" href="/dk/legal/" data-analytics-title="legal">Juridisk tekst</a>
+				</li>
+				<li class="ac-gf-footer-legal-links-item" role="listitem">
+					<a class="ac-gf-footer-legal-link" href="/dk/sitemap/" data-analytics-title="site map">Oversigt</a>
+				</li>
+			</ul>
+		</div>
+	</section>
+
+    <script type="text/javascript" src="/ac/globalfooter/8/da_DK/scripts/ac-globalfooter.built.js"></script>
+
+<script type="application/ld+json">
+	{
+		"@context": "http://schema.org",
+		"@id": "https://www.apple.com/#organization",
+		"@type": "Organization",
+		"name": "Apple",
+		"url": "https://www.apple.com/",
+		"logo": "https://www.apple.com/ac/structured-data/images/knowledge_graph_logo.png?202409130300",
+		"subOrganization": {
+			"@type": "Organization",
+			"name": "Apple Support",
+			"url": "https://support.apple.com",
+	    "@id": "https://support.apple.com/#organization"
+		},
+		"contactPoint": [
+			{
+				"@type": "ContactPoint",
+				"telephone": "+1-800-692-7753",
+				"contactType": "sales",
+				"areaServed": "US"
+			},
+			{
+				"@type": "ContactPoint",
+				"telephone": "+1-800-275-2273",
+				"contactType": "technical support",
+				"areaServed": "US",
+				"availableLanguage": ["EN", "ES"]
+			},
+			{
+				"@type": "ContactPoint",
+				"telephone": "+1-800-275-2273",
+				"contactType": "customer support",
+				"areaServed": "US",
+				"availableLanguage": ["EN", "ES"]
+			}
+		],
+		"sameAs": [
+			"http://www.wikidata.org/entity/Q312",
+			"https://www.youtube.com/user/Apple",
+			"https://www.linkedin.com/company/apple",
+			"https://www.facebook.com/Apple",
+			"https://www.twitter.com/Apple"
+		]
+	}
+</script>
+
+<script type="text/javascript" src="/ac/localeswitcher/4/da_DK/scripts/localeswitcher.built.js"></script>
+
+
+
+		</div>
+	</footer>
+
+
+	<script type="application/ld+json">
+	{
+		"@context": "http://schema.org",
+		"@id": "https://www.apple.com/dk/#webpage",
+		"@type": "WebPage",
+		"url": "https://www.apple.com/dk/",
+		"name": "Apple (Danmark)"
+	}
+</script>
+
+
+	<script src="/v/home/cf/built/scripts/main.built.js" type="text/javascript" charset="utf-8"></script>
+	
+<link rel="stylesheet" href="/ac/ac-films/7.2.0/styles/modal.css" />
+<script src="/ac/ac-films/7.2.0/scripts/autofilms.built.js" type="text/javascript"></script>
+	
+
+<script src="/metrics/data-relay/1.1.4/scripts/data-relay.js" type="text/javascript" charset="utf-8"></script>
+<script src="/metrics/data-relay/1.1.4/scripts/auto-relay.js" type="text/javascript" charset="utf-8"></script>
+
+	
+	
+
+
+
+<script src="/ac/pricing/latest-1/scripts/autopricing.built.js" type="text/javascript"></script>
+	
+<script src="/v/energy-rating/a/built/scripts/energy-modal/main.built.js" type="text/javascript" charset="utf-8"></script>
+
+	</body>
+</html>
+
+						
+					
+
+				
+
+				
+
+

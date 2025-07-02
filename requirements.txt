@@ -1,0 +1,17 @@
+# requirements.txt
+httpx[http2]
+beautifulsoup4
+lxml
+pytest
+diskcache
+pytest-asyncio
+tenacity
+PyYAML
+python-dotenv
+pandas
+openpyxl
+tqdm
+certifi
+fake-useragent
+playwright
+respx

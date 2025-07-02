@@ -1,0 +1,1145 @@
+<!DOCTYPE html><html lang="da" class="position-relative"><head prefix="og: http://ogp.me/ns#">
+     <meta charset="utf-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <link rel="dns-prefetch" href="//ww2.proshop.dk">
+         <script type="text/javascript" async="" src="https://ws.cs.1worldsync.com/1def94fb/script/1df6b731e6?cpn=S26682103&amp;mf=SanDisk&amp;pn=SDSDXXD-256G-GN4IN&amp;lang=da-DK&amp;market=DK&amp;host=www.proshop.dk&amp;nld=1"></script><script type="text/javascript" async="" src="https://ww2.proshop.dk/gtag/js?id=G-KNBWHMY9GP&amp;cx=c&amp;gtm=45Fe56r1v9115630387za204&amp;sign=d6990490ee0806445530dda4eb0e23a46f3b2041e4e348288186fdd5c3508d5d_20250701&amp;tag_exp=101509157~103116026~103200004~103233427~103308216~103308218~103351869~103351871~104684208~104684211~104718208~104784387~104784389~104885889~104885891"></script><script async="" src="//ww2.proshop.dk/gtm.js?id=GTM-PCQSS3W"></script><script>var proshopGtmServerDataLayer = [{}];</script>
+     <script type="module">
+    window.dataLayer = window.dataLayer || [];
+    function getElements() {
+        return document.querySelectorAll('[data-gtm]');
+    }
+    getElements().forEach(el => {
+        window.dataLayer.push(JSON.parse(atob(el.dataset.gtm)));
+    });
+    let btns = document.querySelectorAll('button[data-gtm-item-id]');
+    btns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            let gtmId = this.getAttribute('data-gtm-item-id');
+            getElements().forEach(el => {
+                var gtmJson = JSON.parse(atob(el.dataset.gtm));
+                for (var i = 0; i <= gtmJson.ecommerce.items.length; i++) {
+                    if (gtmJson.ecommerce.items[i].item_id !== gtmId) {
+                        continue;
+                    }
+                    window.dataLayer.push({ event: 'add_to_cart', ecommerce: { items: gtmJson.ecommerce.items[i] } });
+                    return;
+                }
+            });
+        },false);
+    });
+    let basketBuyBtn = document.querySelector('#CommerceBasketApp a.site-btn-green');
+    if (basketBuyBtn) {
+        basketBuyBtn.addEventListener('click', function (e) {
+            let basketLines = document.querySelectorAll('#basketLines li input');
+            basketLines.forEach((element) => {
+                let gtmJson = JSON.parse(this.getAttribute("data-gtm-click"));
+                let theId = element.getAttribute("id");
+                for (let index = 0; gtmJson.ecommerce.items.length; index++) {
+                    if (gtmJson.ecommerce.items[index].item_id !== theId) {
+                        continue;
+                    }
+                    gtmJson.ecommerce.items[index].quantity = element.value;
+                    window.dataLayer.push({ ecommerce: null })
+                    window.dataLayer.push(gtmJson);
+                    break;
+                }
+            });
+        });
+    }
+    let paymentTypeButtons = document.getElementsByName("paymentOption");    
+    paymentTypeButtons.forEach(function (paymentTypeButton) {
+        paymentTypeButton.addEventListener('click', function () {
+            window.dataLayer.push({ ecommerce: null })
+            window.dataLayer.push(JSON.parse(atob(paymentTypeButton.getAttribute('data-gtm-payment'))));
+        });
+    });
+</script>
+     <script type="text/javascript">
+    var apps = {};
+    apps.queue = [];
+    apps.register = function (rootContainer, app) {
+        if (typeof registerApp != 'undefined')
+            registerApp(rootContainer, app)
+        else {
+            apps.queue.push({ rootContainer, app });
+        }
+    }
+</script>
+     
+    
+
+     <title>SanDisk Extreme PRO SD - 200MB/s - 256GB | På lager | Billig</title>
+              <link rel="canonical" href="https://www.proshop.dk/Hukommelseskort/SanDisk-Extreme-PRO-SD-200MBs-256GB/3077374">
+         <meta property="og:url" content="https://www.proshop.dk/Hukommelseskort/SanDisk-Extreme-PRO-SD-200MBs-256GB/3077374">
+              <meta name="description" content="309,00 kr. SDXC flashhukommelseskort, kapacitet: 256 GB, overførselshastighed: op til 200MB/s (læs) / op til 140MB/s (skriv), hastighedsklasse: SD Class: C10 / UHS Class: UHS-I / U Class: U3 / Video Class: V30.
+
+• software: SanDisk RescuePRO Deluxe
+
+• Egenskaber: SanDisk QuickFlow-teknology.">
+         <meta property="og:description" content="309,00 kr. SDXC flashhukommelseskort, kapacitet: 256 GB, overførselshastighed: op til 200MB/s (læs) / op til 140MB/s (skriv), hastighedsklasse: SD Class: C10 / UHS Class: UHS-I / U Class: U3 / Video Class: V30.
+
+• software: SanDisk RescuePRO Deluxe
+
+• Egenskaber: SanDisk QuickFlow-teknology.">
+     <meta property="og:title" content="SanDisk Extreme PRO SD - 200MB/s - 256GB | På lager | Billig">
+     <meta property="og:type" content="website">
+     <meta property="og:image" content="/Images/300x251/3077374_9ff742f1ee31.jpg">
+     <link rel="apple-touch-icon-precomposed" sizes="57x57" href="/apple-touch-icon-57x57.png">
+     <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114x114.png">
+     <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72x72.png">
+     <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144x144.png">
+     <link rel="apple-touch-icon-precomposed" sizes="60x60" href="/apple-touch-icon-60x60.png">
+     <link rel="apple-touch-icon-precomposed" sizes="120x120" href="/apple-touch-icon-120x120.png">
+     <link rel="apple-touch-icon-precomposed" sizes="76x76" href="/apple-touch-icon-76x76.png">
+     <link rel="apple-touch-icon-precomposed" sizes="152x152" href="/apple-touch-icon-152x152.png">
+     <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+     <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+     <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+     <link rel="icon" type="image/png" href="/favicon-128.png" sizes="128x128">
+     <meta name="application-name" content="PROSHOP">
+     <meta name="msapplication-TileColor" content="#FFFFFF">
+     <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+     <meta name="msapplication-square70x70logo" content="/mstile-70x70.png">
+     <meta name="msapplication-square150x150logo" content="/mstile-150x150.png">
+     <meta name="msapplication-wide310x150logo" content="/mstile-310x150.png">
+     <meta name="msapplication-square310x310logo" content="/mstile-310x310.png">
+     <meta name="format-detection" content="telephone=no">
+     
+    
+    
+<link rel="stylesheet" href="/dist/Proshop/site.fe780979.css">
+    
+    <link rel="stylesheet" href="/Content/Lightbox/v-1173573356/css.bundle.css">
+
+
+
+     
+    
+    <link rel="preload" href="/dist/js/shared.8624c6ee.js" as="script">
+<script src="/dist/js/shared.8624c6ee.js" defer=""></script>
+
+    <script type="text/javascript" src="/Content/v-1173573356/scriptsBase.bundle.js" defer=""></script>
+    <script src="/dist/js/menu.98017c24.js" defer=""></script>
+
+<script src="/dist/js/common.c941cdb1.js" defer=""></script>
+
+<script src="/dist/js/showmo.2.4db2c254.js" defer=""></script>
+
+
+    
+    <script src="/dist/js/productDetailsPage.c2c8cc5a.js" defer=""></script>
+
+<script src="/dist/js/showmo.2.4db2c254.js" defer=""></script>
+
+
+
+
+
+ <style type="text/css">.siteSlideEnergyLabelContainer {
+  margin-bottom: 15px;
+}
+.siteSlideEnergyLabelContainer img {
+  max-width: 60px;
+}
+.splide__slide .site-image-discount-splash div span,
+.splideElement .site-image-discount-splash div span {
+  margin-left: 0px;
+}
+</style><style type="text/css">@keyframes splide-loading{0%{transform:rotate(0)}to{transform:rotate(1turn)}}.splide--draggable>.splide__slider>.splide__track,.splide--draggable>.splide__track{-webkit-user-select:none;-ms-user-select:none;user-select:none}.splide--fade>.splide__slider>.splide__track>.splide__list,.splide--fade>.splide__track>.splide__list{display:block}.splide--fade>.splide__slider>.splide__track>.splide__list>.splide__slide,.splide--fade>.splide__track>.splide__list>.splide__slide{left:0;opacity:0;position:absolute;top:0;z-index:0}.splide--fade>.splide__slider>.splide__track>.splide__list>.splide__slide.is-active,.splide--fade>.splide__track>.splide__list>.splide__slide.is-active{opacity:1;position:relative;z-index:1}.splide--rtl{direction:rtl}.splide--ttb.is-active>.splide__slider>.splide__track>.splide__list,.splide--ttb.is-active>.splide__track>.splide__list{display:block}.splide__container{box-sizing:border-box;position:relative}.splide__list{-webkit-backface-visibility:hidden;backface-visibility:hidden;display:-ms-flexbox;display:flex;height:100%;margin:0!important;padding:0!important;transform-style:preserve-3d}.splide.is-initialized:not(.is-active) .splide__list{display:block}.splide__pagination{-ms-flex-align:center;align-items:center;display:-ms-flexbox;display:flex;-ms-flex-wrap:wrap;flex-wrap:wrap;-ms-flex-pack:center;justify-content:center;margin:0;pointer-events:none}.splide__pagination li{display:inline-block;line-height:1;list-style-type:none;margin:0;pointer-events:auto}.splide__progress__bar{width:0}.splide{outline:none;position:relative;visibility:hidden}.splide.is-initialized,.splide.is-rendered{visibility:visible}.splide__slide{-webkit-backface-visibility:hidden;backface-visibility:hidden;box-sizing:border-box;-ms-flex-negative:0;flex-shrink:0;list-style-type:none!important;margin:0;outline:none;position:relative}.splide__slide img{vertical-align:bottom}.splide__slider{position:relative}.splide__spinner{animation:splide-loading 1s linear infinite;border:2px solid #999;border-left-color:transparent;border-radius:50%;bottom:0;contain:strict;display:inline-block;height:20px;left:0;margin:auto;position:absolute;right:0;top:0;width:20px}.splide__track{overflow:hidden;position:relative;z-index:0}</style><style type="text/css">/*@cms-BtnDefaultBgColor: #0f2f56;*/
+</style><style type="text/css">/*@cms-BtnDefaultBgColor: #0f2f56;*/
+.slideContainer[data-v-d9c0b786] {
+  flex-wrap: wrap;
+}
+.splideElement[data-v-d9c0b786]:not(:first-child) {
+  margin-left: 10px;
+}
+.splideElement[data-v-d9c0b786] {
+  margin-bottom: 10px;
+  border: 1px solid #cbcbcb;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-basis: 0;
+  flex-grow: 1;
+  padding: 15px;
+  overflow: hidden;
+}
+.splide__cta[data-v-d9c0b786] {
+  display: block;
+  height: 100%;
+  transition: border-color 0.1s ease-in-out;
+}
+@media screen and (max-width: 991px) {
+.splideElement[data-v-d9c0b786] {
+    min-width: 40%;
+}
+.splideElement[data-v-d9c0b786]:nth-child(even) {
+    margin-left: 10px;
+}
+.splideElement[data-v-d9c0b786]:nth-child(odd) {
+    margin-left: 0px;
+}
+}
+</style><script type="text/javascript" src="https://cdn.cs.1worldsync.com/jsc/h1ws.js"></script><script type="text/javascript" async="" src="/Content/v-1173573356/testSeek.bundle.js"></script><script type="text/javascript" async="" src="/Content/v-1173573356/leadFamly.bundle.js"></script><script>(function(pr){
+    if (!pr) return;
+    let lg = document.createElement('div');
+    lg.id = 'ccs-logos';
+    pr.appendChild(lg);
+}(document.querySelector('div.col-xs-12.col-sm-7 .row')))
+</script><link rel="stylesheet" type="text/css" href="https://cdn.cs.1worldsync.com/redirect/gp-subscriber-files/1def94fb/1df6b731e6/Style.Minified/20220208165255.css"><style type="text/css">
+
+</style><script>
+
+ccs_cc_loge_5d96d6('183fbf26');
+function ccs_cc_gete_params_5d96d6(id){switch(id){
+case '183fbf26': return { et: 'ProductHookLoad', serverParams: {"ServerTime":"18","ResultCode":"12"} };break;
+}}
+function ccs_cc_loge_5d96d6(id, clientParams){
+var eventInfo = ccs_cc_gete_params_5d96d6(id); if(!eventInfo) return;
+ccs_cc_log.logEvent (eventInfo.et, 'SKey=1def94fb&LCID=1030&Market=DK&Locale=DA-DNK&ZoneId=1df6b731e6&ZoneVer=35&SkuId=26682103&MfgPn=SDSDXXD256GGN4IN&MasterId=10624c643e8af5d7&CatalogId=ds-pull-8600&SMfgName=SanDisk&SMfgPn=SDSDXXD-256G-GN4IN&ProductId=S26682103&MfgId=857', eventInfo.serverParams, clientParams); }
+
+</script><script>(function ($) {
+	if (!$) return;
+	var $inline = $("#ccs-inline-content [id^=inline]");
+	if ($inline.length == 0) return;
+	
+	CcsElementQueries.detach($inline[0]);
+	$inline.removeAttr("max-width");
+}(window.ccsJq));
+
+
+(function($){
+    if(!$) return;
+    window.ccsATC = {
+        buy: function (pid) {
+            $.post(`/Basket/AddItem?token=${ccsATC[pid]}&productId=${pid}`, () => window.location.href = '/Basket')
+        }
+    }
+}(window.ccsJq))
+</script></head>
+ 
+
+
+<body id="siteContainer" data-version="1.0.9313.19199" data-cnet="1df6b731e6" data-lang="da-DK" data-site="proshop.dk" class="product-details-page bottom-ribbon-added" style="">
+    <noscript><iframe src="//ww2.proshop.dk/ns.html?id=GTM-PCQSS3W" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<script type="module">
+(function (w, d, s, l, i) { w[l] = w[l] || []; w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' }); var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src = '//ww2.proshop.dk/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f); })(window, document, 'script', 'dataLayer', 'GTM-PCQSS3W');
+</script>
+
+    
+
+<header id="pageHeader" class="fixed-top w-100">
+    <div class="pl-2 pr-2 ps-container">
+        <div class="ps-container__inner header__template">
+            <div class="header__logo align-items-center">
+                <a href="/" aria-label="Back to Home" id="logohome"><div data-vueapp="campaigns" class="site-logo" id="c9781b337da2f41c690c6b8d11590431b" element-id="9781b337-da2f-41c6-90c6-b8d11590431b" data="eyJjYXRlZ29yeVVybE5hbWUiOiJIdWtvbW1lbHNlc2tvcnQiLCJwcm9kdWN0SWQiOiIzMDc3Mzc0In0=" data-v-app=""><div><div><img src="/Images/proshop_logo_tagline_new_outlined_med_opacity_3684c4325e81.svg"></div></div></div>
+</a>
+            </div>
+<div class="header__search d-flex flex-nowrap">
+    <div class="header__burger hidden-md hidden-lg mr-2">
+        <button type="button" aria-label="Open menu" id="menu-button" class="pi-sm header__burger-menu navbar-toggle position-relative" aria-expanded="false" aria-haspopup="true" aria-controls="main-menu"><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button>
+        <p class="header__text m-0 position-relative">Menu</p>
+    </div>
+    <div class="position-relative flex-1">
+        <form action="/" class="d-flex align-items-center" method="GET" role="search" novalidate="novalidate">
+           <input type="search" data-action="/ClientPlugins/AutoComplete/SearchResult" id="search-input" class="input__round-lg w-100 site-search" name="s" placeholder="Søg" title="Søg" aria-description="Søg efter produkter" enterkeyhint="search" autocomplete="off">
+           <button id="btn_clearSearchTerm" class="hidden" type="reset">Ryd</button>
+           <button type="submit" aria-label="Søg efter produkter" class="input__round-btn green d-flex justify-content-center align-items-center"><i class="ki pi-xs pi-search"></i></button>
+        </form>
+    </div>
+</div><div class="header__categories d-flex">
+<a href="/Kundeservice.htm" class="header__icon d-block"><i class="pi-sm pi pi-headphones-b m-auto d-block"></i><p class="header__text m-0">Hjælp</p></a>                <div class="header__icon input__new"><a id="logout" class="hidden btn__no-style dropdown-toggle w-100 position-relative" href="/CustomerCenter/CustomerAccount">
+    <i class="pi-sm pi pi-login m-auto d-block position-relative"><small class="header__number-login position-absolute"><span class="pi-xxs pi pi-check-white"></span></small></i>
+    <p id="loginButtonText" class="hidden-xs hidden-sm header__text m-0">Log ind</p>
+    <p id="loginButtonTextSm" class="hidden-md hidden-lg header__text m-0">Min konto</p>
+</a>
+<button id="openLogin" type="button" class="btn__no-style w-100 position-relative" data-toggle="modal" data-target="#loginModal">
+    <i class="pi-sm pi pi-login m-auto d-block position-relative"></i>
+    <p id="loginButtonText" class="hidden-xs hidden-sm  hidden-sm header__text m-0">Log ind</p>
+    <p id="loginButtonTextSm" class="hidden-md hidden-lg header__text m-0">Log ind</p>
+</button></div><div class="header__icon">
+<div id="minibasket" data-customerid="">
+<form action="/Basket" class="form-horizontal" method="get" novalidate="novalidate">        <button type="submit" class="btn__no-style position-relative w-100" id="btnBasket"><i class="pi-sm pi pi-basket m-auto position-relative d-block"><small data-minibasketlinecount=""></small></i><p class="hidden-xs hidden-sm header__text m-0" data-minibasketprice="" data-toggle="tooltip" data-placement="bottom">0,00 kr.</p><p class="hidden-md hidden-lg header__text m-0">Kurv</p></button>
+</form></div></div>
+            </div>
+        </div>
+    </div>
+    
+
+
+<section class="menu-top hidden-xs hidden-sm position-absolute w-100">
+    <div class="pl-2 pr-2 ps-container">
+        <div class="d-flex flex-nowrap">
+                <a class="menu-top__cta menu-top__cta--bf" href="/Baerbar">Bærbar</a>
+                <a class="menu-top__cta menu-top__cta--bf" href="/Gaming">Gaming</a>
+                <a class="menu-top__cta menu-top__cta--bf" href="/Mobil">Mobil</a>
+                <a class="menu-top__cta menu-top__cta--bf" href="/Smart-Home">Smart Home</a>
+                <a class="menu-top__cta menu-top__cta--bf" href="/SSD">SSD</a>
+                            <div class="menu-top__cta menu-top__cta--bf"><a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/Hus-Have" data-gtm-vis-polling-id115630387_30="46" data-gtm-vis-recent-on-screen115630387_57="107" data-gtm-vis-first-on-screen115630387_57="107" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="206" data-gtm-vis-first-on-screen115630387_30="206" data-gtm-vis-total-visible-time115630387_30="1100">Hus &amp; Have</a> <a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/DEALS" data-gtm-vis-polling-id115630387_30="47" data-gtm-vis-recent-on-screen115630387_57="111" data-gtm-vis-first-on-screen115630387_57="111" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="206" data-gtm-vis-first-on-screen115630387_30="206" data-gtm-vis-total-visible-time115630387_30="1100">DEALS</a> <a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/dutzo-computere" data-gtm-vis-polling-id115630387_30="48" data-gtm-vis-recent-on-screen115630387_57="115" data-gtm-vis-first-on-screen115630387_57="115" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="206" data-gtm-vis-first-on-screen115630387_30="206" data-gtm-vis-total-visible-time115630387_30="1100">DUTZO Gaming</a> <a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/Erhverv" data-gtm-vis-polling-id115630387_30="49" data-gtm-vis-recent-on-screen115630387_57="119" data-gtm-vis-first-on-screen115630387_57="119" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="206" data-gtm-vis-first-on-screen115630387_30="206" data-gtm-vis-total-visible-time115630387_30="1100">Erhverv</a> <a data-action="campaignClick" data-id="096e58a2-c1cf-4ac1-a2a3-1f17e258a656" data-name="TOP MENU" data-creative="d36dadeb-1910-44af-a5f0-1e275a968343" data-position="top-menu" href="/Gavekort/Gavekort/100001" data-gtm-vis-polling-id115630387_30="50" data-gtm-vis-recent-on-screen115630387_57="123" data-gtm-vis-first-on-screen115630387_57="123" data-gtm-vis-total-visible-time115630387_57="100" data-gtm-vis-has-fired115630387_57="1" data-gtm-vis-recent-on-screen115630387_30="206" data-gtm-vis-first-on-screen115630387_30="206" data-gtm-vis-total-visible-time115630387_30="1100">Gavekort</a></div>
+        </div>
+    </div>
+</section>
+
+
+</header><div id="search-result" class="position-relative" style="display: block; opacity: 0;"></div>
+        <div class="site-background-banner visible-lg"><div data-vueapp="campaigns" class="site-background-skin" id="c20a7b958acb14a93b2a74596cf36c719" element-id="20a7b958-acb1-4a93-b2a7-4596cf36c719" data="eyJjYXRlZ29yeVVybE5hbWUiOiJIdWtvbW1lbHNlc2tvcnQiLCJwcm9kdWN0SWQiOiIzMDc3Mzc0In0=" data-v-app=""><div><div><a data-action="campaignClick" data-id="4c956537-ca35-47e1-ac2d-e5b08026b97d" data-name="PRO01740 - Fairphone (Gen. 6) Launch - Frontpage Takeover" data-creative="20a7b958-acb1-4a93-b2a7-4596cf36c719" data-position="background-skin" class="site-background-cta visible-lg" href="/Fairphone-Gen-6" target="_self"></a></div></div></div>
+</div>
+    
+    
+    
+<div class="bottom-ribbon">
+    <div class="bottom-ribbon-elements">
+        <div class="bottom-ribbon-image hidden-xs">
+            <a data-lightbox="3077374" data-title="SDSDXXD-256G-GN4IN" href="/Images/915x900/3077374_9ff742f1ee31.jpg"><img alt="SDSDXXD-256G-GN4IN" class="img-thumbnail" height="60" src="/Images/80x60/3077374_9ff742f1ee31.jpg" width="80"></a>                
+        </div>
+        <div class="bottom-ribbon-name hidden-xs">SanDisk Extreme PRO SD - 200MB/s - 256GB</div>
+        <div class="bottom-ribbon-price hidden-xs">
+                <span class="site-currency-attention">309,00 kr.</span>
+        </div>
+            <div class="bottom-ribbon-btn clearfix">
+                <form id="addToCart_BtnForm" action="/Basket/AddItem" method="post" class="w-100 pull-right" novalidate="novalidate">
+                    <input name="token" type="hidden" value="57d656d2c9f5">
+                    <input name="productId" type="hidden" value="3077374">
+                    <button class="btn site-btn-tall site-btn-green pull-right scroll-ribbon-btn" type="submit" data-form-action="addToBasket" data-id="3077374" data-price="309,00" data-brand="SanDisk" data-currency="DKK" data-category="flashhukommelse">
+                        <i class="ki ki-m pi-cart-fill"></i>&nbsp;Køb
+                    </button>
+                </form>
+            </div>
+    </div>
+</div>
+
+
+    <div class="site-container-fullwidth">
+        <div class="top-banner-container visible-sm">
+            <div class="site-top-banner d-flex justify-content-center align-items-center"><div data-vueapp="campaigns" class="site-top" id="c133b79045ba04d648e679f04868336d1" element-id="133b7904-5ba0-4d64-8e67-9f04868336d1" data="eyJjYXRlZ29yeVVybE5hbWUiOiJIdWtvbW1lbHNlc2tvcnQiLCJwcm9kdWN0SWQiOiIzMDc3Mzc0In0=" data-v-app=""><div><div><a data-action="campaignClick" data-id="4c956537-ca35-47e1-ac2d-e5b08026b97d" data-name="PRO01740 - Fairphone (Gen. 6) Launch - Frontpage Takeover" data-creative="133b7904-5ba0-4d64-8e67-9f04868336d1" data-position="top" href="/Fairphone-Gen-6" target="_self"><img src="/Images/PRO01740-The-Fairphone-siteskin-top-CTA-DK_ba77e7f0f03a.jpg" alt=""></a></div></div></div>
+</div>
+        </div>
+            <div class="visible-xs site-top-banner-mobile"><div data-vueapp="campaigns" class="site-top-small" id="cca339e43954e4ef9b874a4c238dd3794" element-id="ca339e43-954e-4ef9-b874-a4c238dd3794" data="eyJjYXRlZ29yeVVybE5hbWUiOiJIdWtvbW1lbHNlc2tvcnQiLCJwcm9kdWN0SWQiOiIzMDc3Mzc0In0=" data-v-app=""><div><div><a data-action="campaignClick" data-id="4c956537-ca35-47e1-ac2d-e5b08026b97d" data-name="PRO01740 - Fairphone (Gen. 6) Launch - Frontpage Takeover" data-creative="ca339e43-954e-4ef9-b874-a4c238dd3794" data-position="top-small" href="/Fairphone-Gen-6" target="_self"><img src="/Images/PRO01740-The-Fairphone-852x150-DK_08d1592a2923.jpg" alt=""></a></div></div></div>
+</div>
+    <div class="container site-container ps-container position-relative px-2 pt-1 hasTopBanner">
+        
+
+        
+        
+<div class="site-content-table row">
+    <div class="col-xs-12 col-md-3 p-0">
+        <aside id="Site-menu" class="position-relative" data-v-app=""><nav class="site-mainMenu position-relative" aria-label="Main menu" menulevel="1"><!----><ul class="site-mainMenuItems d-flex" id="main-menu" role="menu" aria-labelledby="menu-button"><li class="outlet d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/outlet.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/outlet.svg&quot;);"></i><a class="d-flex" href="/Auktion-Outlet" role="menuitem" tabindex="0">Auktion &amp; Outlet</a><i class=""></i></li><li class="campaign d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/campaigns.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/campaigns.svg&quot;);"></i><a class="d-flex" href="/campaigns" role="menuitem" tabindex="0">Kampagner</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/boger.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/boger.svg&quot;);"></i><a class="d-flex" href="/Boeger" role="menuitem" tabindex="0">Bøger</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/spilfilm.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/spilfilm.svg&quot;);"></i><a class="d-flex" href="/Boern-Legetoej" role="menuitem" tabindex="0">Børn &amp; Legetøj</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/computer.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/computer.svg&quot;);"></i><a class="d-flex" href="/Computer" role="menuitem" tabindex="0">Computer</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/pets.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/pets.svg&quot;);"></i><a class="d-flex" href="/Dyreartikler" role="menuitem" tabindex="0">Dyreartikler</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/belysning.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/belysning.svg&quot;);"></i><a class="d-flex" href="/El-VVS" role="menuitem" tabindex="0">El &amp; VVS</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/fotovideo.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/fotovideo.svg&quot;);"></i><a class="d-flex" href="/Foto-Video" role="menuitem" tabindex="0">Foto &amp; Video</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/hardware.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/hardware.svg&quot;);"></i><a class="d-flex" href="/Hardware" role="menuitem" tabindex="0">Hardware</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/hushave.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/hushave.svg&quot;);"></i><a class="d-flex" href="/Hus-Have" role="menuitem" tabindex="0">Hus &amp; Have</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/husholdning.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/husholdning.svg&quot;);"></i><a class="d-flex" href="/Husholdning" role="menuitem" tabindex="0">Husholdning</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/kablerstik.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/kablerstik.svg&quot;);"></i><a class="d-flex" href="/Kabler-Stik" role="menuitem" tabindex="0">Kabler &amp; Stik</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/office-supplies.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/office-supplies.svg&quot;);"></i><a class="d-flex" href="/Kontor-og-hobbyartikler" role="menuitem" tabindex="0">Kontor- og hobbyartikler</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/mobilgps.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/mobilgps.svg&quot;);"></i><a class="d-flex" href="/Mobil-Tablet" role="menuitem" tabindex="0">Mobil &amp; Tablet</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/netvaerk.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/netvaerk.svg&quot;);"></i><a class="d-flex" href="/Netvaerk" role="menuitem" tabindex="0">Netværk</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/personligpleje.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/personligpleje.svg&quot;);"></i><a class="d-flex" href="/Personlig-pleje" role="menuitem" tabindex="0">Personlig pleje</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/printereforbrugstoffer.svg" width="25" height="25" class="site-mainMenuItemIcon lazy entered loaded" data-ll-status="loaded" style="background-image: url(&quot;/Content/images/SVG/printereforbrugstoffer.svg&quot;);"></i><a class="d-flex" href="/Printere-Forbrugsstoffer" role="menuitem" tabindex="0">Printere &amp; Forbrugsstoffer</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/software.svg" width="25" height="25" class="site-mainMenuItemIcon lazy"></i><a class="d-flex" href="/Software" role="menuitem" tabindex="0">Software</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/games-gaming.svg" width="25" height="25" class="site-mainMenuItemIcon lazy"></i><a class="d-flex" href="/Spil-Gaming" role="menuitem" tabindex="0">Spil &amp; Gaming</a><i class=""></i></li><li class="d-flex align-items-center w-100" role="presentation"><i data-bg="/Content/images/SVG/tvhifi.svg" width="25" height="25" class="site-mainMenuItemIcon lazy"></i><a class="d-flex" href="/Tv-og-lyd" role="menuitem" tabindex="0">Tv og lyd</a><i class=""></i></li><!----></ul></nav><!----></aside>
+        
+            <div class="hidden-xs hidden-sm mt-2">
+                <div class="mb-2"><div data-vueapp="campaigns" class="site-bottom-left" id="c81cecc2c6c754ff4bdfbc548018d6412" element-id="81cecc2c-6c75-4ff4-bdfb-c548018d6412" data="eyJjYXRlZ29yeVVybE5hbWUiOiJIdWtvbW1lbHNlc2tvcnQiLCJwcm9kdWN0SWQiOiIzMDc3Mzc0In0=" data-v-app=""><div><!--v-if--></div></div>
+</div><div data-vueapp="campaigns" class="site-bottom-left-2" id="c49271a34d03945e7814b28d0918bb617" element-id="49271a34-d039-45e7-814b-28d0918bb617" data="eyJjYXRlZ29yeVVybE5hbWUiOiJIdWtvbW1lbHNlc2tvcnQiLCJwcm9kdWN0SWQiOiIzMDc3Mzc0In0=" data-v-app=""><div><!--v-if--></div></div>
+
+            </div>
+    </div>
+    <main class="col-xs-12 col-md-9">
+            <div>
+                <div class="site-bar-breadcrumbs d-flex mb-2">
+                    <ol class="breadcrumb d-flex small" id="breadcrumbs" itemscope="" itemtype="http://schema.org/BreadcrumbList"><li itemscope="" itemprop="itemListElement" itemtype="http://schema.org/ListItem"><a class="p-0" href="/" itemprop="item"><span itemprop="name">Forside</span></a><meta itemprop="position" content="1"></li>
+
+<li itemscope="" itemprop="itemListElement" itemtype="http://schema.org/ListItem"><a class="p-0" href="/Hukommelseskort" itemprop="item"><span itemprop="name">Hukommelseskort</span></a><meta itemprop="position" content="2"></li><li itemscope="" itemprop="itemListElement" itemtype="http://schema.org/ListItem"><a class="p-0" href="/Hukommelseskort/SanDisk" itemprop="item"><span itemprop="name">SanDisk Hukommelseskort</span></a><meta itemprop="position" content="3"></li>        <li itemscope="" itemprop="itemListElement" itemtype="http://schema.org/ListItem"><span itemprop="name">SanDisk Extreme PRO SD - 200MB/s - 256GB</span><meta itemprop="position" content="4"></li>
+</ol>
+                </div>
+            </div>
+        
+        
+<script type="application/ld+json"> { "@context": "http://schema.org/", "@type": "Product", "name": "SanDisk Extreme PRO SD - 200MB/s - 256GB", "image": "https:/Images/915x900/3077374_9ff742f1ee31.jpg", "description": "SDXC flashhukommelseskort, kapacitet: 256 GB, overførselshastighed: op til 200MB/s (læs) / op til 140MB/s (skriv), hastighedsklasse: SD Class: C10 / UHS Class: UHS-I / U Class: U3 / Video Class: V30.• software: SanDisk RescuePRO Deluxe• Egenskaber: SanDisk QuickFlow-teknology", "mpn": "SDSDXXD-256G-GN4IN", "sku": "3077374", "category": "Hukommelseskort", "gtin13": "0619659188658", "brand": { "@type": "Brand", "name": "SanDisk" }, "hasMerchantReturnPolicy": { "@type": "MerchantReturnPolicy", "applicableCountry": "DK", "merchantReturnDays": "14" }, "offers": { "@type": "Offer", "url": "https://www.proshop.dk/Hukommelseskort/SanDisk-Extreme-PRO-SD-200MBs-256GB/3077374", "priceCurrency": "DKK", "price": "309.00", "itemCondition": "http://schema.org/NewCondition", "availability": "http://schema.org/InStock", "seller": { "@type": "Organization", "name": "proshop.dk" }, "shippingDetails": { "@type": "OfferShippingDetails", "shippingRate": { "@type": "MonetaryAmount", "value": "39.00", "currency": "DKK" }, "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "DK" }, "deliveryTime": { "@type": "ShippingDeliveryTime", "handlingTime": { "@type": "QuantitativeValue", "minValue": "0", "maxValue": "0", "unitCode": "DAY" }, "transitTime": { "@type": "QuantitativeValue", "minValue": "1", "maxValue": "1", "unitCode": "DAY" } } } } } </script>
+
+<article class="clearfix site-new-product-page-design row" product="" data-partno="SDSDXXD-256G-GN4IN" data-gtm="eyJldmVudCI6InZpZXdfaXRlbSIsImVjb21tZXJjZSI6eyJpdGVtcyI6W3siaXRlbV9pZCI6IjMwNzczNzQiLCJpdGVtX25hbWUiOiJTYW5EaXNrIEV4dHJlbWUgUFJPIFNEIC0gMjAwTUIvcyAtIDI1NkdCIiwiY3VycmVuY3kiOiJES0siLCJpdGVtX2JyYW5kIjoiU2FuRGlzayIsIml0ZW1fY2F0ZWdvcnkiOiJIdWtvbW1lbHNlc2tvcnQiLCJwcmljZSI6MzA5LjAwMDAwLCJxdWFudGl0eSI6MX1dfSwic3VidG90YWxBbW91bnQiOjAuMH0=">
+    <section class="col-xs-12 col-sm-5 imageContainer">
+        <div class="row">
+            <div class="col-xs-12 text-center hidden-lg"><a data-lightbox="3077374" data-title="Hukommelseskort - SanDisk Extreme PRO SD - 200MB/s - 256GB - SDSDXXD-256G-GN4IN" href="/Images/915x900/3077374_9ff742f1ee31.jpg"><img alt="Hukommelseskort - SanDisk Extreme PRO SD - 200MB/s - 256GB - SDSDXXD-256G-GN4IN" class="h-auto" height="251" src="/Images/300x251/3077374_9ff742f1ee31.jpg" width="300"></a></div>
+            <div class="col-xs-12 text-center visible-lg"><a data-lightbox="3077374h" data-title="Hukommelseskort - SanDisk Extreme PRO SD - 200MB/s - 256GB - SDSDXXD-256G-GN4IN" href="/Images/1600x1200/3077374_9ff742f1ee31.jpg"><img alt="Hukommelseskort - SanDisk Extreme PRO SD - 200MB/s - 256GB - SDSDXXD-256G-GN4IN" class="h-auto h-uhd-auto" height="251" src="/Images/300x251/3077374_9ff742f1ee31.jpg" width="300"></a></div>
+            <small class="col-xs-12 text-center">Varenummer: <strong>3077374</strong></small>
+                    <div class="col-xs-3 col-sm-4 col-md-3 mt-1 hidden-lg"><a data-lightbox="3077374" data-title="SDSDXXD-256G-GN4IN" href="/Images/915x900/3077374_c68df59f3bde.jpg"><img alt="SDSDXXD-256G-GN4IN" class="img-thumbnail" height="60" src="/Images/80x60/3077374_c68df59f3bde.jpg" width="80"></a></div>
+                    <div class="col-xs-3 col-sm-4 col-md-3 mt-1 visible-lg"><a data-lightbox="3077374h" data-title="SDSDXXD-256G-GN4IN" href="/Images/1600x1200/3077374_c68df59f3bde.jpg"><img alt="SDSDXXD-256G-GN4IN" class="img-thumbnail" height="60" src="/Images/80x60/3077374_c68df59f3bde.jpg" width="80"></a></div>
+                    <div class="col-xs-3 col-sm-4 col-md-3 mt-1 hidden-lg"><a data-lightbox="3077374" data-title="SDSDXXD-256G-GN4IN" href="/Images/915x900/3077374_419b7f876053.jpg"><img alt="SDSDXXD-256G-GN4IN" class="img-thumbnail" height="60" src="/Images/80x60/3077374_419b7f876053.jpg" width="80"></a></div>
+                    <div class="col-xs-3 col-sm-4 col-md-3 mt-1 visible-lg"><a data-lightbox="3077374h" data-title="SDSDXXD-256G-GN4IN" href="/Images/1600x1200/3077374_419b7f876053.jpg"><img alt="SDSDXXD-256G-GN4IN" class="img-thumbnail" height="60" src="/Images/80x60/3077374_419b7f876053.jpg" width="80"></a></div>
+        </div>
+        <div id="ccs-feature-icons"></div>
+    </section>
+    <section id="site-product-price-stock-buy-container" class="col-xs-12 col-sm-7 mt-1">
+
+        <h1 data-type="product" class="mt-0" product-display-name="" data-productid="3077374" data-siteid="proshop.dk">SanDisk Extreme PRO SD - 200MB/s - 256GB</h1>
+            <p class="pb-2">SDXC flashhukommelseskort, <strong>kapacitet:</strong> 256 GB, <strong>overførselshastighed:</strong> op til 200MB/s (læs) / op til 140MB/s (skriv), <strong>hastighedsklasse:</strong> SD Class: C10 / UHS Class: UHS-I / U Class: U3 / Video Class: V30. <br><br>• <strong>software:</strong> SanDisk RescuePRO Deluxe<br><br>• <strong>Egenskaber:</strong> SanDisk QuickFlow-teknology</p>
+        <div>
+<div data-energy="" data-cpn="S26682103" data-logo="" data-zoom="66" class="hidden">
+    <button class="btn btn-link p-0"><img></button>
+    <br><button class="btn btn-link p-0"><small>Produktdatablad</small></button>
+</div>
+        </div>
+        <div class="pb-2 scrollToDescriptionContainer " id="scrollToDescriptionContainer">
+            <a id="scrollToDescription"> Læs mere </a>
+        </div>
+            <div class="show_testseek clearfix"><div class="ts_stars_template" data-ts-mpn="SDSDXXD-256G-GN4IN" data-ts-man="SanDisk" data-ts-ean="0619659188658"></div></div>
+
+<div class="mt-3 clearfix">
+    <div class="menu-button-links pull-right btn-group position-relative">
+        <a href="#" aria-controls="menu2" class="familyRelationsDropdownBtn dropdown btn site-btn-between site-btn-white site-btn-hasborder dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <p>Varianter</p>&nbsp;
+            <i class="ki-s pi-chev-right bg-black rotate90 ml-1"></i>
+        </a>
+        <ul id="menu2" role="menu" aria-labelledby="menubutton" class="dropdown-menu familyRelationsDropdown">
+                <li role="presentation">
+                    <a role="menuitem" href="/Hukommelseskort/SanDisk-Extreme-PRO-SD-100MBs-32GB/3075925">
+                        <span class="site-familyrelation-displayname pr-2">100MB/s 32GB</span>
+                        <span class="site-familyrelation-price text-right">
+89,00 kr.                        </span>
+                        <div class="d-flex position-relative">
+                            <span class="site-stock-icon site-icon-stock-in"></span>
+                        </div>
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a role="menuitem" href="/Hukommelseskort/SanDisk-Extreme-PRO-SD-200MBs-64GB/3077368">
+                        <span class="site-familyrelation-displayname pr-2">64GB</span>
+                        <span class="site-familyrelation-price text-right">
+109,00 kr.                        </span>
+                        <div class="d-flex position-relative">
+                            <span class="site-stock-icon site-icon-stock-in"></span>
+                        </div>
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a role="menuitem" href="/Hukommelseskort/SanDisk-Extreme-PRO-SD-200MBs-128GB/3077370">
+                        <span class="site-familyrelation-displayname pr-2">128GB</span>
+                        <span class="site-familyrelation-price text-right">
+179,00 kr.                        </span>
+                        <div class="d-flex position-relative">
+                            <span class="site-stock-icon site-icon-stock-in"></span>
+                        </div>
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a role="menuitem" href="/Hukommelseskort/SanDisk-Extreme-PRO-SD-200MBs-512GB/3076167">
+                        <span class="site-familyrelation-displayname pr-2">512GB</span>
+                        <span class="site-familyrelation-price text-right">
+549,00 kr.                        </span>
+                        <div class="d-flex position-relative">
+                            <span class="site-stock-icon site-icon-stock-in"></span>
+                        </div>
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a role="menuitem" href="/Hukommelseskort/SanDisk-Extreme-PRO-SD-300MBs-512GB/3191982">
+                        <span class="site-familyrelation-displayname pr-2">300MB/s 512GB</span>
+                        <span class="site-familyrelation-price text-right">
+5.695,00 kr.                        </span>
+                        <div class="d-flex position-relative">
+                            <span class="site-stock-icon site-icon-stock-comming"></span>
+                        </div>
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a role="menuitem" href="/Hukommelseskort/SanDisk-Extreme-PRO-SD-200MBs-1TB/3076170">
+                        <span class="site-familyrelation-displayname pr-2">1TB</span>
+                        <span class="site-familyrelation-price text-right">
+1.199,00 kr.                        </span>
+                        <div class="d-flex position-relative">
+                            <span class="site-stock-icon site-icon-stock-in"></span>
+                        </div>
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a role="menuitem" href="/Hukommelseskort/SanDisk-Extreme-PRO-SD-250MBs-2TB/3296266">
+                        <span class="site-familyrelation-displayname pr-2">2TB</span>
+                        <span class="site-familyrelation-price text-right">
+2.109,00 kr.                        </span>
+                        <div class="d-flex position-relative">
+                            <span class="site-stock-icon site-icon-stock-comming"></span>
+                        </div>
+                    </a>
+                </li>
+        </ul>
+    </div>
+</div>
+
+
+
+
+    <section class="clearfix site-product-price-stock-pupinfo-container">
+        <div class="site-product-stock-price-buy d-flex">
+            
+            
+                <div class="site-stock-label">
+                    På lager
+                </div>
+                            <span class="site-currency-wrapper mt-2 mb-2">
+<span class="site-currency-attention">309,00 kr.</span>
+    <span class="price-vat-text pull-right">247,20 kr. ekskl. moms</span>
+                </span>
+                <div class="site-product-demorelation-buybtn-container w-100 d-flex justify-content-between">
+                                                                <form id="addToCart_BtnForm" action="/Basket/AddItem" method="post" class="w-100 pull-right" novalidate="novalidate">
+                            <input name="token" type="hidden" value="57d656d2c9f5">
+                            <input name="productId" type="hidden" value="3077374">
+                            <button class="btn site-btn-tall site-btn-green pull-right" type="submit" data-form-action="addToBasket" data-id="3077374" data-price="309,00" data-brand="SanDisk" data-currency="DKK" data-category="flashhukommelse">
+                                <i class="ki ki-m pi-cart-fill"></i>&nbsp;Køb
+                            </button>
+                        </form>
+                </div>
+                    </div>
+        <div class="site-stock d-flex align-items-center pt-2 pb-2">
+            <div class="d-flex align-items-center"><i class="ki ki-lg pi-truck"></i></div>
+            <div>
+                    <div>Billigste fragt (privatkunde)&nbsp;39,00 kr.</div>
+                <div>
+På lager – Levering i morgen (bestil inden kl. 22)
+                </div> 
+            </div>
+        </div>
+    <div class="site-pickuppoint-container clearfix">
+        <h2>Lagerstatus i vores Pick-up Points</h2>
+        <ul class="site-pickuppoint-list clearfix" role="list">
+                <li role="listitem">
+                    <div class="site-stock-icon site-icon-stock-in"></div>
+                    <h3 class="mt-0 mb-0">Aarhus (+15 stk.)</h3>
+                        <div>På lager, kan afhentes</div>
+                </li>
+                <li role="listitem">
+                    <div class="site-stock-icon site-icon-stock-in"></div>
+                    <h3 class="mt-0 mb-0">København (2 stk.)</h3>
+                        <div>På lager, kan afhentes</div>
+                </li>
+        </ul>
+    </div>
+
+
+
+                    <div class="mt-2 site-product-campaign-text"><div data-cid="bb3c5c52-2e2e-4271-bf60-44ead26bd3df"><div class="MMD"><div class="MDStandard"><a class="MDStandard-ImageBox" href="/SanDisk"><img width="" height="" src="/Images/SanDisk-Medium-Description-600x180px-DK.jpg" alt="SanDisk - Proshop"></a></div></div><style>.MMD .MDStandard{width:100%}.MMD .MDStandard-ImgBox{width:100%}.MMD a.MDStandard-ImgBox:hover img{transform:scale(.95);transition:1s ease-in-out}</style></div></div>
+    </section>
+    </section>
+    
+    <article id="productInfoAccordions" class="mt-3 mb-3">
+        
+
+        <div id="description" class="accordionContainer ">
+            <h2 class="toggleBtn active">
+                <button class="accordionHeader text-left" id="accordionHeader_description" aria-expanded="true" aria-controls="accordionPanel_description">
+                    Beskrivelse/Video
+                    <div class="iconWithBgContainer bg-green d-flex ki-lg">
+                        <i class="ki-s pi-chev-right bg-white rotate270" aria-hidden="true"></i>
+                    </div>
+                </button>
+            </h2>
+            <section class="active" id="accordionPanel_description" aria-labelledby="accordionHeader_description" tabindex="-1">
+                <div id="descriptionItemsAccordion">
+                    <div>
+                        The powerful SD UHS-I memory card yet delivers performance that elevates your creativity. With shot speeds of up to 140MB/s and UHS speed Class 3 (U3) recording, you're ready to capture stunning high-resolution, stutter-free 4K UHD video. And, because your pace doesn't let up after the shots are in, it delivers up to 200MB/s transfer speeds for a faster postproduction workflow. Plus, it's built to withstand weather, water, shocks and other less-than-ideal conditions so you can rest assured that it's good to go wherever your work takes you.
+                    </div>
+                    <div id="ccs-inline-content" data-cnetid="S26682103" data-pn="SDSDXXD-256G-GN4IN" data-mf="SanDisk">
+                        <div id="icecat-content">
+                            <div id="flix-inpage">
+
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        
+        <div id="general" class="accordionContainer">
+            
+            <h2>
+                <button class="accordionHeader text-left" id="accordionHeader_general" aria-expanded="false" aria-controls="accordionPanel_general">
+                    Generelt
+                    <div class="iconWithBgContainer bg-green d-flex ki-lg">
+                        <i class="ki-s pi-chev-right bg-white rotate90" aria-hidden="true"></i>
+                    </div>
+                </button>
+            </h2>
+            <section id="accordionPanel_general" aria-labelledby="accordionHeader_general" tabindex="-1">
+<div id="generalItemsAccordion">
+        <div class="invertHover">
+            <div class="specItemTitle">Producent</div>
+            <div><a href="/SanDisk" title="Vis alle produkter fra SanDisk">SanDisk</a></div>
+        </div>
+    <div class="invertHover">
+        <div class="specItemTitle">Varenummer</div>
+        <div>3077374</div>
+    </div>
+
+        <div class="invertHover">
+            <div class="specItemTitle">Model</div>
+            <div>SDSDXXD-256G-GN4IN</div>
+        </div>
+            <div class="invertHover">
+            <div class="specItemTitle">Ean</div>
+            <div>0619659188658</div>
+        </div>
+                <div class="invertHover">
+            <div class="specItemTitle">Til producentens hjemmeside</div>
+            <div><a href="http://www.sandisk.com" target="_blank" title="Til producentens hjemmeside">www.sandisk.com</a></div>
+        </div>
+                        <div>
+                    <div class="specItemTitle">Produktbeskrivelse</div>
+                    <div>SanDisk Extreme Pro - flashhukommelseskort - 256 GB - SDXC UHS-I</div>
+                </div>
+                <div>
+                    <div class="specItemTitle">Produkttype</div>
+                    <div>Flashhukommelseskort</div>
+                </div>
+                <div>
+                    <div class="specItemTitle">Model</div>
+                    <div>SDXC UHS-I Memory Card</div>
+                </div>
+                <div>
+                    <div class="specItemTitle">Lagerkapacitet</div>
+                    <div>256 GB</div>
+                </div>
+                <div>
+                    <div class="specItemTitle">Hastighed</div>
+                    <div>Video Class V30 / UHS-I U3 / Class10</div>
+                </div>
+                <div>
+                    <div class="specItemTitle">Med software</div>
+                    <div>RescuePRO Deluxe (2 års download)</div>
+                </div>
+</div>
+            </section>
+        </div>
+        
+            <div id="specs" class="accordionContainer">
+                <h2>
+                    <button class="accordionHeader text-left" id="accordionHeader_specs" aria-expanded="false" aria-controls="accordionPanel_specs">
+                        Specifikationer
+                        <div class="iconWithBgContainer bg-green d-flex ki-lg">
+                            <i class="ki-s pi-chev-right bg-white rotate90" aria-hidden="true"></i>
+                        </div>
+                    </button>
+                </h2>
+                <section id="accordionPanel_specs" aria-labelledby="accordionHeader_specs" tabindex="-1">
+
+
+<div id="specItemsAccordion">
+        <div class="sectionTitle">
+            <div><h3>Generelt</h3></div><div></div>
+        </div>
+        <div>
+            <div class="specItemTitle">Produkttype</div>
+            <div class="specItemValue">Flashhukommelseskort</div>
+        </div>
+        <div>
+            <div class="specItemTitle">Lagerkapacitet</div>
+            <div class="specItemValue">256 GB</div>
+        </div>
+        <div class="sectionTitle">
+            <div><h3>Hukommelse</h3></div><div></div>
+        </div>
+        <div>
+            <div class="specItemTitle">Hastighedsklasse</div>
+            <div class="specItemValue">Video Class V30 / UHS-I U3 / Class10</div>
+        </div>
+        <div>
+            <div class="specItemTitle">Læse Rate</div>
+            <div class="specItemValue">Op til 200 MB/s</div>
+        </div>
+        <div>
+            <div class="specItemTitle">Skrive Rate</div>
+            <div class="specItemValue">Op til 140 MB/s</div>
+        </div>
+        <div>
+            <div class="specItemTitle">Model</div>
+            <div class="specItemValue">SDXC UHS-I Memory Card</div>
+        </div>
+        <div>
+            <div class="specItemTitle">Egenskaber</div>
+            <div class="specItemValue">Skrivebeskyttelses kontakt, stødsikker, vandtæt, røntgensikker, temperatursikker</div>
+        </div>
+        <div class="sectionTitle">
+            <div><h3>Programmer / Systemkrav</h3></div><div></div>
+        </div>
+        <div>
+            <div class="specItemTitle">Med software</div>
+            <div class="specItemValue">RescuePRO Deluxe (2 års download)</div>
+        </div>
+        <div class="sectionTitle">
+            <div><h3>Mål og vægt</h3></div><div></div>
+        </div>
+        <div>
+            <div class="specItemTitle">Bredde</div>
+            <div class="specItemValue">23.91 mm</div>
+        </div>
+        <div>
+            <div class="specItemTitle">Dybde</div>
+            <div class="specItemValue">31.92 mm</div>
+        </div>
+        <div>
+            <div class="specItemTitle">Højde</div>
+            <div class="specItemValue">2.17 mm</div>
+        </div>
+        <div>
+            <div class="specItemTitle">Vægt</div>
+            <div class="specItemValue">1.67 g</div>
+        </div>
+</div>                </section>
+            </div>
+        <p class="specDisclaimer small">Ovenstående informationer/specifikationer kan løbende ændres. I tilfælde af trykfejl vedrørende pris eller udsolgte varer bestræber vi os på hurtigst muligt at opdatere siden. Hvis en pris er åbenlyst forkert, er Proshop ikke forpligtet til at levere det pågældende produkt til den forkerte pris. Enkelte tekster kan være autogenererede eller maskinoversatte, og der kan derfor fremkomme tekster, som virker misvisende.</p>
+    </article>
+    <article class="col-xs-12">
+        <div data-vueapp="campaigns" class="site-products-bottom-1" id="c74ff02438a414f958a9d7be2fb3770dd" element-id="74ff0243-8a41-4f95-8a9d-7be2fb3770dd" data="eyJjYXRlZ29yeVVybE5hbWUiOiJIdWtvbW1lbHNlc2tvcnQiLCJwcm9kdWN0SWQiOiIzMDc3Mzc0In0=" data-v-app=""><div><!--v-if--></div></div>
+
+    </article>
+</article>
+    </main>
+</div>
+    </div>
+    <script type="module">
+    Consent.activateFor('functional', function () {
+            (function (s, o, l, v, e, m, a, t) {
+        t = 'solvemateConfig'; s[e] = s[e] || function (x, y) { (s[t] = s[t] || {})[x] = y; }; a = o.createElement(l); a.async = 1; a.src = v; o.body.appendChild(a);
+    })(window, document, 'script', 'https://widget.solvemate.com/v2/init.js', 'solvemate');
+    solvemate('projectID', '5f994edd45b0d36364c03bba');
+    if (document.getElementById("chatbot") != null) {
+        solvemate('hideBeacon', true);
+        solvemate('inlineContainerId', 'chatbot');
+        solvemate('hideGreeting', true);
+    }
+    });
+</script>
+</div>
+    <footer class="footer position-relative" role="contentinfo">
+<div class="footer__top py-4">
+    <div class="ps-container">
+        <div class="site-footer-newsletterContainer">
+
+<div class="f-white">
+    Få nyheder, tilbud og konkurrencer direkte i din mailboks
+</div>
+<div class="p-2">
+<form action="/CustomerCenter/Newsletter/Subscribe" class="input-newsletter position-relative w-100" method="get" novalidate="novalidate"><input name="__RequestVerificationToken" type="hidden" value="tahHE0lRv5ZhPIU2_EoSE49M0vAEroeLWuz3yxShGxZsjF9B2JQMjXqIYdCNPlJdGva636T5CSX8m0QGIgFhOBx2ZWUTfbzLTaRIzc-ahR01">        <input name="Email" class="input__round-lg w-100 pr-5" type="email" placeholder="skriv e-mail adresse">
+<input id="source" name="source" type="hidden" value="WebsiteForm">        <button type="submit" aria-label="Newsletter Subscribe" class="input__round-btn position-absolute d-flex justify-content-center align-items-center">
+            <i class="pi-sm pi pi-send-mail rotate45"></i>
+        </button>
+</form></div>
+                <div class="socialLinksContainer">
+                    <span class="f-white pb-1">Find os på:</span>
+                    <div class="socialLinks">
+                            <a class="px-half" rel="noreferrer" href="https://www.facebook.com/proshop.dk/" target="_blank" title="Find os på: Facebook"><img class="lazy soci-icon" width="40" height="40" data-src="/Content/images/SVG/facebook.svg" src="" alt="Facebook"></a>
+                            <a class="px-half" rel="noreferrer" href="https://www.instagram.com/proshop.dk/" target="_blank" title="Find os på: Instagram"><img class="lazy soci-icon" width="40" height="40" data-src="/Content/images/SVG/instagram.svg" src="" alt="Instagram"></a>
+                            <a class="px-half" rel="noreferrer" href="https://www.tiktok.com/@proshop.dk" target="_blank" title="Find os på: TikTok"><img class="lazy soci-icon" width="40" height="40" data-src="/Content/images/SVG/tiktok.svg" src="" alt="TikTok"></a>
+                            <a class="px-half" rel="noreferrer" href="https://www.youtube.com/c/ProshopDk" target="_blank" title="Find os på: Youtube"><img class="lazy soci-icon" width="40" height="40" data-src="/Content/images/SVG/youtube-logotype.svg" src="" alt="Youtube"></a>
+                            <a class="px-half" rel="noreferrer" href="https://www.linkedin.com/company/proshop-aps/" target="_blank" title="Find os på: LinkedIn"><img class="lazy soci-icon" width="40" height="40" data-src="/Content/images/SVG/linkedin.svg" src="" alt="LinkedIn"></a>
+                    </div>
+                </div>
+        </div>
+    </div>
+</div>
+<div class="pl-2 pr-2 ps-container">
+    <div class="ps-container__inner ps__template--footer">
+        <div class="footer__contact footer__accordion-item active">
+                <div class="display-5 footer__header d-flex"><span class="align-items-center"><i class="pi-sm pi pi-headphones-b mr-1"></i>Åbningstider telefon</span><button class="d-flex footer__toggle" data-toggle="true" aria-expanded="true" aria-controls="accordion__section-0"><div class="align-items-center text-left d-flex"><i class="pi-sm pi pi-headphones-b mr-1"></i>Åbningstider telefon</div> <i class="ki pi-xs pi-chevron-down"></i></button></div>
+                <div id="accordion__section-0" class="footer__accordion-list">
+                    <table width="100%">
+<tbody>
+<tr>
+<td>Mandag - Torsdag:</td>
+<td>08:00 - 16:00</td>
+</tr>
+<tr>
+<td>Fredag:</td>
+<td>08:00 - 15:30</td>
+</tr>
+<tr>
+<td>Weekend &amp; helligdage:</td>
+<td>Lukket</td>
+</tr>
+<tr>
+<td colspan="2">&nbsp;&nbsp;</td>
+</tr>
+<tr>
+<td colspan="2">Find svar på ofte stillede spørgsmål i vores <span style="text-decoration: underline;"><strong><a href="/Kundeservice.htm">kundecenter</a></strong></span>, eller kontakt os på&nbsp;<a href="mailto:support@proshop.dk">support@proshop.dk</a>, henvendelser besvares inden for 48 timer.</td>
+</tr>
+</tbody>
+</table>
+                        <div class="pt-2"><p class="display-5 d-flex fw700 footer__display m-0">Åbningstider for afhentning af varer</p>Se åbningstider og adresser for Pick-up Points i København og Aarhus, <span style="text-decoration: underline;"><strong><a href="/Om-Pick-up-Points.htm">klik her</a></strong></span>.</div>
+                </div>
+        </div>
+        <div class="footer__support footer__accordion-item">
+            <div class="display-5 footer__header d-flex">
+                <span>Support</span>
+                <button class="d-flex footer__toggle" data-toggle="true" aria-expanded="false" aria-controls="accordion__section-1">
+                    Support
+                    <i class="ki-s pi-chev-right svg-fill-red"></i>
+                </button>
+            </div>
+            <div id="accordion__section-1" class="footer__accordion-list">
+                <ul class="list-unstyled arrow__list">
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Guides.htm"> Guides</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Forsendelse-og-levering.htm"> Forsendelse og levering</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Om-Pick-up-Points.htm"> Om Pick-up Points</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Reparation-Defekt.htm"> Reparation / Defekt</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Kundeservice.htm"> Kundeservice</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Handelsbetingelser.htm"> Handelsbetingelser</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Persondatapolitik.htm"> Persondatapolitik</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CSR.htm"> CSR</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Black-Friday"> Black Friday 2025</a>
+                        </li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer__myProshop footer__accordion-item">
+            <div class="display-5 footer__header d-flex">
+                <span>Min side</span>
+                <button class="d-flex footer__toggle" data-toggle="true" aria-expanded="false" aria-controls="accordion__section-2">
+                    Min side
+                    <i class="ki-s pi-chev-right svg-fill-red"></i>
+                </button>
+            </div>
+            <div id="accordion__section-2" class="footer__accordion-list">
+                <ul class="list-unstyled arrow__list">
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter"> Mit Proshop</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter/Rma/Login"> Reklamation</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter/CustomerReturn/StartReturnCase"> Returnering</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter/Account"> Købshistorik</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/CustomerCenter/CustomerAccount/ForgotPassword"> Glemt adgangskode</a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="ki-s pi-chev-right bg-black"></i>
+                            <a href="/Guide-til-fragtskader.htm"> Guide til fragtskader</a>
+                        </li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer__address">
+                <div class="footer__accordion-item">
+                    <div class="display-5 footer__header d-flex">
+                        <span>Kontakt</span>
+                        <button class="d-flex footer__toggle" data-toggle="true" aria-expanded="false" aria-controls="accordion__section-3">
+                            Kontakt
+                            <i class="ki-s pi-chev-right svg-fill-red"></i>
+                        </button>
+                    </div>
+                    <div id="accordion__section-3" class="footer__accordion-list">
+                        Proshop a/s<br>Slet Møllevej 17<br>8270&nbsp;Højbjerg<br>Danmark<br>DK18966239<br><a href="mailto:support@proshop.dk">support@proshop.dk</a><br><br>
+
+                        <ul class="list-unstyled arrow__list">
+                                <li class="d-flex align-items-center">
+                                    <i class="ki-s pi-chev-right bg-black"></i>
+                                    <a href="/Om-Proshop.htm"> Om Proshop</a>
+                                </li>
+                                <li class="d-flex align-items-center">
+                                    <i class="ki-s pi-chev-right bg-black"></i>
+                                    <a href="/Erhverv"> Erhverv</a>
+                                </li>
+                                <li class="d-flex align-items-center">
+                                    <i class="ki-s pi-chev-right bg-black"></i>
+                                    <a href="/Job.htm"> Job</a>
+                                </li>
+                        </ul>
+                        <div class="pt-2 clearfix">
+                            
+       <div class="menu-button-links pull-left btn-group position-relative">
+        <a id="dropdown-lang" href="#" aria-controls="languageMenu" class="familyRelationsDropdownBtn dropdown btn site-btn-between site-btn-white site-btn-hasborder dropdown-toggle langDropDownBtn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="ki-m pi pi-globe mr-1"></i>
+            <p>Lande</p>
+            <i class="ki-s pi-chev-right bg-black rotate90 ml-1"></i>
+        </a>
+        <ul id="languageMenu" role="menu" aria-labelledby="dropdown-lang" class="dropdown__list dropdown-menu familyRelationsDropdown langDropDown">
+                <li role="none">
+                    <a href="//www.proshop.at">
+                        proshop.at
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.de">
+                        proshop.de
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.fi">
+                        proshop.fi
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.nl">
+                        proshop.nl
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.no">
+                        proshop.no
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.pl">
+                        proshop.pl
+                    </a>
+                </li>
+                <li role="none">
+                    <a href="//www.proshop.se">
+                        proshop.se
+                    </a>
+                </li>
+        </ul>
+    </div>
+
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+</div>
+    <div class="pl-2 pr-2 ps-container"><div class="d-flex footer-row__flex pb-4 pt-2 footer__border justify-content-center">     <div class="site-campaignElement" data-campaign-element-id="299d6d40-a5aa-42b0-914e-f084bc90add2">
+        <a rel="noopener" data-action="campaignClick" data-id="3c871804-857c-4555-a051-a659fd8e74e4" data-name="Proshop.dk defaults" data-creative="299d6d40-a5aa-42b0-914e-f084bc90add2" data-position="footer-certification" href="//certifikat.emaerket.dk/eshop/proshop.dk" target="_blank" border="0" id="emaerke"><img class="lazy" data-src="/Content/images/SVG/e-maerket.svg" alt="e-maerket" width="62" height="66" style="width:62px;height:66px"></a><script src="" defer="" data-consent-src="https://static.klaviyo.com/onsite/js/klaviyo.js?company_id=L6MTra" data-category-consent="cookie_cat_marketing"></script><script>window._learnq=window._learnq||[];window._learnq.push(["track","Visited webpage",{url:window.location.href,name:document.title}])</script><style>.footer__border{flex-direction:initial}</style><a rel="noopener" data-action="campaignClick" data-id="3c871804-857c-4555-a051-a659fd8e74e4" data-name="Proshop.dk defaults" data-creative="299d6d40-a5aa-42b0-914e-f084bc90add2" data-position="footer-certification" href="https://www.findsmiley.dk/989192" target="_blank" alt="Fødevarestyrelsen smiley"><img class="lazy ml-2" style="height:59px;width:50px" data-src="/Images/smiley_105x125.gif" alt="Fødevarestyrelsen smiley" width="50" height="60"></a>
+    </div>
+ </div></div>
+<div class="footer__bottom">
+    <div class="pl-2 pr-2 ps-container">
+        <div class="d-flex footer-row__flex pt-4 pb-2 justify-content-between align-items-center">
+            <div class="text-center flex-center">
+                        <div class="d-flex mb-2 mx-1">
+                            <img class="lazy" data-src="/content/images/delivery/Postnord.svg" alt="Postnord">
+                        </div>
+            </div>
+            <div class="text-center flex-center flex-wrap">
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/Dankort.svg" alt="Dankort">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/apple-pay.svg" alt="Apple Pay">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/google-pay.svg" alt="Google Pay">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/MobilePay.svg" alt="MobilePay">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/Visa.svg" alt="Visa">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/MasterCard.svg" alt="Mastercard">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/PayPal.svg" alt="PayPal">
+                        </div>
+                        <div class="d-flex footer__payment mb-2">
+                            <img class="lazy" data-src="/content/images/cards-svg/Klarna.svg" alt="Klarna">
+                        </div>
+            </div>
+        </div>
+    </div>
+    <div id="auctionsMenu" class="d-flex pl-2 pr-2 ps-container"></div> 
+</div>
+<script type="text/javascript">
+    let footerToggle = document.querySelectorAll("[data-toggle='true']");
+    for (var i = 0; i < footerToggle.length; i++) {
+        footerToggle[i].addEventListener('click', function (e) {
+            e.currentTarget.closest('.footer__accordion-item').classList.toggle('active');
+            this.toggleAttribute('aria-expanded="true"');
+        });
+    }
+</script><input id="cookieTextFirstPart" type="hidden" value="Hos Proshop a/s bruger vi cookies til at forbedre brugeroplevelsen samt til personalisering af indhold og annoncer. Denne information deles med tredjepart, eksempelvis Google og Facebook, og cookies anvendes til anonym sporing på tværs af hjemmesider.">
+<input id="cookieTextLastPart" type="hidden" value="Ved at bruge vores hjemmeside, godkender du vores cookie- og persondatapolitik.">
+<input id="cookieLinkText" type="hidden" value="Du kan læse mere her">
+<input id="cookieLink" type="hidden" value="https://www.proshop.dk/Persondatapolitik.htm">
+<input id="cookieAcceptButtonText" type="hidden" value="OK"></footer>
+    
+<div class="modal--custom modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModal" aria-hidden="true" data-url="/CustomerCenter/CustomerAccount/TopLogin">
+    <div class="modal-dialog position-relative" role="document">
+        <div class="modal-body position-relative"><button type="button" class="login-modal--close d-flex align-items-center justify-content-end position-absolute" data-dismiss="modal" aria-label="Close"><i aria-hidden="true" class="pi pi-close"></i></button><div id="modalData"><div class="site-spinner mt-1 text-center"></div></div></div>
+    </div>
+</div>
+    <div id="fixedBottomMessage"></div>
+    
+    
+    <script type="text/javascript" src="/Content/v-1173573356/syndigo.bundle.js" defer=""></script>
+    <script type="text/javascript" src="" data-consent-src="https://live.icecat.biz/js/live-current-2.js" data-category-consent="cookie_cat_marketing" async=""></script>
+    
+<script type="text/javascript" src="" data-consent-src="//media.flixfacts.com/js/loader.js" data-category-consent="cookie_cat_functional" data-flix-distributor="5293" data-flix-language="da" data-flix-brand="SanDisk" data-flix-mpn="SDSDXXD-256G-GN4IN" data-flix-ean="0619659188658" data-flix-sku="3077374" data-flix-inpage="flix-inpage" data-flix-fallback-language="en" data-flix-price="309,00000" async=""></script> 
+    <script type="text/javascript" src="" data-consent-src="https://tag.heylink.com/ac1b7d31-cc69-4991-a875-8f4d7ae860d8/script.js" data-category-consent="cookie_cat_marketing" defer=""></script><script type="text/javascript">var _learnq = _learnq || [];var item = {
+"ProductName": "SanDisk Extreme PRO SD - 200MB/s - 256GB",
+"ProductID": "3077374",
+"Categories": ["Hukommelseskort"],
+"ImageURL": "https://www.proshop.dk/Images/915x900/3077374_9ff742f1ee31.jpg", 
+"URL": "https://www.proshop.dk/Hukommelseskort/SanDisk-Extreme-PRO-SD-200MBs-256GB/3077374",
+"Brand": "SanDisk",
+"Price": 309.00,
+"Old_price": 309.00};_learnq.push(["track", "Viewed Product", item]);</script>
+
+    <script>
+        window.addEventListener('liveload', function () {
+            IcecatLive.getDatasheet({
+                productstory: '#icecat-content'
+            }, {
+                GTIN: '0619659188658',
+                UserName: 'proshop.icecat'
+            }, 'dk');
+        })
+    </script>
+
+    <script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', () => {
+        // Define target node and observer configuration
+        const targetNode = document.getElementById("ccs-inline-content");
+        const config = { childList: true, characterData: true, subtree: true, attributes: true };
+
+        // Mutation Observer callback
+        const callback = (mutationList, observer) => {
+            for (const mutation of mutationList) {
+                for (const node of mutation.addedNodes) {
+                    if (node.nodeName === "SCRIPT") continue;
+
+                    const showMoreContainer = document.getElementById("scrollToDescriptionContainer");
+                    const descContainer = document.getElementById("description");
+
+                    if (showMoreContainer && descContainer) {
+                        showMoreContainer.classList.remove("not-visible");
+                        descContainer.classList.remove("hidden");
+                    }
+
+                    observer.disconnect(); // Stop observing after first match
+                    return; // Exit loop early
+                }
+            }
+        };
+
+        // Create and start the observer
+        const observer = new MutationObserver(callback);
+        if (targetNode) observer.observe(targetNode, config);
+
+        // Toggle button functionality
+        document.querySelectorAll('.site-toggleAccessoriesBtn').forEach((button) => {
+            button.addEventListener('click', () => {
+                const isExpanded = button.getAttribute('aria-expanded') === 'true';
+                button.setAttribute('aria-expanded', !isExpanded);
+                button.textContent = isExpanded
+                    ? 'Vis flere'
+                    : 'Vis færre';
+            });
+        });
+
+        // Add class to body
+        document.body.classList.add('product-details-page');
+
+        // Main click handler
+        document.addEventListener('click', ({ target }) => {
+            if (target.matches('#scrollToDescription')) {
+                scrollToDescription();
+            } else if (target.classList.contains('accordionHeader')) {
+                toggleAccordion(target);
+            }
+        });
+
+        // Accordion toggle function
+        function toggleAccordion(clickedElement) {
+            const controlsId = clickedElement.getAttribute('aria-controls');
+            if (!controlsId) return;
+
+            const accordion = document.getElementById(controlsId);
+            if (!accordion) return;
+
+            const isExpanded = clickedElement.getAttribute('aria-expanded') === 'true';
+            updateAccordion(!isExpanded, accordion, clickedElement);
+
+            if (!isExpanded) accordion.focus();
+        }
+
+        // Scroll to description function
+        function scrollToDescription() {
+            const headerDesc = document.getElementById('accordionHeader_description');
+            const panelDesc = document.getElementById('accordionPanel_description');
+
+            if (!headerDesc || !panelDesc) return;
+
+            updateAccordion(true, panelDesc, headerDesc);
+
+            // Smooth scrolling using scrollIntoView
+            headerDesc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Update accordion state function
+        function updateAccordion(expand, panel, header) {
+            const method = expand ? "add" : "remove";
+            panel.classList[method]("active");
+            header.parentNode.classList[method]("active");
+            header.setAttribute("aria-expanded", expand.toString());
+        }
+
+        // Check if element is out of viewport
+        function isElementOutOfViewport(element) {
+            if (!element) return false;
+
+            const rect = element.getBoundingClientRect();
+            return rect.bottom < 0 || rect.top > window.innerHeight;
+        }
+
+        // Check button visibility and update class on body
+        function checkButtonVisibility() {
+            const button = document.querySelector('.site-new-product-page-design #addToCart_BtnForm .btn');
+
+            if (isElementOutOfViewport(button)) {
+                document.body.classList.add('bottom-ribbon-added');
+            } else {
+                document.body.classList.remove('bottom-ribbon-added');
+            }
+        }
+
+        // Initial check and scroll listener for visibility updates
+        checkButtonVisibility();
+        window.addEventListener('scroll', checkButtonVisibility);
+    });
+ </script>
+
+    
+<link rel="stylesheet" href="/dist/Proshop/under.422943e7.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="/dist/under.422943e7.css"></noscript>
+
+
+    <script type="text/javascript" language="javascript">
+        var rsa;var raptorLoaded = function (raptor) { rsa = raptor; raptor.initialize({ customerID: "5875", productIdParamIndex: 2, eventTypeParamIndex: 1, useCookies: Consent.isValid('marketing') });
+            var raptorUserId = '';var userId = $('#minibasket').data('customerid');
+            console.log("Raptor **************: " + userId);if (raptorUserId.length > 0) userId = raptorUserId;else if (userId === '0') userId = ''; if (location.search.indexOf('mailId=') >= 0) { raptor.trackClickEvent({ methodName: 'GetUserRecommendations' }, ["itemClick", "3077374"]); } raptor.trackEvent("visit", "3077374", "SanDisk Extreme PRO SD - 200MB/s - 256GB", "Sortiment_Hardware#Sortiment_Hardware;flashhukommelse#flashhukommelse", "", "", userId, "SanDisk", "", "", "", "");
+        };
+    </script>
+
+<script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon="{&quot;rayId&quot;:&quot;9586547b8d7612a5&quot;,&quot;serverTiming&quot;:{&quot;name&quot;:{&quot;cfExtPri&quot;:true,&quot;cfEdge&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfL4&quot;:true,&quot;cfSpeedBrain&quot;:true,&quot;cfCacheStatus&quot;:true}},&quot;version&quot;:&quot;2025.6.2&quot;,&quot;token&quot;:&quot;f8b2150c90b94f51987ae93c4994ca3a&quot;}" crossorigin="anonymous"></script>
+
+
+ 
+ 
+<script type="text/javascript">
+var Consent = { cookieWarning: false, validCategories: ["functional", "statistic", "marketing"] };window.dataLayer = window.dataLayer || [];function gtag() { dataLayer.push(arguments); }gtag('consent', 'default', {'ad_storage': 'denied','ad_user_data': 'denied','ad_personalization': 'denied','analytics_storage': 'denied','wait_for_update': 2000 });if (navigator.userAgent.includes("CookieInformationScanner")) { initCookieInf(); }else if (document.cookie.indexOf('CookieInformationConsent=') < 0) { window.addEventListener('mousemove', initCookieInf);window.addEventListener('scroll', initCookieInf);window.addEventListener('keydown', initCookieInf);} else { initCookieInf();} function initCookieInf() { window.removeEventListener('mousemove', initCookieInf);window.removeEventListener('scroll', initCookieInf);window.removeEventListener('keydown', initCookieInf);var sc = document.createElement('script');sc.type = 'text/javascript';sc.id = 'CookieConsent';sc.defer = true;sc.src = 'https://policy.app.cookieinformation.com/uc.js';sc.dataset.culture = 'DA';sc.dataset.gcmVersion = '2.0';document.head.appendChild(sc);} Consent.cookieWarning = true;Consent.isValid = function (category) { try { return CookieInformation.getConsentGivenFor('cookie_cat_' + category); } catch { return false; } };Consent.run = function (category, callback) { if (Consent.isValid(category)) { callback(); } };Consent.activateFor = function (category, callback) { if (Consent.isValid(category)) { callback(); } else { window.addEventListener('CookieInformationConsentGiven', function () { Consent.run(category, callback) }); } };
+</script>
+ <style>:root{--background-banner-image-url:url(/Images/PRO01740-The-Fairphone-siteskin-DK_02bd2b16fe17.jpg)}@media(max-width:1199px){.site-background-cta{display:none!important}}</style></body></html>
