@@ -33,7 +33,7 @@ jobs:
 
       - name: Build Gist payload JSON
         run: |
-          python - << 'PY'
+          cat > build_gist.py <<'PY'
 import json, os, glob
 files = {}
 for path in glob.glob("share/*"):
@@ -51,6 +51,7 @@ payload = {
 with open("gist_payload.json", "w", encoding="utf-8") as f:
     json.dump(payload, f)
 PY
+          python build_gist.py
 
       - name: Update Secret Gist
         env:
