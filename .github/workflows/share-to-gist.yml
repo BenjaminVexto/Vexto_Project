@@ -19,11 +19,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Build debug bundle (whitelist)
+      - name: Copy whitelisted files
         run: |
-          set -e
           mkdir -p share
-          # ---- Kun de filer vi vil dele ----
           cp -f src/vexto/scoring/http_client.py share/ || true
           cp -f src/vexto/scoring/website_fetchers.py share/ || true
           cp -f src/vexto/scoring/analyzer.py share/ || true
@@ -33,7 +31,8 @@ jobs:
           cp -f tests/test_fetcher_matrix.py share/ || true
           cp -f tests/debug_csv.py share/ || true
 
-          # Byg Gist payload
+      - name: Build Gist payload JSON
+        run: |
           python - << 'PY'
 import json, os, glob
 files = {}
