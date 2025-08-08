@@ -1,8 +1,8 @@
 name: Share Vexto debug to Secret Gist
 
 on:
-  workflow_dispatch:  # manuel kørsel
-  push:               # automatisk kørsel ved ændringer i disse paths
+  workflow_dispatch:
+  push:
     branches: [ main ]
     paths:
       - "src/vexto/scoring/**"
@@ -10,6 +10,8 @@ on:
       - "config/scoring_rules.yml"
       - "tests/test_fetcher_matrix.py"
       - "tests/debug_csv.py"
+      - "debug_*.html"
+      - "final_view*.html"
 
 jobs:
   publish:
@@ -30,36 +32,24 @@ jobs:
           cp -f config/scoring_rules.yml share/ || true
           cp -f tests/test_fetcher_matrix.py share/ || true
           cp -f tests/debug_csv.py share/ || true
+          # Tag evt. de seneste 3 debug-HTML'er hvis de findes
+          ls -1t debug_*.html 2>/dev/null | head -n 3 | xargs -I{} cp -f {} share/ 2>/dev/null || true
+          ls -1t final_view*.html 2>/dev/null | head -n 3 | xargs -I{} cp -f {} share/ 2>/dev/null || true
 
-      - name: Build Gist payload JSON
-        run: |
-          cat > build_gist.py <<'PY'
-import json, os, glob
-files = {}
-for path in glob.glob("share/*"):
-    name = os.path.basename(path)
-    try:
-        with open(path, "r", encoding="utf-8", errors="ignore") as f:
-            content = f.read()
-    except Exception:
-        content = ""
-    files[name] = {"content": content}
-payload = {
-    "files": files,
-    "description": "Vexto debug snapshot (auto-update via GitHub Actions)"
-}
-with open("gist_payload.json", "w", encoding="utf-8") as f:
-    json.dump(payload, f)
-PY
-          python build_gist.py
-
-      - name: Update Secret Gist
+      - name: Authenticate GH CLI
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          echo "$GH_TOKEN" | gh auth login --with-token
+          gh auth status
+
+      - name: Update Secret Gist (one file at a time)
+        env:
           GIST_ID: ${{ secrets.GIST_ID }}
         run: |
-          curl -sS -X PATCH \
-            -H "Authorization: token $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/gists/$GIST_ID \
-            -d @gist_payload.json
+          shopt -s nullglob
+          for f in share/*; do
+            echo "Uploading $f"
+            gh gist edit "$GIST_ID" "$f"
+          done
+          echo "Done."
