@@ -34,14 +34,19 @@ jobs:
           ls -1t debug_*.html 2>/dev/null | head -n 3 | xargs -I{} cp -f {} share/ 2>/dev/null || true
           ls -1t final_view*.html 2>/dev/null | head -n 3 | xargs -I{} cp -f {} share/ 2>/dev/null || true
 
-      # Dropper "Authenticate GH CLI" — gh bruger GH_TOKEN automatisk
+      - name: Ensure GH CLI installed
+        run: |
+          if ! command -v gh >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y gh
+          fi
+          gh --version
 
       - name: Update Secret Gist (one file at a time)
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}   # gh læser denne automatisk
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}   # gh bruger denne automatisk
           GIST_ID: ${{ secrets.GIST_ID }}
         run: |
-          gh --version
           shopt -s nullglob
           for f in share/*; do
             echo "Uploading $f"
