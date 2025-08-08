@@ -1,34 +1,35 @@
-# src/vexto/scoring/tracking_fetchers.py
 import logging
 from bs4 import BeautifulSoup
-from .schemas import ConversionMetrics
+from .schemas import ConversionMetrics  # For type hinting
+from .http_client import AsyncHtmlClient
 
 log = logging.getLogger(__name__)
 
-# Unikke tekststrenge, der indikerer tilstedeværelsen af de respektive scripts
-GA4_IDENTIFIER = 'googletagmanager.com/gtag/js?id=G-'
-META_PIXEL_IDENTIFIER = 'connect.facebook.net/en_US/fbevents.js'
-
-def detect_tracking_scripts(soup: BeautifulSoup) -> ConversionMetrics:
+async def fetch_tracking_data(client: AsyncHtmlClient, soup: BeautifulSoup) -> dict:
     """
-    Analyserer et BeautifulSoup-objekt for at detektere GA4 og Meta Pixel scripts.
+    Tjekker for GA4 og Meta Pixel ved at scrape <script> tags og src.
+    Returnerer dict med bool-værdier til ConversionMetrics.
     """
     if not soup:
-        return {'has_ga4': None, 'has_meta_pixel': None}
+        return {'has_ga4': False, 'has_meta_pixel': False}
 
     try:
-        # Konverter hele HTML-suppen til en enkelt tekststreng for nem søgning
-        html_text = str(soup).lower()
+        # Tjek for GA4: Søg efter gtag.js eller analytics.google.com
+        has_ga4 = any(
+            'google-analytics.com/ga.js' in str(script) or 
+            'analytics.google.com/g/collect' in str(script) or 
+            'gtag.js' in str(script).lower()
+            for script in soup.find_all('script')
+        )
 
-        has_ga4 = GA4_IDENTIFIER.lower() in html_text
-        has_meta_pixel = META_PIXEL_IDENTIFIER.lower() in html_text
+        # Tjek for Meta Pixel: Søg efter connect.facebook.net og pixel
+        has_meta_pixel = any(
+            'connect.facebook.net' in str(script) and 'pixel' in str(script).lower()
+            for script in soup.find_all('script')
+        )
 
-        tracking_data: ConversionMetrics = {
-            'has_ga4': has_ga4,
-            'has_meta_pixel': has_meta_pixel,
-        }
-        return tracking_data
+        return {'has_ga4': has_ga4, 'has_meta_pixel': has_meta_pixel}
 
     except Exception as e:
-        log.error(f"Fejl under detektion af tracking scripts: {e}", exc_info=True)
-        return {'has_ga4': None, 'has_meta_pixel': None}
+        log.error(f"Fejl under tracking-scraping: {e}", exc_info=True)
+        return {'has_ga4': False, 'has_meta_pixel': False}

@@ -1,5 +1,3 @@
-# tests/test_authority_fetcher.py
-
 import pytest
 import os
 import json
@@ -55,29 +53,30 @@ class MockHttpxResponse:
             )
 
 # --- Pytest Fixtures ---
-# Moved mock_async_html_client fixture definition to the top
 @pytest.fixture
 def mock_async_html_client():
     """Provides a mock AsyncHtmlClient instance."""
-    # We only need to mock httpx_get, as get_authority calls that.
     client = AsyncHtmlClient()
     client.httpx_get = AsyncMock()
     return client
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def setup_authority_tests(mocker):
     """Ensures OPR_API_KEY is set and cache is cleared for authority tests."""
-    # Patch os.getenv directly so the module-level call in authority_fetcher sees it
-    mocker.patch('os.getenv', side_effect=lambda key: 'DUMMY_OPR_KEY' if key == 'OPENPAGERANK_API_KEY' else os.environ.get(key))
-    html_cache.clear() # Clear cache before each test
+    # --- START PÅ KIRURGISK INDGREB ---
+    # Lambda-funktionen er opdateret til at acceptere et 'default' argument.
+    # Dette forhindrer TypeError, når f.eks. Playwright kalder os.getenv med to argumenter.
+    mocker.patch('os.getenv', side_effect=lambda key, default=None: 'DUMMY_OPR_KEY' if key == 'OPENPAGERANK_API_KEY' else default)
+    # --- SLUT PÅ KIRURGISK INDGREB ---
+    html_cache.clear()
     yield
-    html_cache.clear() # Clear cache again after test
+    html_cache.clear()
 
 
 # --- Test Cases ---
 
 @pytest.mark.asyncio
-async def test_get_authority_success(mock_async_html_client): # Removed set_opr_api_key as it's handled by setup_authority_tests
+async def test_get_authority_success(mock_async_html_client, setup_authority_tests):
     """Tests successful retrieval of authority data from OPR."""
     mock_response = MockHttpxResponse(200, json_data=MOCK_OPR_SUCCESS_RESPONSE)
     mock_async_html_client.httpx_get.return_value = mock_response
@@ -104,18 +103,17 @@ async def test_get_authority_success(mock_async_html_client): # Removed set_opr_
 @pytest.mark.asyncio
 async def test_get_authority_api_key_missing(mock_async_html_client, mocker):
     """Tests when OPR_API_KEY is not set."""
-    # Patch os.getenv specifically for this test to return None for OPR_API_KEY
-    mocker.patch('os.getenv', side_effect=lambda key: None if key == 'OPENPAGERANK_API_KEY' else os.environ.get(key))
+    mocker.patch('os.getenv', side_effect=lambda key, default=None: None if key == 'OPENPAGERANK_API_KEY' else default)
 
     result = await get_authority(mock_async_html_client, "https://any-domain.com")
 
     assert result is None
-    mock_async_html_client.httpx_get.assert_not_called() # Should not be called
+    mock_async_html_client.httpx_get.assert_not_called()
     await mock_async_html_client.close()
 
 
 @pytest.mark.asyncio
-async def test_get_authority_domain_not_found(mock_async_html_client, setup_authority_tests): # Pass setup_authority_tests explicitly
+async def test_get_authority_domain_not_found(mock_async_html_client, setup_authority_tests):
     """Tests authority fetch when OPR API returns data with nulls for a domain not found."""
     mock_response = MockHttpxResponse(200, json_data=MOCK_OPR_NO_DATA_RESPONSE)
     mock_async_html_client.httpx_get.return_value = mock_response
@@ -135,9 +133,9 @@ async def test_get_authority_domain_not_found(mock_async_html_client, setup_auth
     await mock_async_html_client.close()
 
 @pytest.mark.asyncio
-async def test_get_authority_api_http_error(mock_async_html_client, setup_authority_tests): # Pass setup_authority_tests explicitly
+async def test_get_authority_api_http_error(mock_async_html_client, setup_authority_tests):
     """Tests when OPR API returns a non-2xx status code (e.g., 400, 500)."""
-    mock_response = MockHttpxResponse(400, json_data={"error": "bad request"}) # Provide json_data for response.json()
+    mock_response = MockHttpxResponse(400, json_data={"error": "bad request"})
     mock_async_html_client.httpx_get.return_value = mock_response
 
     url_to_test = "https://error-domain.com"
@@ -151,7 +149,7 @@ async def test_get_authority_api_http_error(mock_async_html_client, setup_author
     await mock_async_html_client.close()
 
 @pytest.mark.asyncio
-async def test_get_authority_network_error(mock_async_html_client, setup_authority_tests): # Pass setup_authority_tests explicitly
+async def test_get_authority_network_error(mock_async_html_client, setup_authority_tests):
     """Tests when a network error occurs during OPR API call."""
     mock_async_html_client.httpx_get.side_effect = httpx.RequestError("Mock Network Error", request=httpx.Request("GET", "http://mock-url.com"))
 

@@ -1,10 +1,8 @@
-# tests/test_fetchers.py
-
 import pytest
 from vexto.scoring.website_fetchers import fetch_basic_seo_data
 from vexto.scoring.schemas import BasicSEO
 
-# OPDATERET: Billed-relaterede felter er fjernet fra facitlisten.
+# Forventet tomt resultat ved fejl
 EXPECTED_EMPTY_BASIC_SEO: BasicSEO = {
     'h1': None,
     'h1_count': None,
@@ -23,22 +21,21 @@ EXPECTED_EMPTY_BASIC_SEO: BasicSEO = {
 @pytest.mark.network
 async def test_fetch_google_com(client):
     """
-    End-to-end test against a real, reliable domain, now using the client fixture.
+    End-to-end test against a real, stabil domæne, nu med korrekt tuple-unpacking.
     """
-    data = await fetch_basic_seo_data(client, "https://www.google.com")
+    basic, _ = await fetch_basic_seo_data(client, "https://www.google.com")
 
-    assert data is not None
-    assert data.get('title_text') == "Google"
-    assert data.get('word_count') > 5
-    # RETTELSE: Denne assertion er fjernet, da billed-data ikke længere hentes her.
-    # assert data.get('image_alt_pct') is not None
+    assert basic is not None
+    assert basic.get('title_text') == "Google"
+    assert basic.get('word_count') is not None and basic.get('word_count') > 5
+
 
 @pytest.mark.asyncio
 @pytest.mark.network
 async def test_fetch_non_existent_domain(client):
     """
-    Tests graceful failure for a non-existent domain, using the client fixture.
+    Tester robust fallback ved ugyldigt domæne, med tuple-unpacking.
     """
-    data = await fetch_basic_seo_data(client, "https://this-is-not-a-real-domain-xyz.com")
-    
-    assert data == EXPECTED_EMPTY_BASIC_SEO
+    basic, _ = await fetch_basic_seo_data(client, "https://this-is-not-a-real-domain-xyz.com")
+
+    assert basic == EXPECTED_EMPTY_BASIC_SEO

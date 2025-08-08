@@ -1,4 +1,4 @@
-# run_full_analysis.py
+#run_full_analysis.py
 
 import asyncio
 import logging
@@ -12,25 +12,33 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 async def main():
     """
-    Kører en fuld analyse for URL'er indlæst fra urls.txt og genererer en Excel-rapport.
+    Kører en fuld analyse for URL'er indlæst fra URLs.csv og genererer en Excel-rapport.
     """
-    # --- NYT: Hent URL'er fra urls.txt ---
-    logging.info("Henter URL'er fra 'urls.txt'...")
+    # --- START PÅ OPDATERET KODEBLOK ---
+    logging.info("Henter URL'er fra 'URLs.csv'...")
     try:
-        with open('urls.txt', 'r', encoding='utf-8') as f:
-            # Vi læser hver linje, fjerner unødvendigt whitespace (f.eks. linjeskift)
-            # og ignorerer tomme linjer i filen.
-            urls_to_analyze = [line.strip() for line in f if line.strip()]
+        # Læs CSV-filen med pandas
+        df = pd.read_csv('URLs.csv', sep=';', encoding='utf-8-sig')
+        
+        # Tjek om den nødvendige kolonne findes
+        if 'fundet_url' not in df.columns:
+            logging.error("Kolonnen 'fundet_url' blev ikke fundet i 'URLs.csv'.")
+            return
+            
+        # Udtræk URL'er, fjern eventuelle tomme rækker, og konverter til en liste
+        urls_to_analyze = df['fundet_url'].dropna().tolist()
 
         if not urls_to_analyze:
-            logging.error("Filen 'urls.txt' er tom. Tilføj venligst URL'er, der skal analyseres, og kør scriptet igen.")
+            logging.error("Filen 'URLs.csv' er tom eller indeholder ingen URL'er i 'fundet_url'-kolonnen.")
             return
 
     except FileNotFoundError:
-        logging.error("Filen 'urls.txt' blev ikke fundet i projektmappen.")
-        logging.error("Opret venligst filen, indsæt en URL pr. linje, og kør scriptet igen.")
+        logging.error("Filen 'URLs.csv' blev ikke fundet i projektmappen.")
         return
-    # --- SLUT PÅ NY KODEBLOK ---
+    except Exception as e:
+        logging.error(f"Der opstod en uventet fejl under indlæsning af 'URLs.csv': {e}")
+        return
+    # --- SLUT PÅ OPDATERET KODEBLOK ---
     
     
     logging.info(f"--- Starter fuld analyse for {len(urls_to_analyze)} URL'er fundet i filen ---")

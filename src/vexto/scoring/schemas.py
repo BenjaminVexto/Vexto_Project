@@ -32,9 +32,9 @@ class TechnicalSEO(TypedDict):
     is_https: bool
     robots_txt_found: bool
     sitemap_xml_found: bool
+    sitemap_is_fresh: bool # <-- TILFØJET
     sitemap_locations: List[str]
     response_time_ms: Optional[float]
-    # Felter fra crawler
     total_pages_crawled: Optional[int]
     total_links_found: Optional[int]
     broken_links_count: Optional[int]
@@ -46,7 +46,7 @@ class PerformanceMetrics(TypedDict):
     lcp_ms: Optional[float]
     cls: Optional[float]
     inp_ms: Optional[int]
-    is_mobile_friendly: Optional[bool]
+    viewport_score: Optional[int] # <-- TILFØJET
     performance_score: Optional[int]
     psi_status: str
     total_js_size_kb: Optional[int]

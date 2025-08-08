@@ -1,7 +1,8 @@
 # src/vexto/scoring/authority_fetcher.py
 import os, httpx, logging, asyncio
 from urllib.parse import urlparse
-from typing import Optional # <--- ADDED THIS IMPORT
+from typing import Optional
+from tenacity import retry, stop_after_attempt, wait_exponential  # Ny import for retry
 # Import AsyncHtmlClient and html_cache from http_client
 from .http_client import AsyncHtmlClient, html_cache
 from .schemas import AuthorityMetrics # Import AuthorityMetrics for type hinting
@@ -11,6 +12,7 @@ log = logging.getLogger(__name__)
 # OPR_KEY is now retrieved inside the function, not at module level
 API_URL = "https://openpagerank.com/api/v1.0/getPageRank"
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5), reraise=True)  # Ny: Retry decorator med 3 forsøg, exponential wait
 async def get_authority(client: AsyncHtmlClient, url: str) -> Optional[AuthorityMetrics]: # Return type Optional[AuthorityMetrics]
     opr_key = os.getenv("OPENPAGERANK_API_KEY") # Get OPR_KEY inside the function
     if not opr_key:

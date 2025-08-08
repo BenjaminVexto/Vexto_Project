@@ -1,44 +1,58 @@
 # src/vexto/scoring/social_fetchers.py
+from urllib.parse import urlparse, urljoin
 import logging
+from typing import Dict, List, Set
 from bs4 import BeautifulSoup
 from .schemas import SocialAndReputationMetrics
 
 log = logging.getLogger(__name__)
 
-# Domæner vi leder efter i links
 SOCIAL_MEDIA_DOMAINS = [
-    'facebook.com',
-    'instagram.com',
-    'linkedin.com',
-    'twitter.com',
-    'x.com', # Twitter's nye domæne
-    'youtube.com',
-    'tiktok.com'
+    "facebook.com",
+    "instagram.com",
+    "linkedin.com",
+    "twitter.com",
+    "x.com",
+    "tiktok.com",
+    "youtube.com",
 ]
 
-def find_social_media_links(soup: BeautifulSoup) -> SocialAndReputationMetrics:
-    """
-    Analyserer et BeautifulSoup-objekt for at finde udgående links til sociale medier.
-    """
+def find_social_media_links(soup: BeautifulSoup) -> Dict[str, List[str]]:
     if not soup:
-        return {'social_media_links': []}
+        return {'social_media_links': [], 'social_share_links': []}
 
-    found_links = set() # Brug et set for at undgå duplikater
-    
-    try:
-        links = soup.find_all('a', href=True)
-        for link in links:
-            href = link['href'].lower()
-            for domain in SOCIAL_MEDIA_DOMAINS:
-                if domain in href:
-                    found_links.add(link['href']) # Tilføj den originale URL
-                    break # Gå til næste link, når et match er fundet
+    profiles, shares = set(), set()
 
-        social_data: SocialAndReputationMetrics = {
-            'social_media_links': sorted(list(found_links)) # Returner en sorteret liste
-        }
-        return social_data
+    for a in soup.find_all('a', href=True):
+        href = a['href'].strip()
+        # Normalize relative or protocol-relative URLs
+        if href.startswith('//'):
+            href = 'https:' + href
+        elif href.startswith('/'):
+            href = urljoin('https://example.com', href)  # Replace with base_url in analyzer
+        if not href.startswith('http'):
+            continue
+        try:
+            u = urlparse(href)
+            host = u.netloc.lower().lstrip('www.')
+            match = next((d for d in SOCIAL_MEDIA_DOMAINS if host.endswith(d)), None)
+            if not match:
+                continue
+            # Exclude privacy policy, legal, or terms pages
+            if any(term in u.path.lower() for term in ['policy', 'privacy', 'legal', 'terms']):
+                log.debug(f"Excluded policy link: {href}")
+                continue
+            if any(x in u.path.lower() for x in ['share', 'sharer', 'intent']):
+                shares.add(href)
+                log.info(f"Found social share link: {href}")
+            else:
+                profiles.add(href)
+                log.info(f"Found social profile link: {href}")
+        except Exception as e:
+            log.debug(f"Error parsing social link {href}: {e}")
+            continue
 
-    except Exception as e:
-        log.error(f"Fejl under detektion af SoMe-links: {e}", exc_info=True)
-        return {'social_media_links': []}
+    return {
+        'social_media_links': sorted(profiles),
+        'social_share_links': sorted(shares)
+    }

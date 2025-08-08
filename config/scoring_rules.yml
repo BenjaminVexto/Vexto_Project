@@ -1,51 +1,318 @@
 # config/scoring_rules.yml
 
 technical_seo:
-  max_points: 25
+  max_points: 145
   rules:
-    https_check:
-      description: "Siden bruger en sikker HTTPS-forbindelse."
+    site_status:
+      description: "Viser om hjemmesiden er online og tilgængelig."
+      data_key: status_code
+      type: equals
+      threshold: 200
+      points: 55
+      kritikalitet: Høj
+    uses_https:
+      description: "Krypterer data mellem browser og server."
       data_key: is_https
       type: boolean_true
       points: 25
-
-# -- KIRURGISK INDGREB START --
-basic_seo:
-  max_points: 30 # Forøget fra 10 til 30 (10 for alt-tekst + 20 for schema)
-  rules:
-    alt_ratio_check:
-      description: "Størstedelen af billederne (>80%) har alt-tekst."
-      data_key: img_alt_ratio
-      type: greater_than_or_equal
-      threshold: 0.8
+      kritikalitet: Høj
+    sitemap_score:
+      description: "En fil, der fortæller Google, hvilke sider der er på sitet."
+      data_keys:
+        found: sitemap_xml_found
+        fresh: sitemap_is_fresh
+      type: custom_function
+      function_name: calculate_sitemap_score
+      points: 15
+      kritikalitet: Medium
+    robots_txt:
+      description: "En fil, der guider søgemaskiner."
+      data_key: robots_txt_found
+      type: boolean_true
+      points: 20
+      kritikalitet: Høj
+    broken_links:
+      description: "Identificerer links, der fører til 'side ikke fundet' (404-fejl)."
+      data_key: broken_links_pct
+      type: range
+      levels:
+        - type: less_than_or_equal
+          threshold: 1
+          points: 15
+        - type: less_than_or_equal
+          threshold: 5
+          points: 7
+      kritikalitet: Medium
+    canonical_score:
+      description: "Sikrer at Google kun indekserer den foretrukne version af en side."
+      data_key: canonical_url
+      type: custom_function
+      function_name: evaluate_canonical
       points: 10
-    schema_markup_check:
-      description: "Siden har struktureret data (Schema.org)."
+      kritikalitet: Medium
+
+performance:
+  max_points: 130
+  rules:
+    lcp_score:
+      description: "Tiden det tager for det største synlige indhold at dukke op."
+      data_key: lcp_ms
+      type: range
+      levels:
+        - type: less_than_or_equal
+          threshold: 2500
+          points: 35
+        - type: less_than_or_equal
+          threshold: 4000
+          points: 15
+      kritikalitet: Høj
+    cls_score:
+      description: "Måler hvor meget indholdet 'hopper' under indlæsning."
+      data_key: cls
+      type: range
+      levels:
+        - type: less_than_or_equal
+          threshold: 0.1
+          points: 25
+        - type: less_than_or_equal
+          threshold: 0.25
+          points: 10
+      kritikalitet: Medium
+    inp_score:
+      description: "Måler en sides responsivitet på brugerinteraktion."
+      data_key: inp_ms
+      type: range
+      levels:
+        - type: less_than_or_equal
+          threshold: 200
+          points: 25
+        - type: less_than_or_equal
+          threshold: 500
+          points: 10
+      kritikalitet: Høj
+    mobile_friendly_check:
+      description: "Hvor godt siden tilpasser sig mobiltelefoner."
+      data_key: viewport_score
+      type: equals
+      threshold: 1
+      points: 45
+      kritikalitet: Høj
+
+basic_seo:
+  max_points: 80
+  rules:
+    title_length:
+      description: "Længden på sidens titel i søgeresultater."
+      data_key: title_length
+      type: range
+      levels:
+        - min: 50
+          max: 60
+          points: 10
+        - min: 40
+          max: 70
+          points: 5
+      kritikalitet: Medium
+    description_length:
+      description: "Længden på sidens beskrivelse i søgeresultater."
+      data_key: meta_description_length
+      type: range
+      levels:
+        - min: 120
+          max: 155
+          points: 10
+        - min: 70
+          max: 160
+          points: 5
+      kritikalitet: Lav
+    avg_image_size:
+      description: "Hvor store billedfilerne er i gennemsnit."
+      data_key: avg_image_size_kb
+      type: range
+      levels:
+        - type: less_than
+          threshold: 100
+          points: 15
+        - type: less_than_or_equal
+          threshold: 300
+          points: 7
+      kritikalitet: Medium
+    image_alt_texts:
+      description: "Tekstbeskrivelser af billeder for SEO og tilgængelighed."
+      data_key: image_alt_pct
+      type: range
+      levels:
+        - type: greater_than
+          threshold: 90
+          points: 10
+        - type: greater_than_or_equal
+          threshold: 50
+          points: 5
+      kritikalitet: Lav
+    schema_markup:
+      description: "Kode der hjælper Google med at forstå indholdet (Rich Snippets)."
       data_key: schema_markup_found
       type: boolean_true
       points: 20
-# -- KIRURGISK INDGREB SLUT --
-
-performance:
-  max_points: 80
-  rules:
-    lcp_score:
-      description: "Largest Contentful Paint (LCP) score"
-      data_key: lcp_ms
+      kritikalitet: Medium
+    text_length:
+      description: "Om der er tilstrækkeligt indhold på kernesider."
+      data_key: word_count
+      type: range
       levels:
-        - name: "good"
-          description_suffix: "er under 2.5 sekunder (hurtig)."
-          type: less_than_or_equal
-          threshold: 2500
-          points: 35
-        - name: "needs_improvement"
-          description_suffix: "er mellem 2.5s og 4.0s."
-          type: less_than_or_equal
-          threshold: 4000
-          points: 15
-    
-    mobile_friendly_check:
-      description: "Siden er mobilvenlig."
-      data_key: is_mobile_friendly
-      type: boolean_true
+        - type: greater_than_or_equal
+          threshold: 300
+          points: 25
+        - type: greater_than_or_equal
+          threshold: 100
+          points: 10
+      kritikalitet: Medium
+
+content:
+  max_points: 110
+  rules:
+    latest_blog_post:
+      description: "Dato for seneste blogindlæg eller nyhed."
+      data_key: days_since_last_post
+      type: range
+      levels:
+        - type: less_than_or_equal
+          threshold: 90
+          points: 20
+        - type: less_than_or_equal
+          threshold: 365
+          points: 10
+      kritikalitet: Medium
+    keyword_presence:
+      description: "Om vigtige søgeord bruges strategisk."
+      data_key: keyword_relevance_score
+      type: greater_than_or_equal
+      threshold: 0.7
       points: 45
+      kritikalitet: Høj
+    internal_links:
+      description: "Hvordan siderne linker til hinanden internt."
+      data_key: internal_link_score
+      type: greater_than_or_equal
+      threshold: 50
+      points: 20
+      kritikalitet: Medium
+
+authority:
+  max_points: 150
+  rules:
+    authority_score_v1:
+      description: "Et samlet mål for domænets autoritet."
+      data_keys:
+        pagerank: page_authority
+        global_rank: global_rank
+        trustpilot_count: social_and_reputation.gmb_review_count
+        trustpilot_rating: social_and_reputation.gmb_average_rating
+      type: custom_function
+      function_name: calculate_authority_score
+      points: 65
+      kritikalitet: Høj
+    social_presence:
+      description: "Tilstedeværelse og aktivitet på sociale medier."
+      data_key: social_media_links
+      type: custom_function
+      function_name: calculate_social_presence
+      points: 20
+      kritikalitet: Lav
+    gmb_profile:
+      description: "Hvor komplet og optimeret Google-profilen er."
+      data_key: gmb_profile_complete
+      type: boolean_true
+      points: 65
+      kritikalitet: Høj
+
+conversion:
+  max_points: 225
+  rules:
+    tracking_tags:
+      description: "Om GA4 og Meta-pixel er opsat korrekt."
+      data_keys:
+        ga4: has_ga4
+        pixel: has_meta_pixel
+      type: custom_function
+      function_name: calculate_tracking
+      points: 70
+      kritikalitet: Høj
+    cta_analysis:
+      description: "Hvor tydelige og strategiske opfordringer til handling er."
+      data_key: cta_score
+      type: range
+      levels:
+        - type: greater_than_or_equal
+          threshold: 80
+          points: 60
+        - type: greater_than_or_equal
+          threshold: 40
+          points: 30
+      kritikalitet: Høj
+    contact_visibility:
+      description: "Hvor nemt det er at finde telefon, e-mail og adresse."
+      data_keys:
+        emails: emails_found
+        phones: phone_numbers_found
+      type: custom_function
+      function_name: calculate_contact_score
+      points: 35
+      kritikalitet: Medium
+    form_usability:
+      description: "Hvor nemme og hurtige kontaktformularer er at udfylde."
+      data_key: form_field_counts
+      type: custom_function
+      function_name: calculate_form_score
+      points: 35
+      kritikalitet: Høj
+    trust_elements:
+      description: "Fremvisning af anmeldelser, certifikater, etc. på sitet."
+      data_key: trust_signals_found
+      type: custom_function
+      function_name: calculate_trust_score
+      points: 25
+      levels:
+        - type: range
+          min: 1
+          max: 1
+          points: 10
+        - type: range
+          min: 2
+          max: 100
+          points: 25
+      kritikalitet: Medium
+
+strategic_assessment:
+  max_points: 110
+  rules:
+    competitor_comparison:
+      description: "En direkte sammenligning med konkurrenters nøgletal."
+      data_key: benchmark_complete
+      type: boolean_true
+      points: 40
+      kritikalitet: Høj
+    ux_ui_quality:
+      description: "Sidens overordnede brugervenlighed og visuelle design."
+      data_key: ux_ui_score
+      type: range
+      levels:
+        - type: greater_than_or_equal
+          threshold: 80
+          points: 40
+        - type: greater_than_or_equal
+          threshold: 40
+          points: 20
+      kritikalitet: Høj
+    market_fit:
+      description: "Hvor godt siden positionerer sig inden for sin niche."
+      data_key: niche_score
+      type: range
+      levels:
+        - type: greater_than_or_equal
+          threshold: 80
+          points: 30
+        - type: greater_than_or_equal
+          threshold: 40
+          points: 15
+      kritikalitet: Høj

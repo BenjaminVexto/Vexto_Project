@@ -27,7 +27,7 @@ def test_parser_with_live_google_fixture():
     # Bekræft at INP-fallback til Total Blocking Time virkede
     assert parsed_data["inp_ms"] == 120
     # Bekræft at det nye mobil-tjek virker
-    assert parsed_data["is_mobile_friendly"] is True
+    assert parsed_data["viewport_score"] == 1
 
 def test_get_performance_from_stub():
     """Tester at stub-funktionen kan læse og parse den gamle stub-fil korrekt."""
@@ -36,7 +36,7 @@ def test_get_performance_from_stub():
     
     assert data is not None
     assert data["performance_score"] == 92
-    assert data["is_mobile_friendly"] is True
+    assert data["viewport_score"] == 1
     assert "lcp_ms" in data
 
 @pytest.mark.network

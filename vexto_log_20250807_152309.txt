@@ -1,0 +1,341 @@
+2025-08-07 15:23:10,521 - INFO - Playwright-browser starter i baggrundstråd (chromium)…
+2025-08-07 15:23:11,310 - INFO - Playwright-browser (chromium) startet succesfuldt.
+2025-08-07 15:23:11,310 - INFO - Starter diagnose for: https://www.inventarland.dk med max_pages=50...
+2025-08-07 15:23:11,312 - INFO - Starting analysis for: https://www.inventarland.dk
+2025-08-07 15:23:11,319 - INFO - Crawling: https://www.inventarland.dk (1/50)
+2025-08-07 15:23:11,413 - INFO - HTTP Request: GET https://www.inventarland.dk "HTTP/2 200 OK"
+2025-08-07 15:23:11,439 - INFO - Crawling: https://www.inventarland.dk/kontormobler (2/50)
+2025-08-07 15:23:12,705 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler "HTTP/2 200 OK"
+2025-08-07 15:23:12,735 - INFO - Crawling: https://www.inventarland.dk/thailand-skoleprojekt (3/50)
+2025-08-07 15:23:13,207 - INFO - HTTP Request: GET https://www.inventarland.dk/thailand-skoleprojekt "HTTP/2 200 OK"
+2025-08-07 15:23:13,246 - INFO - Crawling: https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe (4/50)
+2025-08-07 15:23:14,283 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe "HTTP/2 200 OK"
+2025-08-07 15:23:14,319 - INFO - Crawling: https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe/pc-skabe (5/50)
+2025-08-07 15:23:15,287 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe/pc-skabe "HTTP/2 200 OK"
+2025-08-07 15:23:15,324 - INFO - Crawling: https://www.inventarland.dk/lager-og-vaerksted/omklaedningsskabe-garderobeskabe/smarumsskabe (6/50)
+2025-08-07 15:23:16,268 - INFO - HTTP Request: GET https://www.inventarland.dk/lager-og-vaerksted/omklaedningsskabe-garderobeskabe/smarumsskabe "HTTP/2 200 OK"
+2025-08-07 15:23:16,308 - INFO - Crawling: https://www.inventarland.dk/kontormobler/skaermvaegge (7/50)
+2025-08-07 15:23:17,795 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/skaermvaegge "HTTP/2 200 OK"
+2025-08-07 15:23:17,820 - INFO - Crawling: https://www.inventarland.dk/pc-skab-med-10-rum-inkl-el-og-cylinderlas-2651963114 (8/50)
+2025-08-07 15:23:18,529 - INFO - HTTP Request: GET https://www.inventarland.dk/pc-skab-med-10-rum-inkl-el-og-cylinderlas-2651963114 "HTTP/2 200 OK"
+2025-08-07 15:23:18,545 - INFO - Crawling: https://www.inventarland.dk/kontormobler/skaermvaegge/akustik-til-vaeg (9/50)
+2025-08-07 15:23:20,104 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/skaermvaegge/akustik-til-vaeg "HTTP/2 200 OK"
+2025-08-07 15:23:20,148 - INFO - Crawling: https://www.inventarland.dk/kontormobler/skaermvaegge/mosvaeg-mosbilleder (10/50)
+2025-08-07 15:23:21,930 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/skaermvaegge/mosvaeg-mosbilleder "HTTP/2 200 OK"
+2025-08-07 15:23:21,963 - INFO - Crawling: https://www.inventarland.dk/kontormobler/kontor-tilbehor (11/50)
+2025-08-07 15:23:22,983 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/kontor-tilbehor "HTTP/2 200 OK"
+2025-08-07 15:23:23,017 - INFO - Crawling: https://www.inventarland.dk/kontormobler/kontor-tilbehor/entre (12/50)
+2025-08-07 15:23:24,059 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/kontor-tilbehor/entre "HTTP/2 200 OK"
+2025-08-07 15:23:24,095 - INFO - Crawling: https://www.inventarland.dk/kontormobler/kontor-tilbehor/taepper (13/50)
+2025-08-07 15:23:26,310 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/kontor-tilbehor/taepper "HTTP/2 200 OK"
+2025-08-07 15:23:26,346 - INFO - Crawling: https://www.inventarland.dk/tilbud/udsalg (14/50)
+2025-08-07 15:23:27,823 - INFO - HTTP Request: GET https://www.inventarland.dk/tilbud/udsalg "HTTP/2 200 OK"
+2025-08-07 15:23:27,861 - INFO - Crawling: https://www.inventarland.dk/kontormobler/skaermvaegge/stillerum (15/50)
+2025-08-07 15:23:29,599 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/skaermvaegge/stillerum "HTTP/2 200 OK"
+2025-08-07 15:23:29,647 - INFO - Crawling: https://www.inventarland.dk/kontormobler/skaermvaegge/telefonbokse-til-kontor (16/50)
+2025-08-07 15:23:30,991 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/skaermvaegge/telefonbokse-til-kontor "HTTP/2 200 OK"
+2025-08-07 15:23:31,027 - INFO - Crawling: https://www.inventarland.dk/kontormobler/kontor-tilbehor/entre/stumtjenere (17/50)
+2025-08-07 15:23:32,137 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/kontor-tilbehor/entre/stumtjenere "HTTP/2 200 OK"
+2025-08-07 15:23:32,167 - INFO - Crawling: https://www.inventarland.dk/kontorstole (18/50)
+2025-08-07 15:23:33,266 - INFO - HTTP Request: GET https://www.inventarland.dk/kontorstole "HTTP/2 200 OK"
+2025-08-07 15:23:33,295 - INFO - Crawling: https://www.inventarland.dk/projektafdelingen (19/50)
+2025-08-07 15:23:33,767 - INFO - HTTP Request: GET https://www.inventarland.dk/projektafdelingen "HTTP/2 200 OK"
+2025-08-07 15:23:33,806 - INFO - Crawling: https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe/skuffeskabe (20/50)
+2025-08-07 15:23:34,915 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe/skuffeskabe "HTTP/2 200 OK"
+2025-08-07 15:23:34,945 - INFO - Crawling: https://www.inventarland.dk/tilbud/udsalg/professionelle-hvidevarer (21/50)
+2025-08-07 15:23:35,820 - INFO - HTTP Request: GET https://www.inventarland.dk/tilbud/udsalg/professionelle-hvidevarer "HTTP/2 200 OK"
+2025-08-07 15:23:35,852 - INFO - Crawling: https://www.inventarland.dk/honey-moss-print-ecosund-6-stk (22/50)
+2025-08-07 15:23:36,502 - INFO - HTTP Request: GET https://www.inventarland.dk/honey-moss-print-ecosund-6-stk "HTTP/2 200 OK"
+2025-08-07 15:23:36,517 - INFO - Crawling: https://www.inventarland.dk/kontormobler/skaermvaegge/eco-soft-akustik-system (23/50)
+2025-08-07 15:23:37,436 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/skaermvaegge/eco-soft-akustik-system "HTTP/2 200 OK"
+2025-08-07 15:23:37,476 - INFO - Crawling: https://www.inventarland.dk/kontorstole/laeder-kontorstole (24/50)
+2025-08-07 15:23:38,470 - INFO - HTTP Request: GET https://www.inventarland.dk/kontorstole/laeder-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:23:38,511 - INFO - Crawling: https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe/sikringsskabe/vabenskabe (25/50)
+2025-08-07 15:23:39,542 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe/sikringsskabe/vabenskabe "HTTP/2 200 OK"
+2025-08-07 15:23:39,579 - INFO - Crawling: https://www.inventarland.dk/kontormobler/kontor-tilbehor/ergonomisk-tilbehor (26/50)
+2025-08-07 15:23:40,522 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/kontor-tilbehor/ergonomisk-tilbehor "HTTP/2 200 OK"
+2025-08-07 15:23:40,548 - INFO - Crawling: https://www.inventarland.dk/tilbud/udsalg/transport-og-loft (27/50)
+2025-08-07 15:23:41,475 - INFO - HTTP Request: GET https://www.inventarland.dk/tilbud/udsalg/transport-og-loft "HTTP/2 200 OK"
+2025-08-07 15:23:41,501 - INFO - Crawling: https://www.inventarland.dk/handelsbetingelser (28/50)
+2025-08-07 15:23:41,883 - INFO - HTTP Request: GET https://www.inventarland.dk/handelsbetingelser "HTTP/2 200 OK"
+2025-08-07 15:23:41,910 - INFO - Crawling: https://www.inventarland.dk/mobil-hotel-30-rum-mnoglelas-2656316312 (29/50)
+2025-08-07 15:23:42,609 - INFO - HTTP Request: GET https://www.inventarland.dk/mobil-hotel-30-rum-mnoglelas-2656316312 "HTTP/2 200 OK"
+2025-08-07 15:23:42,629 - INFO - Crawling: https://www.inventarland.dk/kontormobler/kontor-tilbehor/navneskilte-og-kort (30/50)
+2025-08-07 15:23:43,547 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/kontor-tilbehor/navneskilte-og-kort "HTTP/2 200 OK"
+2025-08-07 15:23:43,575 - INFO - Crawling: https://www.inventarland.dk/kontormobler/skaermvaegge/nordic-light-system (31/50)
+2025-08-07 15:23:45,369 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/skaermvaegge/nordic-light-system "HTTP/2 200 OK"
+2025-08-07 15:23:45,453 - INFO - Crawling: https://www.inventarland.dk/lager-og-vaerksted/omklaedningsskabe-garderobeskabe (32/50)
+2025-08-07 15:23:46,678 - INFO - HTTP Request: GET https://www.inventarland.dk/lager-og-vaerksted/omklaedningsskabe-garderobeskabe "HTTP/2 200 OK"
+2025-08-07 15:23:46,706 - INFO - Crawling: https://www.inventarland.dk/kontormobler/kontor-tilbehor/ergonomisk-tilbehor/gaband (33/50)
+2025-08-07 15:23:47,809 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/kontor-tilbehor/ergonomisk-tilbehor/gaband "HTTP/2 200 OK"
+2025-08-07 15:23:47,843 - INFO - Crawling: https://www.inventarland.dk/gabandlobeband-inmotion-in-lb-5-1-10-kmt-max-110-kg-2552664208 (34/50)
+2025-08-07 15:23:48,568 - INFO - HTTP Request: GET https://www.inventarland.dk/gabandlobeband-inmotion-in-lb-5-1-10-kmt-max-110-kg-2552664208 "HTTP/2 200 OK"
+2025-08-07 15:23:48,592 - INFO - Crawling: https://www.inventarland.dk/kontorstol-elc-excellence-laeder-sort-2313638108 (35/50)
+2025-08-07 15:23:49,586 - INFO - HTTP Request: GET https://www.inventarland.dk/kontorstol-elc-excellence-laeder-sort-2313638108 "HTTP/2 200 OK"
+2025-08-07 15:23:49,602 - INFO - Crawling: https://www.inventarland.dk/kontorstole/saerlig-behov-kontorstole (36/50)
+2025-08-07 15:23:50,700 - INFO - HTTP Request: GET https://www.inventarland.dk/kontorstole/saerlig-behov-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:23:50,744 - INFO - Crawling: https://www.inventarland.dk/kontaktformular (37/50)
+2025-08-07 15:23:51,217 - INFO - HTTP Request: GET https://www.inventarland.dk/kontaktformular "HTTP/2 200 OK"
+2025-08-07 15:23:51,233 - INFO - Crawling: https://www.inventarland.dk/kontormobler/kontor-tilbehor/haengemapper (38/50)
+2025-08-07 15:23:52,269 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/kontor-tilbehor/haengemapper "HTTP/2 200 OK"
+2025-08-07 15:23:52,293 - INFO - Crawling: https://www.inventarland.dk/kontorstole/stoleunderlag (39/50)
+2025-08-07 15:23:53,643 - INFO - HTTP Request: GET https://www.inventarland.dk/kontorstole/stoleunderlag "HTTP/2 200 OK"
+2025-08-07 15:23:53,677 - INFO - Crawling: https://www.inventarland.dk/kontormobler/skaermvaegge/eco-soft-akustik-system/eco-soft-bordskaerme (40/50)
+2025-08-07 15:23:54,800 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/skaermvaegge/eco-soft-akustik-system/eco-soft-bordskaerme "HTTP/2 200 OK"
+2025-08-07 15:23:54,829 - INFO - Crawling: https://www.inventarland.dk/kontormobler/kontor-tilbehor/traeningsudstyr (41/50)
+2025-08-07 15:23:55,677 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/kontor-tilbehor/traeningsudstyr "HTTP/2 200 OK"
+2025-08-07 15:23:55,740 - INFO - Crawling: https://www.inventarland.dk/frontskaerm-eco-pet-160x60-cm-2411672511 (42/50)
+2025-08-07 15:23:56,533 - INFO - HTTP Request: GET https://www.inventarland.dk/frontskaerm-eco-pet-160x60-cm-2411672511 "HTTP/2 200 OK"
+2025-08-07 15:23:56,558 - INFO - Crawling: https://www.inventarland.dk/stoleunderlag-floorlux-eco-m-pigge-120x150 (43/50)
+2025-08-07 15:23:57,278 - INFO - HTTP Request: GET https://www.inventarland.dk/stoleunderlag-floorlux-eco-m-pigge-120x150 "HTTP/2 200 OK"
+2025-08-07 15:23:57,301 - INFO - Crawling: https://www.inventarland.dk/kontorstole/kontorstole-i-farver (44/50)
+2025-08-07 15:23:58,868 - INFO - HTTP Request: GET https://www.inventarland.dk/kontorstole/kontorstole-i-farver "HTTP/2 200 OK"
+2025-08-07 15:23:58,902 - INFO - Crawling: https://www.inventarland.dk/kontorstole/rh-kontorstole (45/50)
+2025-08-07 15:24:00,056 - INFO - HTTP Request: GET https://www.inventarland.dk/kontorstole/rh-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:24:00,100 - INFO - Crawling: https://www.inventarland.dk/rullebord-i-plast-3-hylder-52x110x102h-sorte-sojler (46/50)
+2025-08-07 15:24:00,829 - INFO - HTTP Request: GET https://www.inventarland.dk/rullebord-i-plast-3-hylder-52x110x102h-sorte-sojler "HTTP/2 200 OK"
+2025-08-07 15:24:00,847 - INFO - Crawling: https://www.inventarland.dk/kontormobler/kontor-tilbehor/navneskilte-og-kort/navneskilte (47/50)
+2025-08-07 15:24:02,304 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/kontor-tilbehor/navneskilte-og-kort/navneskilte "HTTP/2 200 OK"
+2025-08-07 15:24:02,326 - INFO - Crawling: https://www.inventarland.dk/tilbud/udsalg/kantinemobler (48/50)
+2025-08-07 15:24:04,158 - INFO - HTTP Request: GET https://www.inventarland.dk/tilbud/udsalg/kantinemobler "HTTP/2 200 OK"
+2025-08-07 15:24:04,193 - INFO - Crawling: https://www.inventarland.dk/tilbud/udsalg/kontormobler (49/50)
+2025-08-07 15:24:05,663 - INFO - HTTP Request: GET https://www.inventarland.dk/tilbud/udsalg/kontormobler "HTTP/2 200 OK"
+2025-08-07 15:24:05,754 - INFO - Crawling: https://www.inventarland.dk/kontormobler/kontor-tilbehor/traeningsudstyr/spinningcykler (50/50)
+2025-08-07 15:24:06,711 - INFO - HTTP Request: GET https://www.inventarland.dk/kontormobler/kontor-tilbehor/traeningsudstyr/spinningcykler "HTTP/2 200 OK"
+2025-08-07 15:24:06,742 - INFO - Found 239 unique links (internal: 232). Checking status...
+2025-08-07 15:24:06,748 - INFO - Limiting check to 200 links (of 239).
+2025-08-07 15:24:06,768 - INFO - HTTP Request: HEAD https://www.inventarland.dk/thailand-skoleprojekt "HTTP/2 200 OK"
+2025-08-07 15:24:06,808 - INFO - HTTP Request: HEAD https://www.inventarland.dk/lager-og-vaerksted/omklaedningsskabe-garderobeskabe/smarumsskabe "HTTP/2 200 OK"
+2025-08-07 15:24:07,679 - INFO - HTTP Request: HEAD https://www.inventarland.dk/vabenskab-burg-ranger-n-7 "HTTP/2 200 OK"
+2025-08-07 15:24:07,679 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstol-elc-excellence-laeder-brun-2313638135 "HTTP/2 200 OK"
+2025-08-07 15:24:07,822 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstol-ortopaedisk-sd5 "HTTP/2 200 OK"
+2025-08-07 15:24:07,893 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/kontorstole-1000-2000 "HTTP/2 200 OK"
+2025-08-07 15:24:07,893 - INFO - HTTP Request: HEAD https://www.inventarland.dk/selvklaebende-lomme-a4-10-stk-pose "HTTP/2 200 OK"
+2025-08-07 15:24:07,894 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kantine-indretning "HTTP/2 200 OK"
+2025-08-07 15:24:08,007 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/traeningsudstyr/styrketraening "HTTP/2 200 OK"
+2025-08-07 15:24:08,449 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/taepper "HTTP/2 200 OK"
+2025-08-07 15:24:08,449 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/stastole "HTTP/2 200 OK"
+2025-08-07 15:24:08,449 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg "HTTP/2 200 OK"
+2025-08-07 15:24:08,449 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skaermvaegge/stillerum "HTTP/2 200 OK"
+2025-08-07 15:24:08,454 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/ergonomisk-tilbehor/handledsstotte "HTTP/2 200 OK"
+2025-08-07 15:24:08,479 - INFO - HTTP Request: HEAD https://www.inventarland.dk/stumtjener-arizona?childSku=2531203108 "HTTP/2 200 OK"
+2025-08-07 15:24:08,816 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skaermvaegge/telefonbokse-til-kontor "HTTP/2 200 OK"
+2025-08-07 15:24:08,816 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/entre/stumtjenere "HTTP/2 200 OK"
+2025-08-07 15:24:08,816 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole "HTTP/2 200 OK"
+2025-08-07 15:24:08,838 - INFO - HTTP Request: HEAD https://www.inventarland.dk/stumtjener-molde-sort-2536463008 "HTTP/2 200 OK"
+2025-08-07 15:24:08,838 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe/skuffeskabe "HTTP/2 200 OK"
+2025-08-07 15:24:09,087 - INFO - HTTP Request: HEAD https://www.inventarland.dk/stillerum "HTTP/2 200 OK"
+2025-08-07 15:24:09,087 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/professionelle-hvidevarer "HTTP/2 200 OK"
+2025-08-07 15:24:09,482 - INFO - HTTP Request: HEAD https://www.inventarland.dk/honey-moss-print-ecosund-6-stk "HTTP/2 200 OK"
+2025-08-07 15:24:09,503 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontorskabe-og-reoler/lockers "HTTP/2 200 OK"
+2025-08-07 15:24:09,503 - INFO - HTTP Request: HEAD https://www.inventarland.dk/modeboks-furnitech-l-antracit-2455535114 "HTTP/2 200 OK"
+2025-08-07 15:24:09,504 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/taepper/stolunderlag-taepper "HTTP/2 200 OK"
+2025-08-07 15:24:09,505 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skaermvaegge/eco-soft-akustik-system "HTTP/2 200 OK"
+2025-08-07 15:24:09,837 - INFO - HTTP Request: HEAD https://www.inventarland.dk/projektafdelingen "HTTP/2 200 OK"
+2025-08-07 15:24:09,957 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/ergonomisk-tilbehor/fodstotter "HTTP/2 200 OK"
+2025-08-07 15:24:09,957 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/laeder-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:24:09,960 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe/sikringsskabe/vabenskabe "HTTP/2 200 OK"
+2025-08-07 15:24:09,960 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/ergonomisk-tilbehor "HTTP/2 200 OK"
+2025-08-07 15:24:09,970 - INFO - HTTP Request: HEAD https://www.inventarland.dk/stoleunderlag-floorlux-eco-m-pigge-90x120 "HTTP/2 200 OK"
+2025-08-07 15:24:09,974 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/transport-og-loft "HTTP/2 200 OK"
+2025-08-07 15:24:09,990 - INFO - HTTP Request: HEAD https://www.inventarland.dk/handelsbetingelser "HTTP/2 200 OK"
+2025-08-07 15:24:09,990 - INFO - HTTP Request: HEAD https://www.inventarland.dk/mobil-hotel-30-rum-mnoglelas-2656316312 "HTTP/2 200 OK"
+2025-08-07 15:24:10,006 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/navneskilte-og-kort "HTTP/2 200 OK"
+2025-08-07 15:24:10,006 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skaermvaegge/nordic-light-system "HTTP/2 200 OK"
+2025-08-07 15:24:10,007 - INFO - HTTP Request: HEAD https://www.inventarland.dk/lager-og-vaerksted/omklaedningsskabe-garderobeskabe "HTTP/2 200 OK"
+2025-08-07 15:24:10,025 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/ergonomisk-tilbehor/gaband "HTTP/2 200 OK"
+2025-08-07 15:24:10,025 - INFO - HTTP Request: HEAD https://www.inventarland.dk/gabandlobeband-inmotion-in-lb-5-1-10-kmt-max-110-kg-2552664208 "HTTP/2 200 OK"
+2025-08-07 15:24:10,073 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/ergonomisk-tilbehor/ergonomisk-mus "HTTP/2 200 OK"
+2025-08-07 15:24:10,074 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/stoleunderlag/underlag-uden-pigge "HTTP/2 200 OK"
+2025-08-07 15:24:10,074 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstol-elc-excellence-laeder-sort-2313638108 "HTTP/2 200 OK"
+2025-08-07 15:24:10,077 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/saerlig-behov-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:24:10,077 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontaktformular "HTTP/2 200 OK"
+2025-08-07 15:24:10,107 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/haengemapper "HTTP/2 200 OK"
+2025-08-07 15:24:10,107 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/stoleunderlag "HTTP/2 200 OK"
+2025-08-07 15:24:10,135 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skaermvaegge/eco-soft-akustik-system/eco-soft-bordskaerme "HTTP/2 200 OK"
+2025-08-07 15:24:10,135 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/traeningsudstyr "HTTP/2 200 OK"
+2025-08-07 15:24:10,321 - INFO - HTTP Request: HEAD https://dk.trustpilot.com/review/www.inventarland.dk "HTTP/2 200 OK"
+2025-08-07 15:24:10,340 - INFO - HTTP Request: HEAD https://www.inventarland.dk/frontskaerm-eco-pet-160x60-cm-2411672511 "HTTP/2 200 OK"
+2025-08-07 15:24:10,832 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skaermvaegge "HTTP/2 200 OK"
+2025-08-07 15:24:10,832 - INFO - HTTP Request: HEAD https://www.inventarland.dk/pc-skab-med-10-rum-inkl-el-og-cylinderlas-2651963114 "HTTP/2 200 OK"
+2025-08-07 15:24:10,832 - INFO - HTTP Request: HEAD https://www.inventarland.dk/frontskaerm-eco-pet-70x60h-cm-2411672111 "HTTP/2 200 OK"
+2025-08-07 15:24:10,832 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorreol-epf-3x2h-antracit?childSku=2237145112 "HTTP/2 200 OK"
+2025-08-07 15:24:10,832 - INFO - HTTP Request: HEAD https://www.inventarland.dk/stoleunderlag-floorlux-eco-m-pigge-120x150 "HTTP/2 200 OK"
+2025-08-07 15:24:10,857 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skaermvaegge/akustik-til-vaeg "HTTP/2 200 OK"
+2025-08-07 15:24:10,941 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/transport-og-loft/loftevogne-og-saekkevogne "HTTP/2 200 OK"
+2025-08-07 15:24:10,941 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/rh-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:24:10,941 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/kontorstole-i-farver "HTTP/2 200 OK"
+2025-08-07 15:24:10,975 - INFO - HTTP Request: HEAD https://www.inventarland.dk/rullebord-i-plast-3-hylder-52x110x102h-sorte-sojler "HTTP/2 200 OK"
+2025-08-07 15:24:11,031 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstol-rh-activ-220-sort "HTTP/2 200 OK"
+2025-08-07 15:24:11,031 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/navneskilte-og-kort/navneskilte "HTTP/2 200 OK"
+2025-08-07 15:24:11,043 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skaermvaegge/mosvaeg-mosbilleder "HTTP/2 200 OK"
+2025-08-07 15:24:11,045 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/kantinemobler "HTTP/2 200 OK"
+2025-08-07 15:24:11,491 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/traeningsudstyr/spinningcykler "HTTP/2 200 OK"
+2025-08-07 15:24:11,731 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/kontormobler/lounge-reception-og-diske "HTTP/2 200 OK"
+2025-08-07 15:24:12,493 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/skrivebordstilbehor "HTTP/2 200 OK"
+2025-08-07 15:24:12,493 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/kontormobler "HTTP/2 200 OK"
+2025-08-07 15:24:12,493 - INFO - HTTP Request: HEAD https://www.inventarland.dk/spinningcykel-titan-life-s62 "HTTP/2 200 OK"
+2025-08-07 15:24:12,493 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/stoleunderlag/underlag-i-tekstil "HTTP/2 200 OK"
+2025-08-07 15:24:12,559 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/designede-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:24:12,559 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/kantinemobler/fest-eventmobler "HTTP/2 200 OK"
+2025-08-07 15:24:12,739 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/traeningsudstyr/traeningstilbehor "HTTP/2 200 OK"
+2025-08-07 15:24:12,861 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/giroflex-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:24:12,861 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skriveborde "HTTP/2 200 OK"
+2025-08-07 15:24:12,893 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/kontorplanter "HTTP/2 200 OK"
+2025-08-07 15:24:13,560 - INFO - HTTP Request: HEAD https://www.inventarland.dk/underentreprenr "HTTP/2 200 OK"
+2025-08-07 15:24:13,563 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/navneskilte-og-kort/etui "HTTP/2 200 OK"
+2025-08-07 15:24:13,646 - INFO - HTTP Request: HEAD https://www.e-pages.dk/inventarland/311 "HTTP/1.1 301 Moved Permanently"
+2025-08-07 15:24:13,780 - INFO - HTTP Request: HEAD https://www.e-pages.dk/inventarland/311/ "HTTP/1.1 200 OK"
+2025-08-07 15:24:13,868 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/gamerstole "HTTP/2 200 OK"
+2025-08-07 15:24:13,869 - INFO - HTTP Request: HEAD https://www.inventarland.dk/gaband-inmotion-in-gb-2-1-6-kmt-max-120-kg-2552661112 "HTTP/2 200 OK"
+2025-08-07 15:24:13,870 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler "HTTP/2 200 OK"
+2025-08-07 15:24:13,871 - INFO - HTTP Request: HEAD https://www.inventarland.dk/vabenskab-burg-ranger-n-5 "HTTP/2 200 OK"
+2025-08-07 15:24:13,941 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/entre/paraplyholdere "HTTP/2 200 OK"
+2025-08-07 15:24:14,355 - INFO - HTTP Request: HEAD https://www.inventarland.dk/canadian-ergo-eco-2-kontorstol-2314422408 "HTTP/2 200 OK"
+2025-08-07 15:24:14,938 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/populaere-ergonomiske-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:24:15,193 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skriveborde/haeve-saenkebord-oversigt "HTTP/2 200 OK"
+2025-08-07 15:24:15,193 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbudsavis "HTTP/2 200 OK"
+2025-08-07 15:24:15,193 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/taepper/sisal-taepper "HTTP/2 200 OK"
+2025-08-07 15:24:15,201 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/mode-og-konference "HTTP/2 200 OK"
+2025-08-07 15:24:15,373 - INFO - HTTP Request: HEAD https://www.inventarland.dk/lager-og-vaerksted "HTTP/2 200 OK"
+2025-08-07 15:24:15,374 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/udendorsmobler "HTTP/2 200 OK"
+2025-08-07 15:24:15,507 - INFO - HTTP Request: HEAD https://www.inventarland.dk/skuffeskab-bisley-m-6-skuffer?childSku=2613110614 "HTTP/2 200 OK"
+2025-08-07 15:24:15,885 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe/arkivstalreoler "HTTP/2 200 OK"
+2025-08-07 15:24:16,117 - INFO - HTTP Request: HEAD https://www.inventarland.dk/lager-og-vaerksted/omklaedningsskabe-garderobeskabe/torreskabe "HTTP/2 200 OK"
+2025-08-07 15:24:16,189 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/taepper/tuftede-taepper "HTTP/2 200 OK"
+2025-08-07 15:24:16,190 - INFO - HTTP Request: HEAD https://www.inventarland.dk/case-lattec "HTTP/2 200 OK"
+2025-08-07 15:24:16,306 - INFO - HTTP Request: HEAD https://m2.inventarland.dk/pub/media/wysiwyg/PDF/Fortrydelsesformular.pdf "HTTP/2 200 OK"
+2025-08-07 15:24:16,747 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/dauphin-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:24:16,774 - INFO - HTTP Request: HEAD https://www.inventarland.dk/lager-og-vaerksted/omklaedningsskabe-garderobeskabe/garderobebaenke "HTTP/2 200 OK"
+2025-08-07 15:24:16,774 - INFO - HTTP Request: HEAD https://www.inventarland.dk/dobbeltboks-phonealone-laminat?childSku=2451024014 "HTTP/2 200 OK"
+2025-08-07 15:24:16,904 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/ergonomisk-tilbehor/kontorcykel "HTTP/2 200 OK"
+2025-08-07 15:24:17,215 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/traeningsudstyr/romaskiner "HTTP/2 200 OK"
+2025-08-07 15:24:17,215 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skaermvaegge/skaermvaegge "HTTP/2 200 OK"
+2025-08-07 15:24:17,215 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/stoleunderlag "HTTP/2 200 OK"
+2025-08-07 15:24:17,215 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/chef-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:24:17,827 - INFO - HTTP Request: HEAD https://www.inventarland.dk/mobil-hotel-30-rum-ulas-2656316112 "HTTP/2 200 OK"
+2025-08-07 15:24:17,909 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/traeningsudstyr/motionscykler "HTTP/2 200 OK"
+2025-08-07 15:24:17,909 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/papirkurve "HTTP/2 200 OK"
+2025-08-07 15:24:18,088 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/kontormobler/tojstativ-og-stumtjener "HTTP/2 200 OK"
+2025-08-07 15:24:18,222 - INFO - HTTP Request: HEAD https://www.inventarland.dk/lagerindretning "HTTP/2 200 OK"
+2025-08-07 15:24:18,323 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/skriveborde "HTTP/2 200 OK"
+2025-08-07 15:24:18,323 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/ergonomisk-tilbehor/balancebraet "HTTP/2 200 OK"
+2025-08-07 15:24:18,927 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/ure "HTTP/2 200 OK"
+2025-08-07 15:24:18,927 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/kontormobler/gaband "HTTP/2 200 OK"
+2025-08-07 15:24:18,927 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/interstuhl-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:24:19,105 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/taepper/fladvaevet-taepper "HTTP/2 200 OK"
+2025-08-07 15:24:19,128 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstol-rh-activ-200-sort "HTTP/2 200 OK"
+2025-08-07 15:24:19,176 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/underholdning "HTTP/2 200 OK"
+2025-08-07 15:24:19,584 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe "HTTP/2 200 OK"
+2025-08-07 15:24:19,658 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe/pc-skabe "HTTP/2 200 OK"
+2025-08-07 15:24:19,658 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/stoleunderlag/underlag-med-pigge "HTTP/2 200 OK"
+2025-08-07 15:24:19,658 - INFO - HTTP Request: HEAD https://www.inventarland.dk/case-dagrofa "HTTP/2 200 OK"
+2025-08-07 15:24:19,668 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/entre/entre-spejle "HTTP/2 200 OK"
+2025-08-07 15:24:19,885 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/darlig-ryg-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:24:19,885 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/kontorstole-under-1000-kr "HTTP/2 200 OK"
+2025-08-07 15:24:20,538 - INFO - HTTP Request: HEAD https://www.inventarland.dk/case-topmanager "HTTP/2 200 OK"
+2025-08-07 15:24:20,538 - INFO - HTTP Request: HEAD https://www.inventarland.dk/dit-projekt "HTTP/2 200 OK"
+2025-08-07 15:24:20,674 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/information-praesentation "HTTP/2 200 OK"
+2025-08-07 15:24:20,674 - INFO - HTTP Request: HEAD https://www.inventarland.dk/lager-og-vaerksted/omklaedningsskabe-garderobeskabe/newline-omklaedningsskabe "HTTP/2 200 OK"
+2025-08-07 15:24:21,050 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/marathon-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:24:21,050 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstol-ortopaedisk-sd3 "HTTP/2 200 OK"
+2025-08-07 15:24:21,351 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe/stalskabe "HTTP/2 200 OK"
+2025-08-07 15:24:21,421 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/forste-hjaelp "HTTP/2 200 OK"
+2025-08-07 15:24:21,446 - INFO - HTTP Request: HEAD https://www.inventarland.dk/mosbillede-pudemos-70x50-cm?childSku=2442632105 "HTTP/2 200 OK"
+2025-08-07 15:24:21,556 - INFO - HTTP Request: HEAD https://www.inventarland.dk/telefonboks-me1-hojrevendt-2453234414 "HTTP/2 200 OK"
+2025-08-07 15:24:21,644 - INFO - HTTP Request: HEAD https://www.forbrug.dk "HTTP/2 308 Permanent Redirect"
+2025-08-07 15:24:21,697 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorindretning "HTTP/2 200 OK"
+2025-08-07 15:24:21,723 - INFO - HTTP Request: HEAD https://forbrug.dk/ "HTTP/2 200 OK"
+2025-08-07 15:24:21,745 - INFO - HTTP Request: HEAD https://www.inventarland.dk/spinningcykel-titan-life-s72 "HTTP/2 200 OK"
+2025-08-07 15:24:21,745 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/elefantfod "HTTP/2 301 Moved Permanently"
+2025-08-07 15:24:21,745 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/kontormobler/modemobler "HTTP/2 200 OK"
+2025-08-07 15:24:22,147 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/entre/entre-indretning "HTTP/2 200 OK"
+2025-08-07 15:24:22,267 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/entre/tojstativer-til-entre "HTTP/2 200 OK"
+2025-08-07 15:24:22,630 - INFO - HTTP Request: HEAD https://www.inventarland.dk/rullebord-i-plast-med-2-hylder-52x110x95h-cm?childSku=3332052010 "HTTP/2 200 OK"
+2025-08-07 15:24:22,655 - INFO - HTTP Request: HEAD https://www.inventarland.dk/omklaedningsskab-unicabin-2-rum-bla "HTTP/2 200 OK"
+2025-08-07 15:24:22,656 - INFO - HTTP Request: HEAD https://www.inventarland.dk/reference-oversigt "HTTP/2 200 OK"
+2025-08-07 15:24:22,656 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/kantinemobler/kantinesaet "HTTP/2 200 OK"
+2025-08-07 15:24:22,679 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/kontor-dekoration "HTTP/2 200 OK"
+2025-08-07 15:24:23,147 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/transport-og-loft/rulleborde "HTTP/2 200 OK"
+2025-08-07 15:24:23,306 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/kontorartikler/elefantfod "HTTP/2 200 OK"
+2025-08-07 15:24:23,438 - INFO - HTTP Request: HEAD https://www.inventarland.dk/case-gavefabrikken "HTTP/2 200 OK"
+2025-08-07 15:24:23,438 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/kontormobler/glasmontrer-og-glasvitriner "HTTP/2 200 OK"
+2025-08-07 15:24:23,701 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/traeningsudstyr/crosstrainer "HTTP/2 200 OK"
+2025-08-07 15:24:23,740 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/ergonomisk-tilbehor/aflastningsmatter-til-kontor "HTTP/2 200 OK"
+2025-08-07 15:24:23,902 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/entre/hylder "HTTP/2 200 OK"
+2025-08-07 15:24:24,390 - INFO - HTTP Request: HEAD https://www.inventarland.dk/loungembler-og-venteomrde "HTTP/2 200 OK"
+2025-08-07 15:24:24,390 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/tronhill-kontorstole "HTTP/2 200 OK"
+2025-08-07 15:24:24,404 - INFO - HTTP Request: HEAD https://www.inventarland.dk/case-mb-food "HTTP/2 200 OK"
+2025-08-07 15:24:24,493 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/malerier "HTTP/2 200 OK"
+2025-08-07 15:24:24,718 - INFO - HTTP Request: HEAD https://www.inventarland.dk/inspiration-til-indretning "HTTP/2 200 OK"
+2025-08-07 15:24:24,806 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/kontorstole-uden-ryg "HTTP/2 200 OK"
+2025-08-07 15:24:24,861 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/kontormobler/skaermvaegge-og-akustik "HTTP/2 200 OK"
+2025-08-07 15:24:24,862 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skaermvaegge/akustik-mobler "HTTP/2 200 OK"
+2025-08-07 15:24:25,631 - INFO - HTTP Request: HEAD https://www.inventarland.dk/visitor-badge-100-stk "HTTP/2 200 OK"
+2025-08-07 15:24:25,739 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/belysning "HTTP/2 200 OK"
+2025-08-07 15:24:25,919 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/entre/knageraekker "HTTP/2 200 OK"
+2025-08-07 15:24:26,184 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/navneskilte-og-kort/skare-og-yoya "HTTP/2 200 OK"
+2025-08-07 15:24:26,184 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/kantinemobler/kantineborde "HTTP/2 200 OK"
+2025-08-07 15:24:26,200 - INFO - HTTP Request: HEAD https://www.inventarland.dk/tilbud/udsalg/kantinemobler/barborde-og-stole "HTTP/2 200 OK"
+2025-08-07 15:24:26,322 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skaermvaegge/mobile-skaermvaegge "HTTP/2 200 OK"
+2025-08-07 15:24:26,406 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/kontorartikler "HTTP/2 200 OK"
+2025-08-07 15:24:26,406 - INFO - HTTP Request: HEAD https://www.inventarland.dk/telefonboks-furnitech-s-antracit-2455233114 "HTTP/2 200 OK"
+2025-08-07 15:24:26,846 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/vogne-til-kontor "HTTP/2 200 OK"
+2025-08-07 15:24:27,038 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/stoleunderlag/underlag-med-pigge "HTTP/2 200 OK"
+2025-08-07 15:24:27,139 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorreol-epf-2x2h-rum-antracit?childSku=2237141112 "HTTP/2 200 OK"
+2025-08-07 15:24:27,139 - INFO - HTTP Request: HEAD https://www.inventarland.dk/mosbillede-pudemos-120x90-cm?childSku=2442632305 "HTTP/2 200 OK"
+2025-08-07 15:24:27,636 - INFO - HTTP Request: HEAD https://www.inventarland.dk/vores-konsulenter "HTTP/2 200 OK"
+2025-08-07 15:24:27,658 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/arkivering-og-stalskabe/haengemappeskab "HTTP/2 200 OK"
+2025-08-07 15:24:27,658 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/populaere-kontorsaet "HTTP/2 200 OK"
+2025-08-07 15:24:27,763 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skaermvaegge/nordic-light-system/nordic-light-plus-skaermvaegge "HTTP/2 200 OK"
+2025-08-07 15:24:27,789 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/ergonomisk-tilbehor/underarmsstotter "HTTP/2 200 OK"
+2025-08-07 15:24:27,880 - INFO - HTTP Request: HEAD https://www.inventarland.dk/haengemapper-pendaflex-standard-a4?childSku=6288000001 "HTTP/2 200 OK"
+2025-08-07 15:24:27,881 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skaermvaegge/bordskaerme "HTTP/2 200 OK"
+2025-08-07 15:24:27,942 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor "HTTP/2 200 OK"
+2025-08-07 15:24:27,942 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/entre "HTTP/2 200 OK"
+2025-08-07 15:24:27,942 - INFO - HTTP Request: HEAD https://www.inventarland.dk/omklaedningsskab-unicabin-2-rum-morkegra "HTTP/2 200 OK"
+2025-08-07 15:24:28,032 - INFO - HTTP Request: HEAD http://ec.europa.eu/consumers/odr "HTTP/1.1 302 Found"
+2025-08-07 15:24:28,122 - INFO - HTTP Request: HEAD https://ec.europa.eu/consumers/odr/ "HTTP/1.1 301 Moved Permanently"
+2025-08-07 15:24:28,270 - INFO - HTTP Request: HEAD https://consumer-redress.ec.europa.eu/site-relocation_en "HTTP/2 200 OK"
+2025-08-07 15:24:28,683 - INFO - HTTP Request: HEAD https://www.inventarland.dk/mdelokaleindretning "HTTP/2 200 OK"
+2025-08-07 15:24:28,701 - INFO - HTTP Request: HEAD https://www.inventarland.dk/skurvognsindretning "HTTP/2 200 OK"
+2025-08-07 15:24:28,702 - INFO - HTTP Request: HEAD https://www.inventarland.dk/bar-koleskab-inlux-inbtc-210fc-sort-1837373108 "HTTP/2 200 OK"
+2025-08-07 15:24:28,703 - INFO - HTTP Request: HEAD https://www.inventarland.dk/montage "HTTP/2 200 OK"
+2025-08-07 15:24:28,704 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/reception-og-lounge "HTTP/2 200 OK"
+2025-08-07 15:24:28,715 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kantine-modestol-comfort-basic-3?childSku=2722212008 "HTTP/2 200 OK"
+2025-08-07 15:24:28,953 - INFO - HTTP Request: HEAD https://www.inventarland.dk/ "HTTP/2 200 OK"
+2025-08-07 15:24:28,953 - INFO - HTTP Request: HEAD https://www.inventarland.dk/skuffeskab-bisley-m-9-skuffer?childSku=2613110914 "HTTP/2 200 OK"
+2025-08-07 15:24:29,185 - INFO - HTTP Request: HEAD https://www.inventarland.dk/haengemapper-esselte-pendaflex-folio?childSku=6288000101 "HTTP/2 200 OK"
+2025-08-07 15:24:29,547 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/kontor-tilbehor/taepper/runde-taepper "HTTP/2 200 OK"
+2025-08-07 15:24:29,547 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontorstole/kontorstole-2000-4000 "HTTP/2 200 OK"
+2025-08-07 15:24:30,512 - INFO - HTTP Request: HEAD https://www.inventarland.dk/kontormobler/skaermvaegge/eco-soft-akustik-system/eco-soft-skaermvaegge "HTTP/2 200 OK"
+2025-08-07 15:24:30,512 - INFO - [ok] total_pages_crawled: 50
+2025-08-07 15:24:30,512 - INFO - [ok] total_links_found: 239
+2025-08-07 15:24:30,512 - INFO - [ok] broken_links_count: 0
+2025-08-07 15:24:30,512 - INFO - [ok] internal_link_score: 97
+2025-08-07 15:24:30,512 - INFO - Crawled 50 pages
+2025-08-07 15:24:30,512 - INFO - Forsøger GMB for CVR , søgeliste: ['Inventarland']
+2025-08-07 15:24:30,853 - INFO - HTTP Request: GET https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=Inventarland&inputtype=textquery&fields=place_id&key=AIzaSyCiQoU8N8Lws4pR-kprfYdaRm21VbLCe1o "HTTP/2 200 OK"
+2025-08-07 15:24:30,853 - INFO - → Fandt Place ID 'ChIJq22acXVhTUYRyHQZ4UXSfmo' for 'Inventarland'
+2025-08-07 15:24:30,960 - INFO - HTTP Request: GET https://maps.googleapis.com/maps/api/place/details/json?place_id=ChIJq22acXVhTUYRyHQZ4UXSfmo&fields=rating,user_ratings_total&key=AIzaSyCiQoU8N8Lws4pR-kprfYdaRm21VbLCe1o&language=da "HTTP/2 200 OK"
+2025-08-07 15:24:30,961 - INFO - GMB data fetched once: review_count=85, rating=4.5
+2025-08-07 15:24:31,120 - INFO - HTTP Request: GET https://openpagerank.com/api/v1.0/getPageRank?domains%5B%5D=www.inventarland.dk "HTTP/1.1 200 OK"
+2025-08-07 15:24:31,141 - INFO - Authority data fetched once: DA=None, PA=3.0
+2025-08-07 15:24:31,179 - INFO - HTTP Request: GET https://www.inventarland.dk "HTTP/2 200 OK"
+2025-08-07 15:24:31,191 - INFO - PWA/SPA indicators detected - rendering required.
+2025-08-07 15:24:31,191 - INFO - Escalating to Playwright for https://www.inventarland.dk: Dynamic content; escalate to Playwright
+2025-08-07 15:24:31,256 - INFO - HTTP Request: GET https://www.inventarland.dk "HTTP/2 200 OK"
+2025-08-07 15:24:31,282 - INFO - PWA/SPA indicators detected - rendering required.
+2025-08-07 15:24:31,550 - INFO - ✅ playwright-stealth applied
+2025-08-07 15:24:31,555 - INFO - 🚀 Playwright fetching https://www.inventarland.dk (PWA: True, retry: 0)...
+2025-08-07 15:24:32,641 - INFO - No clickable cookie button found; hiding overlays via JS.
+2025-08-07 15:24:32,646 - INFO - 🔄 Starting hybrid PWA hydration...
+2025-08-07 15:24:32,660 - INFO - ✅ Vue/Nuxt framework detected
+2025-08-07 15:24:42,953 - INFO - 📷 Image loading status: 21/21 (100.0%)
+2025-08-07 15:24:42,953 - INFO - 🎯 Hydration strategy 1/4...
+2025-08-07 15:24:42,980 - INFO - ✅ Strategy 1 succeeded!
+2025-08-07 15:24:42,991 - INFO - 🎉 State verified: 652920 chars, canonical: True
+2025-08-07 15:24:43,202 - INFO - 🎯 Runtime canonical found: category.list[1].custom_canonical_url = None
+2025-08-07 15:24:43,202 - INFO - 🎯 Runtime canonical found: category.current_path[0].custom_canonical_url = None
+2025-08-07 15:24:43,202 - INFO - 🎯 Runtime canonical found: category-next.categoriesMap.2.custom_canonical_url = None
+2025-08-07 15:24:45,220 - INFO - 💾 Saved debug HTML: debug_www_inventarland_dk_index_20250807_152445.html

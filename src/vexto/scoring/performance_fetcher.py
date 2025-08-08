@@ -1,30 +1,27 @@
-# src/vexto/scoring/performance_fetcher.py
 import json, logging, os, asyncio, httpx
 from pathlib import Path
 from typing import Optional, Dict
-from urllib.parse import quote, urlparse, urljoin # <-- NYT: urljoin tilføjet
+from urllib.parse import quote, urlparse, urljoin
 from dotenv import load_dotenv
-from bs4 import BeautifulSoup # <-- NYT: BeautifulSoup tilføjet
+from bs4 import BeautifulSoup
 
 from .http_client import AsyncHtmlClient, html_cache
-from .schemas     import PerformanceMetrics
+from .schemas import PerformanceMetrics
 
 log = logging.getLogger(__name__)
 load_dotenv()
 
-PROJECT_ROOT  = Path(__file__).resolve().parents[3]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PSI_STUB_PATH = PROJECT_ROOT / "tests" / "fixtures" / "psi_sample.json"
-API_ROOT      = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
+API_ROOT = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
 
 MOBILE, DESKTOP = "mobile", "desktop"
 SEMA = asyncio.Semaphore(8)
 
-# --- Referer URL for PSI API calls ---
 PSI_REFERER_URL = "https://developers.google.com/speed/pagespeed/insights/"
 
-# ---------- helpers --------------------------------------------------------
-async def _psi_call(api_url: str, client: AsyncHtmlClient, timeout_s: int = 25, headers: Optional[Dict[str, str]] = None) -> Optional[dict]:
-    """Henter PSI-JSON (kun httpx), med disk-cache og begrænset concurrency."""
+async def _psi_call(api_url: str, client: AsyncHtmlClient, timeout_s: int = 60, headers: Optional[Dict[str, str]] = None) -> Optional[dict]:
+    """Henter PSI-JSON med øget timeout."""
     if (cached := html_cache.get(api_url)) is not None:
         log.info("CACHE HIT: PSI-JSON %s", api_url)
         return cached
@@ -44,9 +41,18 @@ async def _psi_call(api_url: str, client: AsyncHtmlClient, timeout_s: int = 25, 
 
 def _parse(psi: dict) -> Optional[PerformanceMetrics]:
     try:
-        lh  = psi["lighthouseResult"]; aud = lh["audits"]; cat = lh["categories"]
+        lh = psi.get("lighthouseResult", {})
+        aud = lh.get("audits", {})
+        cat = lh.get("categories", {})
+        
         num = lambda aid: aud.get(aid, {}).get("numericValue")
-        lcp, cls = num("largest-contentful-paint"), num("cumulative-layout-shift")
+        lcp = num("largest-contentful-paint")
+        cls = num("cumulative-layout-shift")
+
+        # Cap LCP for outliers
+        if lcp and lcp > 10000:
+            log.warning(f"Høj LCP ({lcp}ms) capped til 10000ms")
+            lcp = 10000
 
         inp = None
         for key in ("interaction-to-next-paint",
@@ -57,28 +63,28 @@ def _parse(psi: dict) -> Optional[PerformanceMetrics]:
                 log.info("Interaktivitet fundet via '%s'", key)
                 break
 
-        perf = cat["performance"]["score"]
-        mobile_ok = aud["viewport"]["score"] == 1 and \
-                    aud["uses-responsive-images"]["score"] == 1
+        perf_score_raw = cat.get("performance", {}).get("score")
+        viewport_score = aud.get('viewport', {}).get('score')
 
         return {
-            "lcp_ms": lcp, "cls": cls, "inp_ms": inp,
-            "performance_score": int(perf*100) if perf is not None else None,
-            "is_mobile_friendly": mobile_ok,
+            "lcp_ms": lcp,
+            "cls": cls,
+            "inp_ms": inp,
+            "performance_score": int(perf_score_raw * 100) if perf_score_raw is not None else None,
+            "viewport_score": viewport_score,
         }
+        
     except Exception:
         log.error("Fejl ved parsing af PSI-JSON: %s", psi, exc_info=True)
         return None
 
 def get_performance_from_stub() -> PerformanceMetrics:
-    """Henter PSI-data fra en lokal stub-fil, bruges som fallback."""
     with PSI_STUB_PATH.open(encoding="utf-8") as f:
         data = _parse(json.load(f)) or {}
     data["psi_status"] = "fallback_stub"
     return data
 
-# --------------------------------------------------------------------------
-async def _one_api_call(client: AsyncHtmlClient, url: str, strat: str, timeout_s: int = 25) -> Optional[PerformanceMetrics]:
+async def _one_api_call(client: AsyncHtmlClient, url: str, strat: str, timeout_s: int = 60) -> Optional[PerformanceMetrics]:
     key = os.getenv("GOOGLE_API_KEY")
     if not key:
         log.warning("GOOGLE_API_KEY mangler – springer PSI over.")
@@ -115,7 +121,7 @@ async def get_performance(client: AsyncHtmlClient, url: str,
     for candidate_url in candidates:
         failed_bad = False
         for strategy in (MOBILE, DESKTOP):
-            res = await _one_api_call(client, candidate_url, strategy)
+            res = await _one_api_call(client, candidate_url, strategy, timeout_s=60)
             
             if res and res["psi_status"].startswith("ok"):
                 return res
@@ -144,12 +150,7 @@ async def get_performance(client: AsyncHtmlClient, url: str,
     log.warning("Alle PSI-forsøg fejlede for %s – bruger stub.", url)
     return get_performance_from_stub()
 
-# --- NYT: Funktion til at beregne JS-størrelse ---
 async def calculate_js_size(client: AsyncHtmlClient, soup: BeautifulSoup, base_url: str) -> dict:
-    """
-    Finder alle eksterne JS-filer, henter deres størrelse via HEAD-requests,
-    og returnerer den samlede størrelse.
-    """
     if not soup:
         return {'total_js_size_kb': None, 'js_file_count': 0}
 
@@ -175,8 +176,4 @@ async def calculate_js_size(client: AsyncHtmlClient, soup: BeautifulSoup, base_u
         'js_file_count': len(script_tags)
     }
 
-# Public alias for internal _parse function for testing purposes
-_parse_psi_json = _parse
-
-# --- OPDATERET: Eksporterer den nye funktion ---
 __all__ = ["get_performance_from_stub", "get_performance", "_parse_psi_json", "calculate_js_size"]

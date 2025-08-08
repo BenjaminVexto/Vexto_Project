@@ -1,0 +1,1415 @@
+2025-08-04 17:42:30,906 [INFO] 🎛️  Starter Vexto-applikationen
+2025-08-04 17:42:40,155 [INFO] Valg: 1 postnumre · 1 branchekoder
+2025-08-04 17:42:40,165 [DEBUG] Valgte parametre gemt → valgte_parametre.csv
+2025-08-04 17:42:40,165 [INFO] Henter CVR-hits for branchekode 43.32.00 …
+2025-08-04 17:42:40,165 [INFO] Forespørger CVR for branche: 433200 og postnumre: 2670
+2025-08-04 17:42:40,165 [DEBUG] Sender forespørgsel til http://distribution.virk.dk/cvr-permanent/virksomhed/_search
+2025-08-04 17:42:40,166 [DEBUG] URL-parametre: {
+  "size": 3000
+}
+2025-08-04 17:42:40,166 [DEBUG] Body: {
+  "_source": [
+    "Vrvirksomhed.cvrNummer",
+    "Vrvirksomhed.virksomhedMetadata.nyesteNavn.navn",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.vejnavn",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.husnummerFra",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postnummer",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postdistrikt",
+    "Vrvirksomhed.virksomhedMetadata.nyesteKontaktoplysninger",
+    "Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchekode",
+    "Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchetekst",
+    "Vrvirksomhed.virksomhedMetadata.nyesteVirksomhedsform.virksomhedsformkode",
+    "Vrvirksomhed.virksomhedMetadata.nyesteVirksomhedsform.langBeskrivelse",
+    "Vrvirksomhed.virksomhedMetadata.sammensatStatus",
+    "Vrvirksomhed.virksomhedMetadata.ophørsDato",
+    "Vrvirksomhed.deltagerRelation"
+  ],
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchekode": "433200"
+          }
+        },
+        {
+          "bool": {
+            "should": [
+              {
+                "terms": {
+                  "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postnummer": [
+                    "2670"
+                  ]
+                }
+              },
+              {
+                "match_phrase": {
+                  "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.kommuneNavn": "Greve"
+                }
+              }
+            ],
+            "minimum_should_match": 1
+          }
+        },
+        {
+          "bool": {
+            "must_not": {
+              "exists": {
+                "field": "Vrvirksomhed.virksomhedMetadata.ophørsDato"
+              }
+            }
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPHØRT"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER FRIVILLIG LIKVIDATION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER KONKURS"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER REASSUMERING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER REKONSTRUKTION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER TVANGSOPLØSNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER ERKLAERING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER FRIVILLIG LIKVIDATION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER FUSION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER GRAENSEOVERSKRIDENDE FUSION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER GRAENSEOVERSKRIDENDE HJEMSTEDSFLYTNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER GRAENSEOVERSKRIDENDE SPALTNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER KONKURS"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER SPALTNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "SLETTET"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "TVANGSOPLØST"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "sort": [
+    {
+      "_doc": "asc"
+    }
+  ],
+  "size": 3000
+}
+2025-08-04 17:42:40,180 [DEBUG] Starting new HTTP connection (1): distribution.virk.dk:80
+2025-08-04 17:42:40,271 [DEBUG] http://distribution.virk.dk:80 "POST /cvr-permanent/virksomhed/_search?size=3000 HTTP/1.1" 200 110274
+2025-08-04 17:42:40,345 [INFO] Hentede 185 hits. Totalt: 185
+2025-08-04 17:42:40,346 [INFO] 185 rå virksomheder modtaget
+2025-08-04 17:42:40,372 [INFO] Inferred websites for 94 rows.
+2025-08-04 17:42:40,373 [DEBUG] Using proactor: IocpProactor
+2025-08-04 17:42:40,374 [INFO] [0] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,375 [INFO] [1] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,380 [INFO] [3] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,380 [INFO] [4] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,381 [INFO] [7] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,382 [INFO] [8] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,382 [INFO] [9] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,382 [INFO] [11] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,382 [INFO] [12] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,382 [INFO] [14] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,382 [INFO] [15] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,382 [INFO] [17] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,383 [INFO] [18] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,383 [INFO] [19] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,383 [INFO] [20] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,383 [INFO] [21] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,383 [INFO] [22] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,383 [INFO] [23] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,383 [INFO] [24] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,383 [INFO] [25] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,383 [INFO] [27] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,384 [INFO] [29] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,384 [INFO] [30] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,384 [INFO] [31] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,385 [INFO] [35] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,385 [INFO] [37] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,385 [INFO] [39] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,385 [INFO] [40] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,385 [INFO] [41] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,385 [INFO] [44] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,386 [INFO] [46] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,386 [INFO] [49] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,386 [INFO] [51] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,386 [INFO] [52] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,387 [INFO] [54] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,387 [INFO] [55] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,387 [INFO] [56] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,387 [INFO] [57] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,387 [INFO] [58] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,387 [INFO] [59] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,388 [INFO] [60] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,388 [INFO] [61] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,388 [INFO] [62] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,388 [INFO] [63] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,388 [INFO] [64] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,388 [INFO] [65] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,388 [INFO] [66] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,388 [INFO] [67] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,388 [INFO] [68] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,388 [INFO] [70] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,388 [INFO] [71] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,388 [INFO] [72] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,389 [INFO] [73] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,389 [INFO] [74] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,389 [INFO] [76] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,389 [INFO] [77] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,389 [INFO] [78] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,389 [INFO] [79] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,389 [INFO] [80] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,389 [INFO] [83] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,390 [INFO] [84] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,390 [INFO] [85] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,390 [INFO] [86] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,390 [INFO] [87] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,390 [INFO] [90] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,390 [INFO] [92] INVALID DOMAIN: 'n/a'
+2025-08-04 17:42:40,431 [WARNING] [10] https://nielsen.mail.dk: ERROR: Cannot connect to host nielsen.mail.dk:443 ssl:default [getaddrinfo failed] (Attempt 1)
+2025-08-04 17:42:40,449 [INFO] [34] https://loytved.dk (-> https://loytved.dk): Status 200, Remark: , Live: True, Content: '<!DOCTYPE html><html prefix="og: http://ogp.me/ns#" style="height:auto !important"><head><meta chars' (Attempt 1)
+2025-08-04 17:42:40,510 [WARNING] [47] https://tf-ds.com: ERROR: Cannot connect to host tf-ds.com:443 ssl:default [getaddrinfo failed] (Attempt 1)
+2025-08-04 17:42:40,522 [INFO] [81] https://justwright.dk (-> https://justwright.dk): Status 200, Remark: under konstruktion, Live: True, Content: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content' (Attempt 1)
+2025-08-04 17:42:40,522 [WARNING] [69] https://guldkystens.dk: ERROR: Cannot connect to host guldkystens.dk:443 ssl:default [getaddrinfo failed] (Attempt 1)
+2025-08-04 17:42:40,522 [WARNING] [10] https://nielsen.mail.dk: ERROR: Cannot connect to host nielsen.mail.dk:443 ssl:default [getaddrinfo failed] (Attempt 2)
+2025-08-04 17:42:40,532 [INFO] [32] https://gilbu.dk (-> https://gilbu.dk): Status 200, Remark: under konstruktion, Live: True, Content: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content' (Attempt 1)
+2025-08-04 17:42:40,538 [WARNING] [13] https://tcfrandsen.dk: ERROR: 'utf-8' codec can't decode byte 0xf8 in position 663: invalid start byte (Attempt 1)
+2025-08-04 17:42:40,550 [INFO] [2] https://grevetømrerservice.dk (-> https://xn--grevetmrerservice-50b.dk): Status 200, Remark: , Live: True, Content: '<!doctype html>\n\n<html class="no-js" lang="da">\n\n\t<head>\n\t<meta charset="utf-8" />\n\t<title>Home Page' (Attempt 1)
+2025-08-04 17:42:40,551 [INFO] [43] https://reimich.dk (-> https://reimich.dk): Status 200, Remark: under konstruktion, Live: True, Content: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content' (Attempt 1)
+2025-08-04 17:42:40,555 [INFO] [26] https://holstholst.dk (-> https://holstholst.dk): Status 200, Remark: under konstruktion, Live: True, Content: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content' (Attempt 1)
+2025-08-04 17:42:40,573 [INFO] [91] https://nhbyg.dk (-> https://nhbyg.dk): Status 200, Remark: under konstruktion, Live: True, Content: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content' (Attempt 1)
+2025-08-04 17:42:40,574 [WARNING] [45] https://brugforhjaelp.dk: ERROR: Cannot connect to host brugforhjaelp.dk:443 ssl:default [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1006)] (Attempt 1)
+2025-08-04 17:42:40,591 [WARNING] [33] https://kjb.nu: ERROR: Cannot connect to host kjb.nu:443 ssl:True [SSLCertVerificationError: (1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'kjb.nu'. (_ssl.c:1006)")] (Attempt 1)
+2025-08-04 17:42:40,591 [WARNING] [50] https://tfsj.dk: ERROR: Cannot connect to host tfsj.dk:443 ssl:True [SSLCertVerificationError: (1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'tfsj.dk'. (_ssl.c:1006)")] (Attempt 1)
+2025-08-04 17:42:40,593 [WARNING] [38] https://triotræ.dk: ERROR: Cannot connect to host xn--triotr-uua.dk:443 ssl:True [SSLCertVerificationError: (1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'xn--triotr-uua.dk'. (_ssl.c:1006)")] (Attempt 1)
+2025-08-04 17:42:40,603 [WARNING] [47] https://tf-ds.com: ERROR: Cannot connect to host tf-ds.com:443 ssl:default [getaddrinfo failed] (Attempt 2)
+2025-08-04 17:42:40,604 [INFO] [75] https://splinten.dk (-> https://splinten.dk): Status 455, not live (Attempt 1)
+2025-08-04 17:42:40,606 [INFO] [16] https://norhsbyg.dk (-> https://norhsbyg.dk): Status 455, not live (Attempt 1)
+2025-08-04 17:42:40,619 [INFO] [53] https://leocon.dk (-> https://leocon.dk): Status 200, Remark: , Live: True, Content: '<!DOCTYPE html><html class="avada-html-layout-wide avada-html-header-position-top avada-is-100-perce' (Attempt 1)
+2025-08-04 17:42:40,619 [INFO] [93] https://kan-byg.dk (-> https://kan-byg.dk): Status 200, Remark: , Live: True, Content: '<!DOCTYPE html><html prefix="og: http://ogp.me/ns#" style="height:auto !important"><head><meta chars' (Attempt 1)
+2025-08-04 17:42:40,619 [WARNING] [69] https://guldkystens.dk: ERROR: Cannot connect to host guldkystens.dk:443 ssl:default [getaddrinfo failed] (Attempt 2)
+2025-08-04 17:42:40,622 [WARNING] [10] https://nielsen.mail.dk: ERROR: Cannot connect to host nielsen.mail.dk:443 ssl:default [getaddrinfo failed] (Attempt 3)
+2025-08-04 17:42:40,623 [INFO] [36] https://sesam.as (-> https://sesam.as): Status 200, Remark: , Live: True, Content: '<!doctype html>\n<html lang="en-US">\n<head>\n\t<meta charset="UTF-8">\n\t<meta name="viewport" content="w' (Attempt 1)
+2025-08-04 17:42:40,659 [WARNING] [13] https://tcfrandsen.dk: ERROR: 'utf-8' codec can't decode byte 0xf8 in position 663: invalid start byte (Attempt 2)
+2025-08-04 17:42:40,699 [WARNING] [47] https://tf-ds.com: ERROR: Cannot connect to host tf-ds.com:443 ssl:default [getaddrinfo failed] (Attempt 3)
+2025-08-04 17:42:40,702 [INFO] [75] https://splinten.dk (-> https://splinten.dk): Status 455, not live (Attempt 2)
+2025-08-04 17:42:40,702 [INFO] [16] https://norhsbyg.dk (-> https://norhsbyg.dk): Status 455, not live (Attempt 2)
+2025-08-04 17:42:40,713 [WARNING] [45] https://brugforhjaelp.dk: ERROR: Cannot connect to host brugforhjaelp.dk:443 ssl:default [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1006)] (Attempt 2)
+2025-08-04 17:42:40,713 [WARNING] [69] https://guldkystens.dk: ERROR: Cannot connect to host guldkystens.dk:443 ssl:default [getaddrinfo failed] (Attempt 3)
+2025-08-04 17:42:40,720 [WARNING] [50] https://tfsj.dk: ERROR: Cannot connect to host tfsj.dk:443 ssl:True [SSLCertVerificationError: (1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'tfsj.dk'. (_ssl.c:1006)")] (Attempt 2)
+2025-08-04 17:42:40,720 [WARNING] [33] https://kjb.nu: ERROR: Cannot connect to host kjb.nu:443 ssl:True [SSLCertVerificationError: (1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'kjb.nu'. (_ssl.c:1006)")] (Attempt 2)
+2025-08-04 17:42:40,733 [WARNING] [38] https://triotræ.dk: ERROR: Cannot connect to host xn--triotr-uua.dk:443 ssl:True [SSLCertVerificationError: (1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'xn--triotr-uua.dk'. (_ssl.c:1006)")] (Attempt 2)
+2025-08-04 17:42:40,776 [WARNING] [13] https://tcfrandsen.dk: ERROR: 'utf-8' codec can't decode byte 0xf8 in position 663: invalid start byte (Attempt 3)
+2025-08-04 17:42:40,812 [INFO] [75] https://splinten.dk (-> https://splinten.dk): Status 455, not live (Attempt 3)
+2025-08-04 17:42:40,812 [INFO] [16] https://norhsbyg.dk (-> https://norhsbyg.dk): Status 455, not live (Attempt 3)
+2025-08-04 17:42:40,815 [WARNING] [45] https://brugforhjaelp.dk: ERROR: Cannot connect to host brugforhjaelp.dk:443 ssl:default [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1006)] (Attempt 3)
+2025-08-04 17:42:40,838 [WARNING] [33] https://kjb.nu: ERROR: Cannot connect to host kjb.nu:443 ssl:True [SSLCertVerificationError: (1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'kjb.nu'. (_ssl.c:1006)")] (Attempt 3)
+2025-08-04 17:42:40,838 [WARNING] [50] https://tfsj.dk: ERROR: Cannot connect to host tfsj.dk:443 ssl:True [SSLCertVerificationError: (1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'tfsj.dk'. (_ssl.c:1006)")] (Attempt 3)
+2025-08-04 17:42:40,870 [WARNING] [38] https://triotræ.dk: ERROR: Cannot connect to host xn--triotr-uua.dk:443 ssl:True [SSLCertVerificationError: (1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'xn--triotr-uua.dk'. (_ssl.c:1006)")] (Attempt 3)
+2025-08-04 17:42:40,891 [INFO] [42] https://chabertbyg.dk (-> https://chabertbyg.dk): Status 200, Remark: , Live: True, Content: '<!doctype html>\n<html lang="da-DK">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="wid' (Attempt 1)
+2025-08-04 17:42:40,909 [INFO] [5] https://dundee.dk (-> https://dundee.dk): Status 200, Remark: , Live: True, Content: '<!DOCTYPE html>\n<html>\n  <head>\n\t  <script type="text/javascript">\nvar _iub = _iub || [];\n_iub.csCon' (Attempt 1)
+2025-08-04 17:42:40,919 [INFO] [82] https://eger-aastroem.dk (-> https://eger-aastroem.dk): Status 200, Remark: , Live: True, Content: '<!DOCTYPE html><html lang="da-DK" class="html_stretched responsive av-preloader-disabled  html_heade' (Attempt 1)
+2025-08-04 17:42:40,930 [INFO] [88] https://danabyg.dk (-> https://danabyg.dk): Status 200, Remark: , Live: True, Content: '\r\n\r\n<!DOCTYPE html>\r\n<!--\r\nCreated by Group Online - grouponline.dk\r\nAll copyright Group Online © 20' (Attempt 1)
+2025-08-04 17:42:40,983 [INFO] [89] https://modukas.dk (-> https://modukas.dk): Status 200, Remark: , Live: True, Content: '<!DOCTYPE html><html lang="en"> <head><meta charset="utf-8"><meta name="viewport" content="width=dev' (Attempt 1)
+2025-08-04 17:42:41,812 [INFO] [48] https://arnepedersen.dk (-> https://arnepedersen.dk): Status 200, Remark: , Live: True, Content: '<!DOCTYPE html>\n<html lang="da-DK" class="html_stretched responsive av-preloader-disabled  html_head' (Attempt 1)
+2025-08-04 17:42:44,577 [WARNING] [6] https://kbbyg.dk: ERROR: Cannot connect to host kbbyg.dk:443 ssl:default [getaddrinfo failed] (Attempt 1)
+2025-08-04 17:42:44,681 [WARNING] [6] https://kbbyg.dk: ERROR: Cannot connect to host kbbyg.dk:443 ssl:default [getaddrinfo failed] (Attempt 2)
+2025-08-04 17:42:44,797 [WARNING] [6] https://kbbyg.dk: ERROR: Cannot connect to host kbbyg.dk:443 ssl:default [getaddrinfo failed] (Attempt 3)
+2025-08-04 17:42:45,594 [INFO] [28] https://brdr-borgesen.dk (-> https://www.brdr-borgesen.dk/): Status 200, Remark: , Live: True, Content: '<!doctype html>\r\n<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en"> <![endif]-->\r\n<!--[if IE' (Attempt 1)
+2025-08-04 17:42:45,594 [INFO] Rensede DataFrame med 94 aktive rækker
+2025-08-04 17:42:45,609 [INFO] Gemte 94 aktive virksomheder → cvr_data.csv
+2025-08-04 17:42:45,609 [INFO] ✔  Workflow afsluttet kl. 17:42:45
+2025-08-04 18:14:33,812 [INFO] 🎛️  Starter Vexto-applikationen
+2025-08-04 18:14:44,602 [INFO] Valg: 1 postnumre · 1 branchekoder
+2025-08-04 18:14:44,611 [DEBUG] Valgte parametre gemt → valgte_parametre.csv
+2025-08-04 18:14:44,611 [INFO] Henter CVR-hits for branchekode 43.32.00 …
+2025-08-04 18:14:44,612 [INFO] Forespørger CVR for branche: 433200 og postnumre: 2670
+2025-08-04 18:14:44,612 [DEBUG] Sender forespørgsel til http://distribution.virk.dk/cvr-permanent/virksomhed/_search
+2025-08-04 18:14:44,612 [DEBUG] URL-parametre: {
+  "size": 3000
+}
+2025-08-04 18:14:44,613 [DEBUG] Body: {
+  "_source": [
+    "Vrvirksomhed.cvrNummer",
+    "Vrvirksomhed.virksomhedMetadata.nyesteNavn.navn",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.vejnavn",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.husnummerFra",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postnummer",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postdistrikt",
+    "Vrvirksomhed.virksomhedMetadata.nyesteKontaktoplysninger",
+    "Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchekode",
+    "Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchetekst",
+    "Vrvirksomhed.virksomhedMetadata.nyesteVirksomhedsform.virksomhedsformkode",
+    "Vrvirksomhed.virksomhedMetadata.nyesteVirksomhedsform.langBeskrivelse",
+    "Vrvirksomhed.virksomhedMetadata.sammensatStatus",
+    "Vrvirksomhed.virksomhedMetadata.ophørsDato",
+    "Vrvirksomhed.deltagerRelation"
+  ],
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchekode": "433200"
+          }
+        },
+        {
+          "bool": {
+            "should": [
+              {
+                "terms": {
+                  "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postnummer": [
+                    "2670"
+                  ]
+                }
+              },
+              {
+                "match_phrase": {
+                  "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.kommuneNavn": "Greve"
+                }
+              }
+            ],
+            "minimum_should_match": 1
+          }
+        },
+        {
+          "bool": {
+            "must_not": {
+              "exists": {
+                "field": "Vrvirksomhed.virksomhedMetadata.ophørsDato"
+              }
+            }
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPHØRT"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER FRIVILLIG LIKVIDATION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER KONKURS"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER REASSUMERING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER REKONSTRUKTION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER TVANGSOPLØSNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER ERKLAERING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER FRIVILLIG LIKVIDATION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER FUSION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER GRAENSEOVERSKRIDENDE FUSION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER GRAENSEOVERSKRIDENDE HJEMSTEDSFLYTNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER GRAENSEOVERSKRIDENDE SPALTNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER KONKURS"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER SPALTNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "SLETTET"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "TVANGSOPLØST"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "sort": [
+    {
+      "_doc": "asc"
+    }
+  ],
+  "size": 3000
+}
+2025-08-04 18:14:44,620 [DEBUG] Starting new HTTP connection (1): distribution.virk.dk:80
+2025-08-04 18:14:44,705 [DEBUG] http://distribution.virk.dk:80 "POST /cvr-permanent/virksomhed/_search?size=3000 HTTP/1.1" 200 109937
+2025-08-04 18:14:44,778 [INFO] Hentede 185 hits. Totalt: 185
+2025-08-04 18:14:44,778 [INFO] 185 rå virksomheder modtaget
+2025-08-04 18:14:44,804 [DEBUG] Inferred websites for 28 rows
+2025-08-04 18:14:44,804 [DEBUG] Using proactor: IocpProactor
+2025-08-04 18:14:44,804 [INFO] [0] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,804 [INFO] [2] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,804 [INFO] [3] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,804 [INFO] [5] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,804 [INFO] [6] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,808 [INFO] [8] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,808 [INFO] [10] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,808 [INFO] [11] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,808 [INFO] [13] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,808 [INFO] [14] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,810 [INFO] [17] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,810 [INFO] [18] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,810 [INFO] [19] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,810 [INFO] [20] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,810 [INFO] [21] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,810 [INFO] [22] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,810 [INFO] [23] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,810 [INFO] [24] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,810 [INFO] [25] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,811 [INFO] [26] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,811 [INFO] [27] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,811 [INFO] [29] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,811 [INFO] [31] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,811 [INFO] [32] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,811 [INFO] [33] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,811 [INFO] [34] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,812 [INFO] [40] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,812 [INFO] [42] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,812 [INFO] [43] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,812 [INFO] [44] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,812 [INFO] [45] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,812 [INFO] [46] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,812 [INFO] [47] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,812 [INFO] [48] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,813 [INFO] [50] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,813 [INFO] [52] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,813 [INFO] [53] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,813 [INFO] [55] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,813 [INFO] [58] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,813 [INFO] [59] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,814 [INFO] [61] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,814 [INFO] [62] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,814 [INFO] [63] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,814 [INFO] [65] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,815 [INFO] [66] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,815 [INFO] [67] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,815 [INFO] [68] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,815 [INFO] [69] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,815 [INFO] [70] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,815 [INFO] [71] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,815 [INFO] [72] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,816 [INFO] [75] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,816 [INFO] [76] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,816 [INFO] [77] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,816 [INFO] [78] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,816 [INFO] [79] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,816 [INFO] [81] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,816 [INFO] [82] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,816 [INFO] [83] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,816 [INFO] [84] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,817 [INFO] [85] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,817 [INFO] [86] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,817 [INFO] [88] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,817 [INFO] [89] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,817 [INFO] [90] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,817 [INFO] [93] INVALID DOMAIN: 'n/a'
+2025-08-04 18:14:44,840 [DEBUG] [9] https://nielsen.mail.dk: DNS failure - False (Attempt 1)
+2025-08-04 18:14:44,842 [DEBUG] [1] https://grevetoemrerservice.dk: DNS failure - False (Attempt 1)
+2025-08-04 18:14:44,852 [DEBUG] [12] https://tf-ds.com: DNS failure - False (Attempt 1)
+2025-08-04 18:14:44,853 [DEBUG] [57] https://guldkystens.dk: DNS failure - False (Attempt 1)
+2025-08-04 18:14:44,895 [DEBUG] [49] https://loytved.dk (redirected to https://loytved.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html prefix="og: http://ogp.me/ns#" style="height:auto !important"><head><meta charset="utf-8"><title>lo' (Attempt 1)
+2025-08-04 18:14:44,898 [DEBUG] [51] https://brugforhjaelp.dk: ClientError Cannot connect to host brugforhjaelp.dk:443 ssl:False [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1006)] (Attempt 1)
+2025-08-04 18:14:44,911 [DEBUG] [15] https://leocon.dk (redirected to https://leocon.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html class="avada-html-layout-wide avada-html-header-position-top avada-is-100-percent-template awb-scro' (Attempt 1)
+2025-08-04 18:14:44,942 [DEBUG] [73] https://kan-byg.dk (redirected to https://kan-byg.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html prefix="og: http://ogp.me/ns#" style="height:auto !important"><head><meta charset="utf-8"><title>Ka' (Attempt 1)
+2025-08-04 18:14:44,956 [DEBUG] [7] https://kbbyg.dk: DNS failure - False (Attempt 1)
+2025-08-04 18:14:44,962 [DEBUG] [37] https://norhsbyg.dk (redirected to https://norhsbyg.dk): Status 455, Remark: , Live: True, Content start: '<html class="errorpage">\n  <head>\n   <title>455 Security Incident Detected</title>\n    <meta name=\'viewport\' content=\'wi' (Attempt 1)
+2025-08-04 18:14:44,967 [DEBUG] [64] https://splinten.dk (redirected to https://splinten.dk): Status 455, Remark: , Live: True, Content start: '<html class="errorpage">\n  <head>\n   <title>455 Security Incident Detected</title>\n    <meta name=\'viewport\' content=\'wi' (Attempt 1)
+2025-08-04 18:14:44,968 [DEBUG] [41] https://triotrae.dk (redirected to https://triotrae.dk): Status 455, Remark: , Live: True, Content start: '<html class="errorpage">\n  <head>\n   <title>455 Security Incident Detected</title>\n    <meta name=\'viewport\' content=\'wi' (Attempt 1)
+2025-08-04 18:14:44,969 [DEBUG] [16] https://tcfrandsen.dk (redirected to http://www.tcfrandsen.dk/): Status 200, Remark: , Live: True, Content start: '<html>\n\n<head>\n<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">\n<meta name="GENERATOR" content' (Attempt 1)
+2025-08-04 18:14:44,981 [DEBUG] [60] https://reimich.dk (redirected to https://reimich.dk): Status 200, Remark: under konstruktion, Live: True, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:14:44,999 [DEBUG] [38] https://chabertbyg.dk (redirected to https://chabertbyg.dk): Status 200, Remark: , Live: True, Content start: '<!doctype html>\n<html lang="da-DK">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, ini' (Attempt 1)
+2025-08-04 18:14:45,001 [DEBUG] [28] https://holstholst.dk (redirected to https://holstholst.dk): Status 200, Remark: under konstruktion, Live: True, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:14:45,006 [DEBUG] [74] https://nhbyg.dk (redirected to https://nhbyg.dk): Status 200, Remark: under konstruktion, Live: True, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:14:45,030 [DEBUG] [87] https://justwright.dk (redirected to https://justwright.dk): Status 200, Remark: under konstruktion, Live: True, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:14:45,068 [DEBUG] [39] https://sesam.as (redirected to https://sesam.as): Status 200, Remark: , Live: True, Content start: '<!doctype html>\n<html lang="en-US">\n<head>\n\t<meta charset="UTF-8">\n\t<meta name="viewport" content="width=device-width, i' (Attempt 1)
+2025-08-04 18:14:45,111 [DEBUG] [51] https://brugforhjaelp.dk: ClientError Cannot connect to host brugforhjaelp.dk:443 ssl:False [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1006)] (Attempt 2)
+2025-08-04 18:14:45,209 [DEBUG] [35] https://gilbu.dk (redirected to https://gilbu.dk): Status 200, Remark: under konstruktion, Live: True, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:14:45,243 [DEBUG] [4] https://dundee.dk (redirected to https://dundee.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html>\n<html>\n  <head>\n\t  <script type="text/javascript">\nvar _iub = _iub || [];\n_iub.csConfiguration = {"askCo' (Attempt 1)
+2025-08-04 18:14:45,324 [DEBUG] [51] https://brugforhjaelp.dk: ClientError Cannot connect to host brugforhjaelp.dk:443 ssl:False [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1006)] (Attempt 3)
+2025-08-04 18:14:45,408 [DEBUG] [92] https://modukas.dk (redirected to https://modukas.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html lang="en"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-s' (Attempt 1)
+2025-08-04 18:14:45,550 [DEBUG] [91] https://danabyg.dk (redirected to https://danabyg.dk): Status 200, Remark: , Live: True, Content start: '\r\n\r\n<!DOCTYPE html>\r\n<!--\r\nCreated by Group Online - grouponline.dk\r\nAll copyright Group Online © 2025\r\nPhone: +45 55 55' (Attempt 1)
+2025-08-04 18:14:45,555 [DEBUG] [80] https://eger-aastroem.dk (redirected to https://eger-aastroem.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html lang="da-DK" class="html_stretched responsive av-preloader-disabled  html_header_top html_logo_left' (Attempt 1)
+2025-08-04 18:14:46,150 [DEBUG] [30] https://brdr-borgesen.dk (redirected to https://www.brdr-borgesen.dk/): Status 200, Remark: , Live: True, Content start: '<!doctype html>\r\n<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en"> <![endif]-->\r\n<!--[if IE 7]>    <html class=' (Attempt 1)
+2025-08-04 18:14:46,188 [DEBUG] [54] https://arnepedersen.dk (redirected to https://arnepedersen.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html>\n<html lang="da-DK" class="html_stretched responsive av-preloader-disabled  html_header_top html_logo_lef' (Attempt 1)
+2025-08-04 18:14:48,794 [DEBUG] [36] https://kjb.nu (redirected to https://www.sjg.dk/): Status 200, Remark: , Live: True, Content start: '<!doctype html>\n<html lang="da-DK" prefix="og: https://ogp.me/ns#" class="no-js" itemtype="https://schema.org/WebPage" i' (Attempt 1)
+2025-08-04 18:14:48,833 [DEBUG] [56] https://tfsj.dk (redirected to https://www.sjg.dk/): Status 200, Remark: , Live: True, Content start: '<!doctype html>\n<html lang="da-DK" prefix="og: https://ogp.me/ns#" class="no-js" itemtype="https://schema.org/WebPage" i' (Attempt 1)
+2025-08-04 18:14:48,838 [DEBUG] Checked liveness for 94 URLs, 22 live
+2025-08-04 18:14:48,840 [DEBUG] Rensede DataFrame med 94 aktive rækker
+2025-08-04 18:14:48,844 [INFO] Gemte 94 aktive virksomheder → cvr_data.csv
+2025-08-04 18:14:48,844 [INFO] ✔  Workflow afsluttet kl. 18:14:48
+2025-08-04 18:19:05,812 [INFO] 🎛️  Starter Vexto-applikationen
+2025-08-04 18:19:15,873 [INFO] Valg: 1 postnumre · 1 branchekoder
+2025-08-04 18:19:15,883 [DEBUG] Valgte parametre gemt → valgte_parametre.csv
+2025-08-04 18:19:15,883 [INFO] Henter CVR-hits for branchekode 43.32.00 …
+2025-08-04 18:19:15,883 [INFO] Forespørger CVR for branche: 433200 og postnumre: 2670
+2025-08-04 18:19:15,883 [DEBUG] Sender forespørgsel til http://distribution.virk.dk/cvr-permanent/virksomhed/_search
+2025-08-04 18:19:15,885 [DEBUG] URL-parametre: {
+  "size": 3000
+}
+2025-08-04 18:19:15,885 [DEBUG] Body: {
+  "_source": [
+    "Vrvirksomhed.cvrNummer",
+    "Vrvirksomhed.virksomhedMetadata.nyesteNavn.navn",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.vejnavn",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.husnummerFra",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postnummer",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postdistrikt",
+    "Vrvirksomhed.virksomhedMetadata.nyesteKontaktoplysninger",
+    "Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchekode",
+    "Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchetekst",
+    "Vrvirksomhed.virksomhedMetadata.nyesteVirksomhedsform.virksomhedsformkode",
+    "Vrvirksomhed.virksomhedMetadata.nyesteVirksomhedsform.langBeskrivelse",
+    "Vrvirksomhed.virksomhedMetadata.sammensatStatus",
+    "Vrvirksomhed.virksomhedMetadata.ophørsDato",
+    "Vrvirksomhed.deltagerRelation"
+  ],
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchekode": "433200"
+          }
+        },
+        {
+          "bool": {
+            "should": [
+              {
+                "terms": {
+                  "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postnummer": [
+                    "2670"
+                  ]
+                }
+              },
+              {
+                "match_phrase": {
+                  "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.kommuneNavn": "Greve"
+                }
+              }
+            ],
+            "minimum_should_match": 1
+          }
+        },
+        {
+          "bool": {
+            "must_not": {
+              "exists": {
+                "field": "Vrvirksomhed.virksomhedMetadata.ophørsDato"
+              }
+            }
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPHØRT"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER FRIVILLIG LIKVIDATION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER KONKURS"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER REASSUMERING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER REKONSTRUKTION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER TVANGSOPLØSNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER ERKLAERING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER FRIVILLIG LIKVIDATION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER FUSION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER GRAENSEOVERSKRIDENDE FUSION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER GRAENSEOVERSKRIDENDE HJEMSTEDSFLYTNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER GRAENSEOVERSKRIDENDE SPALTNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER KONKURS"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER SPALTNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "SLETTET"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "TVANGSOPLØST"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "sort": [
+    {
+      "_doc": "asc"
+    }
+  ],
+  "size": 3000
+}
+2025-08-04 18:19:15,892 [DEBUG] Starting new HTTP connection (1): distribution.virk.dk:80
+2025-08-04 18:19:15,975 [DEBUG] http://distribution.virk.dk:80 "POST /cvr-permanent/virksomhed/_search?size=3000 HTTP/1.1" 200 110672
+2025-08-04 18:19:16,044 [INFO] Hentede 185 hits. Totalt: 185
+2025-08-04 18:19:16,045 [INFO] 185 rå virksomheder modtaget
+2025-08-04 18:19:16,068 [DEBUG] Inferred websites for 28 rows
+2025-08-04 18:19:16,068 [DEBUG] Using proactor: IocpProactor
+2025-08-04 18:19:16,070 [INFO] [0] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,070 [INFO] [1] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,070 [INFO] [3] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,070 [INFO] [4] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,070 [INFO] [8] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [10] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [11] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [12] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [14] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [15] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [16] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [17] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [18] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [19] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [20] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [21] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [22] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [23] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [24] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [25] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [26] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [27] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [29] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [30] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [31] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [32] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [34] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [35] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [42] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [45] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [46] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [47] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [49] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [50] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [51] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [52] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [53] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [54] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [56] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [57] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [58] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [59] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [62] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [63] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [64] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [65] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [66] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,072 [INFO] [67] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,078 [INFO] [69] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,078 [INFO] [70] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,078 [INFO] [73] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,078 [INFO] [75] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,078 [INFO] [76] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,078 [INFO] [77] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,078 [INFO] [78] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,079 [INFO] [79] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,079 [INFO] [80] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,079 [INFO] [81] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,079 [INFO] [82] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,079 [INFO] [85] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,079 [INFO] [86] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,079 [INFO] [87] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,079 [INFO] [88] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,079 [INFO] [89] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,079 [INFO] [91] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,079 [INFO] [93] INVALID DOMAIN: 'n/a'
+2025-08-04 18:19:16,142 [DEBUG] [44] https://leocon.dk (redirected to https://leocon.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html class="avada-html-layout-wide avada-html-header-position-top avada-is-100-percent-template awb-scro' (Attempt 1)
+2025-08-04 18:19:16,142 [DEBUG] [33] https://grevetoemrerservice.dk: DNS failure - False (Attempt 1)
+2025-08-04 18:19:16,145 [DEBUG] [7] https://triotrae.dk (redirected to https://triotrae.dk): Status 455, Remark: custom status 455, Live: True, Content start: '<html class="errorpage">\n  <head>\n   <title>455 Security Incident Detected</title>\n    <meta name=\'viewport\' content=\'wi' (Attempt 1)
+2025-08-04 18:19:16,147 [DEBUG] [38] https://tf-ds.com: DNS failure - False (Attempt 1)
+2025-08-04 18:19:16,163 [DEBUG] [84] https://kan-byg.dk (redirected to https://kan-byg.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html prefix="og: http://ogp.me/ns#" style="height:auto !important"><head><meta charset="utf-8"><title>Ka' (Attempt 1)
+2025-08-04 18:19:16,175 [DEBUG] [36] https://chabertbyg.dk (redirected to https://chabertbyg.dk): Status 200, Remark: , Live: True, Content start: '<!doctype html>\n<html lang="da-DK">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, ini' (Attempt 1)
+2025-08-04 18:19:16,177 [DEBUG] [13] https://norhsbyg.dk (redirected to https://norhsbyg.dk): Status 455, Remark: custom status 455, Live: True, Content start: '<html class="errorpage">\n  <head>\n   <title>455 Security Incident Detected</title>\n    <meta name=\'viewport\' content=\'wi' (Attempt 1)
+2025-08-04 18:19:16,185 [DEBUG] [5] https://nielsen.mail.dk: DNS failure - False (Attempt 1)
+2025-08-04 18:19:16,191 [DEBUG] [28] https://loytved.dk (redirected to https://loytved.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html prefix="og: http://ogp.me/ns#" style="height:auto !important"><head><meta charset="utf-8"><title>lo' (Attempt 1)
+2025-08-04 18:19:16,257 [DEBUG] [37] https://reimich.dk (redirected to https://reimich.dk): Status 200, Remark: placeholder, Live: False, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:19:16,257 [DEBUG] [55] https://guldkystens.dk: DNS failure - False (Attempt 1)
+2025-08-04 18:19:16,276 [DEBUG] [41] https://gilbu.dk (redirected to https://gilbu.dk): Status 200, Remark: placeholder, Live: False, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:19:16,280 [DEBUG] [43] https://sesam.as (redirected to https://sesam.as): Status 200, Remark: , Live: True, Content start: '<!doctype html>\n<html lang="en-US">\n<head>\n\t<meta charset="UTF-8">\n\t<meta name="viewport" content="width=device-width, i' (Attempt 1)
+2025-08-04 18:19:16,297 [DEBUG] [68] https://brugforhjaelp.dk: ClientError Cannot connect to host brugforhjaelp.dk:443 ssl:False [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1006)] (Attempt 1)
+2025-08-04 18:19:16,319 [DEBUG] [60] https://splinten.dk (redirected to https://splinten.dk): Status 455, Remark: custom status 455, Live: True, Content start: '<html class="errorpage">\n  <head>\n   <title>455 Security Incident Detected</title>\n    <meta name=\'viewport\' content=\'wi' (Attempt 1)
+2025-08-04 18:19:16,340 [DEBUG] [61] https://holstholst.dk (redirected to https://holstholst.dk): Status 200, Remark: placeholder, Live: False, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:19:16,365 [DEBUG] [9] https://tcfrandsen.dk (redirected to http://www.tcfrandsen.dk/): Status 200, Remark: , Live: True, Content start: '<html>\n\n<head>\n<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">\n<meta name="GENERATOR" content' (Attempt 1)
+2025-08-04 18:19:16,424 [DEBUG] [83] https://nhbyg.dk (redirected to https://nhbyg.dk): Status 200, Remark: placeholder, Live: False, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:19:16,435 [DEBUG] [90] https://justwright.dk (redirected to https://justwright.dk): Status 200, Remark: placeholder, Live: False, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:19:16,486 [DEBUG] [68] https://brugforhjaelp.dk: ClientError Cannot connect to host brugforhjaelp.dk:443 ssl:False [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1006)] (Attempt 2)
+2025-08-04 18:19:16,509 [DEBUG] [71] https://modukas.dk (redirected to https://modukas.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html lang="en"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-s' (Attempt 1)
+2025-08-04 18:19:16,545 [DEBUG] [40] https://dundee.dk (redirected to https://dundee.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html>\n<html>\n  <head>\n\t  <script type="text/javascript">\nvar _iub = _iub || [];\n_iub.csConfiguration = {"askCo' (Attempt 1)
+2025-08-04 18:19:16,576 [DEBUG] [74] https://danabyg.dk (redirected to https://danabyg.dk): Status 200, Remark: , Live: True, Content start: '\r\n\r\n<!DOCTYPE html>\r\n<!--\r\nCreated by Group Online - grouponline.dk\r\nAll copyright Group Online © 2025\r\nPhone: +45 55 55' (Attempt 1)
+2025-08-04 18:19:16,672 [DEBUG] [72] https://eger-aastroem.dk (redirected to https://eger-aastroem.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html lang="da-DK" class="html_stretched responsive av-preloader-disabled  html_header_top html_logo_left' (Attempt 1)
+2025-08-04 18:19:16,685 [DEBUG] [68] https://brugforhjaelp.dk: ClientError Cannot connect to host brugforhjaelp.dk:443 ssl:False [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1006)] (Attempt 3)
+2025-08-04 18:19:16,935 [DEBUG] [6] https://tfsj.dk (redirected to https://www.sjg.dk/): Status 200, Remark: , Live: True, Content start: '<!doctype html>\n<html lang="da-DK" prefix="og: https://ogp.me/ns#" class="no-js" itemtype="https://schema.org/WebPage" i' (Attempt 1)
+2025-08-04 18:19:17,148 [DEBUG] [33] https://grevetoemrerservice.dk: ClientError Cannot connect to host grevetoemrerservice.dk:443 ssl:False [getaddrinfo failed] (Attempt 1)
+2025-08-04 18:19:17,149 [DEBUG] [38] https://tf-ds.com: ClientError Cannot connect to host tf-ds.com:443 ssl:False [getaddrinfo failed] (Attempt 1)
+2025-08-04 18:19:17,184 [DEBUG] [5] https://nielsen.mail.dk: ClientError Cannot connect to host nielsen.mail.dk:443 ssl:False [getaddrinfo failed] (Attempt 1)
+2025-08-04 18:19:17,251 [DEBUG] [55] https://guldkystens.dk: ClientError Cannot connect to host guldkystens.dk:443 ssl:False [getaddrinfo failed] (Attempt 1)
+2025-08-04 18:19:17,336 [DEBUG] [38] https://tf-ds.com: DNS failure - False (Attempt 2)
+2025-08-04 18:19:17,336 [DEBUG] [33] https://grevetoemrerservice.dk: DNS failure - False (Attempt 2)
+2025-08-04 18:19:17,386 [DEBUG] [5] https://nielsen.mail.dk: DNS failure - False (Attempt 2)
+2025-08-04 18:19:17,448 [DEBUG] [48] https://brdr-borgesen.dk (redirected to https://www.brdr-borgesen.dk/): Status 200, Remark: , Live: True, Content start: '<!doctype html>\r\n<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en"> <![endif]-->\r\n<!--[if IE 7]>    <html class=' (Attempt 1)
+2025-08-04 18:19:17,450 [DEBUG] [55] https://guldkystens.dk: DNS failure - False (Attempt 2)
+2025-08-04 18:19:17,534 [DEBUG] [39] https://arnepedersen.dk (redirected to https://arnepedersen.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html>\n<html lang="da-DK" class="html_stretched responsive av-preloader-disabled  html_header_top html_logo_lef' (Attempt 1)
+2025-08-04 18:19:17,713 [DEBUG] [92] https://kjb.nu (redirected to https://www.sjg.dk/): Status 200, Remark: , Live: True, Content start: '<!doctype html>\n<html lang="da-DK" prefix="og: https://ogp.me/ns#" class="no-js" itemtype="https://schema.org/WebPage" i' (Attempt 1)
+2025-08-04 18:19:18,307 [DEBUG] [2] https://kbbyg.dk: DNS failure - False (Attempt 1)
+2025-08-04 18:19:18,351 [DEBUG] [38] https://tf-ds.com: ClientError Cannot connect to host tf-ds.com:443 ssl:False [getaddrinfo failed] (Attempt 2)
+2025-08-04 18:19:18,351 [DEBUG] [33] https://grevetoemrerservice.dk: ClientError Cannot connect to host grevetoemrerservice.dk:443 ssl:False [getaddrinfo failed] (Attempt 2)
+2025-08-04 18:19:18,383 [DEBUG] [5] https://nielsen.mail.dk: ClientError Cannot connect to host nielsen.mail.dk:443 ssl:False [getaddrinfo failed] (Attempt 2)
+2025-08-04 18:19:18,451 [DEBUG] [55] https://guldkystens.dk: ClientError Cannot connect to host guldkystens.dk:443 ssl:False [getaddrinfo failed] (Attempt 2)
+2025-08-04 18:19:18,569 [DEBUG] [33] https://grevetoemrerservice.dk: DNS failure - False (Attempt 3)
+2025-08-04 18:19:18,569 [DEBUG] [5] https://nielsen.mail.dk: DNS failure - False (Attempt 3)
+2025-08-04 18:19:18,569 [DEBUG] [38] https://tf-ds.com: DNS failure - False (Attempt 3)
+2025-08-04 18:19:18,651 [DEBUG] [55] https://guldkystens.dk: DNS failure - False (Attempt 3)
+2025-08-04 18:19:19,309 [DEBUG] [2] https://kbbyg.dk: ClientError Cannot connect to host kbbyg.dk:443 ssl:False [getaddrinfo failed] (Attempt 1)
+2025-08-04 18:19:19,512 [DEBUG] [2] https://kbbyg.dk: DNS failure - False (Attempt 2)
+2025-08-04 18:19:20,524 [DEBUG] [2] https://kbbyg.dk: ClientError Cannot connect to host kbbyg.dk:443 ssl:False [getaddrinfo failed] (Attempt 2)
+2025-08-04 18:19:20,731 [DEBUG] [2] https://kbbyg.dk: DNS failure - False (Attempt 3)
+2025-08-04 18:19:21,741 [DEBUG] Checked liveness for 94 URLs, 17 live
+2025-08-04 18:19:21,744 [DEBUG] Rensede DataFrame med 94 aktive rækker
+2025-08-04 18:19:21,748 [INFO] Gemte 94 aktive virksomheder → cvr_data.csv
+2025-08-04 18:19:21,748 [INFO] ✔  Workflow afsluttet kl. 18:19:21
+2025-08-04 18:34:33,201 [INFO] 🎛️  Starter Vexto-applikationen
+2025-08-04 18:34:41,585 [INFO] Valg: 1 postnumre · 1 branchekoder
+2025-08-04 18:34:41,596 [DEBUG] Valgte parametre gemt → valgte_parametre.csv
+2025-08-04 18:34:41,596 [INFO] Henter CVR-hits for branchekode 43.32.00 …
+2025-08-04 18:34:41,596 [INFO] Forespørger CVR for branche: 433200 og postnumre: 2670
+2025-08-04 18:34:41,596 [DEBUG] Sender forespørgsel til http://distribution.virk.dk/cvr-permanent/virksomhed/_search
+2025-08-04 18:34:41,596 [DEBUG] URL-parametre: {
+  "size": 3000
+}
+2025-08-04 18:34:41,597 [DEBUG] Body: {
+  "_source": [
+    "Vrvirksomhed.cvrNummer",
+    "Vrvirksomhed.virksomhedMetadata.nyesteNavn.navn",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.vejnavn",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.husnummerFra",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postnummer",
+    "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postdistrikt",
+    "Vrvirksomhed.virksomhedMetadata.nyesteKontaktoplysninger",
+    "Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchekode",
+    "Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchetekst",
+    "Vrvirksomhed.virksomhedMetadata.nyesteVirksomhedsform.virksomhedsformkode",
+    "Vrvirksomhed.virksomhedMetadata.nyesteVirksomhedsform.langBeskrivelse",
+    "Vrvirksomhed.virksomhedMetadata.sammensatStatus",
+    "Vrvirksomhed.virksomhedMetadata.ophørsDato",
+    "Vrvirksomhed.deltagerRelation"
+  ],
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "Vrvirksomhed.virksomhedMetadata.nyesteHovedbranche.branchekode": "433200"
+          }
+        },
+        {
+          "bool": {
+            "should": [
+              {
+                "terms": {
+                  "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postnummer": [
+                    "2670"
+                  ]
+                }
+              },
+              {
+                "match_phrase": {
+                  "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.kommuneNavn": "Greve"
+                }
+              }
+            ],
+            "minimum_should_match": 1
+          }
+        },
+        {
+          "bool": {
+            "must_not": {
+              "exists": {
+                "field": "Vrvirksomhed.virksomhedMetadata.ophørsDato"
+              }
+            }
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPHØRT"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER FRIVILLIG LIKVIDATION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER KONKURS"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER REASSUMERING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER REKONSTRUKTION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "UNDER TVANGSOPLØSNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER ERKLAERING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER FRIVILLIG LIKVIDATION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER FUSION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER GRAENSEOVERSKRIDENDE FUSION"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER GRAENSEOVERSKRIDENDE HJEMSTEDSFLYTNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER GRAENSEOVERSKRIDENDE SPALTNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER KONKURS"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "OPLØST EFTER SPALTNING"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "SLETTET"
+              }
+            }
+          }
+        },
+        {
+          "nested": {
+            "path": "Vrvirksomhed.virksomhedsstatus",
+            "query": {
+              "match_phrase": {
+                "Vrvirksomhed.virksomhedsstatus.status": "TVANGSOPLØST"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "sort": [
+    {
+      "_doc": "asc"
+    }
+  ],
+  "size": 3000
+}
+2025-08-04 18:34:41,603 [DEBUG] Starting new HTTP connection (1): distribution.virk.dk:80
+2025-08-04 18:34:41,690 [DEBUG] http://distribution.virk.dk:80 "POST /cvr-permanent/virksomhed/_search?size=3000 HTTP/1.1" 200 110093
+2025-08-04 18:34:41,768 [INFO] Hentede 185 hits. Totalt: 185
+2025-08-04 18:34:41,768 [INFO] 185 rå virksomheder modtaget
+2025-08-04 18:34:41,792 [DEBUG] Inferred websites for 28 rows
+2025-08-04 18:34:41,793 [DEBUG] Using proactor: IocpProactor
+2025-08-04 18:34:41,795 [INFO] [0] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,795 [INFO] [1] INVALID DOMAIN: 'grevetømrerservice.dk'
+2025-08-04 18:34:41,795 [INFO] [2] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,795 [INFO] [3] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,795 [INFO] [5] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,795 [INFO] [6] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,796 [INFO] [8] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,796 [INFO] [10] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,796 [INFO] [12] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,796 [INFO] [13] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,797 [INFO] [16] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,797 [INFO] [17] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,797 [INFO] [18] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,797 [INFO] [19] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,797 [INFO] [20] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,797 [INFO] [21] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,797 [INFO] [22] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,798 [INFO] [23] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,798 [INFO] [24] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,798 [INFO] [25] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,798 [INFO] [26] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,798 [INFO] [28] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,798 [INFO] [30] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,798 [INFO] [31] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,798 [INFO] [32] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,798 [INFO] [33] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,798 [INFO] [39] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,798 [INFO] [40] INVALID DOMAIN: 'triotræ.dk'
+2025-08-04 18:34:41,798 [INFO] [41] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,800 [INFO] [42] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,800 [INFO] [43] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,800 [INFO] [44] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,800 [INFO] [45] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,800 [INFO] [46] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,800 [INFO] [47] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,801 [INFO] [49] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,801 [INFO] [51] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,801 [INFO] [52] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,801 [INFO] [54] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,801 [INFO] [57] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,801 [INFO] [58] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,801 [INFO] [60] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,801 [INFO] [61] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,802 [INFO] [62] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,802 [INFO] [64] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,802 [INFO] [65] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,802 [INFO] [66] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,802 [INFO] [67] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,802 [INFO] [68] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,803 [INFO] [69] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,803 [INFO] [70] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,803 [INFO] [71] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,803 [INFO] [74] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,804 [INFO] [75] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,804 [INFO] [76] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,804 [INFO] [77] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,804 [INFO] [78] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,804 [INFO] [80] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,804 [INFO] [81] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,804 [INFO] [82] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,804 [INFO] [83] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,804 [INFO] [84] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,805 [INFO] [85] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,805 [INFO] [87] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,805 [INFO] [88] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,805 [INFO] [89] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,805 [INFO] [90] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,805 [INFO] [93] INVALID DOMAIN: 'n/a'
+2025-08-04 18:34:41,829 [DEBUG] [9] https://nielsen.mail.dk: DNS failure - False (Attempt 1)
+2025-08-04 18:34:41,862 [DEBUG] [11] https://tf-ds.com: DNS failure - False (Attempt 1)
+2025-08-04 18:34:41,862 [DEBUG] [56] https://guldkystens.dk: DNS failure - False (Attempt 1)
+2025-08-04 18:34:41,903 [DEBUG] [48] https://loytved.dk (redirected to https://loytved.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html prefix="og: http://ogp.me/ns#" style="height:auto !important"><head><meta charset="utf-8"><title>lo' (Attempt 1)
+2025-08-04 18:34:41,940 [DEBUG] [14] https://leocon.dk (redirected to https://leocon.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html class="avada-html-layout-wide avada-html-header-position-top avada-is-100-percent-template awb-scro' (Attempt 1)
+2025-08-04 18:34:41,943 [DEBUG] [72] https://kan-byg.dk (redirected to https://kan-byg.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html prefix="og: http://ogp.me/ns#" style="height:auto !important"><head><meta charset="utf-8"><title>Ka' (Attempt 1)
+2025-08-04 18:34:41,951 [DEBUG] [50] https://brugforhjaelp.dk: ClientError Cannot connect to host brugforhjaelp.dk:443 ssl:False [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1006)] (Attempt 1)
+2025-08-04 18:34:41,973 [DEBUG] [7] https://kbbyg.dk: DNS failure - False (Attempt 1)
+2025-08-04 18:34:41,988 [DEBUG] [59] https://reimich.dk (redirected to https://reimich.dk): Status 200, Remark: placeholder, Live: False, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:34:42,002 [DEBUG] [36] https://norhsbyg.dk (redirected to https://norhsbyg.dk): Status 455, Remark: custom status 455, Live: True, Content start: '<html class="errorpage">\n  <head>\n   <title>455 Security Incident Detected</title>\n    <meta name=\'viewport\' content=\'wi' (Attempt 1)
+2025-08-04 18:34:42,007 [DEBUG] [63] https://splinten.dk (redirected to https://splinten.dk): Status 455, Remark: custom status 455, Live: True, Content start: '<html class="errorpage">\n  <head>\n   <title>455 Security Incident Detected</title>\n    <meta name=\'viewport\' content=\'wi' (Attempt 1)
+2025-08-04 18:34:42,041 [DEBUG] [73] https://nhbyg.dk (redirected to https://nhbyg.dk): Status 200, Remark: placeholder, Live: False, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:34:42,061 [DEBUG] [37] https://chabertbyg.dk (redirected to https://chabertbyg.dk): Status 200, Remark: wp-login, Live: False, Content start: '<!doctype html>\n<html lang="da-DK">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, ini' (Attempt 1)
+2025-08-04 18:34:42,061 [DEBUG] [15] https://tcfrandsen.dk (redirected to http://www.tcfrandsen.dk/): Status 200, Remark: , Live: True, Content start: '<html>\n\n<head>\n<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">\n<meta name="GENERATOR" content' (Attempt 1)
+2025-08-04 18:34:42,069 [DEBUG] [34] https://gilbu.dk (redirected to https://gilbu.dk): Status 200, Remark: placeholder, Live: False, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:34:42,073 [DEBUG] [38] https://sesam.as (redirected to https://sesam.as): Status 200, Remark: , Live: True, Content start: '<!doctype html>\n<html lang="en-US">\n<head>\n\t<meta charset="UTF-8">\n\t<meta name="viewport" content="width=device-width, i' (Attempt 1)
+2025-08-04 18:34:42,080 [DEBUG] [86] https://justwright.dk (redirected to https://justwright.dk): Status 200, Remark: placeholder, Live: False, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:34:42,087 [DEBUG] [27] https://holstholst.dk (redirected to https://holstholst.dk): Status 200, Remark: placeholder, Live: False, Content start: '\n<!DOCTYPE html><html data-version=v1.2.4-0-g508ecd9-dirty lang=en_us><head><meta http-equiv=Content-Type content="text/' (Attempt 1)
+2025-08-04 18:34:42,157 [DEBUG] [50] https://brugforhjaelp.dk: ClientError Cannot connect to host brugforhjaelp.dk:443 ssl:False [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1006)] (Attempt 2)
+2025-08-04 18:34:42,336 [DEBUG] [4] https://dundee.dk (redirected to https://dundee.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html>\n<html>\n  <head>\n\t  <script type="text/javascript">\nvar _iub = _iub || [];\n_iub.csConfiguration = {"askCo' (Attempt 1)
+2025-08-04 18:34:42,360 [DEBUG] [79] https://eger-aastroem.dk (redirected to https://eger-aastroem.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html lang="da-DK" class="html_stretched responsive av-preloader-disabled  html_header_top html_logo_left' (Attempt 1)
+2025-08-04 18:34:42,367 [DEBUG] [50] https://brugforhjaelp.dk: ClientError Cannot connect to host brugforhjaelp.dk:443 ssl:False [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1006)] (Attempt 3)
+2025-08-04 18:34:42,433 [DEBUG] [91] https://danabyg.dk (redirected to https://danabyg.dk): Status 200, Remark: , Live: True, Content start: '\r\n\r\n<!DOCTYPE html>\r\n<!--\r\nCreated by Group Online - grouponline.dk\r\nAll copyright Group Online © 2025\r\nPhone: +45 55 55' (Attempt 1)
+2025-08-04 18:34:42,508 [DEBUG] [92] https://modukas.dk (redirected to https://modukas.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html><html lang="en"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-s' (Attempt 1)
+2025-08-04 18:34:42,723 [DEBUG] [35] https://kjb.nu (redirected to https://www.sjg.dk/): Status 200, Remark: wp-login, Live: False, Content start: '<!doctype html>\n<html lang="da-DK" prefix="og: https://ogp.me/ns#" class="no-js" itemtype="https://schema.org/WebPage" i' (Attempt 1)
+2025-08-04 18:34:42,818 [DEBUG] [9] https://nielsen.mail.dk: ClientError Cannot connect to host nielsen.mail.dk:443 ssl:False [getaddrinfo failed] (Attempt 1)
+2025-08-04 18:34:42,852 [DEBUG] [11] https://tf-ds.com: ClientError Cannot connect to host tf-ds.com:443 ssl:False [getaddrinfo failed] (Attempt 1)
+2025-08-04 18:34:42,852 [DEBUG] [56] https://guldkystens.dk: ClientError Cannot connect to host guldkystens.dk:443 ssl:False [getaddrinfo failed] (Attempt 1)
+2025-08-04 18:34:42,885 [DEBUG] [55] https://tfsj.dk (redirected to https://www.sjg.dk/): Status 200, Remark: wp-login, Live: False, Content start: '<!doctype html>\n<html lang="da-DK" prefix="og: https://ogp.me/ns#" class="no-js" itemtype="https://schema.org/WebPage" i' (Attempt 1)
+2025-08-04 18:34:42,966 [DEBUG] [7] https://kbbyg.dk: ClientError Cannot connect to host kbbyg.dk:443 ssl:False [getaddrinfo failed] (Attempt 1)
+2025-08-04 18:34:43,034 [DEBUG] [9] https://nielsen.mail.dk: DNS failure - False (Attempt 2)
+2025-08-04 18:34:43,059 [DEBUG] [53] https://arnepedersen.dk (redirected to https://arnepedersen.dk): Status 200, Remark: , Live: True, Content start: '<!DOCTYPE html>\n<html lang="da-DK" class="html_stretched responsive av-preloader-disabled  html_header_top html_logo_lef' (Attempt 1)
+2025-08-04 18:34:43,059 [DEBUG] [11] https://tf-ds.com: DNS failure - False (Attempt 2)
+2025-08-04 18:34:43,059 [DEBUG] [56] https://guldkystens.dk: DNS failure - False (Attempt 2)
+2025-08-04 18:34:43,152 [DEBUG] [7] https://kbbyg.dk: DNS failure - False (Attempt 2)
+2025-08-04 18:34:43,762 [DEBUG] [29] https://brdr-borgesen.dk (redirected to https://www.brdr-borgesen.dk/): Status 200, Remark: , Live: True, Content start: '<!doctype html>\r\n<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en"> <![endif]-->\r\n<!--[if IE 7]>    <html class=' (Attempt 1)
+2025-08-04 18:34:44,032 [DEBUG] [9] https://nielsen.mail.dk: ClientError Cannot connect to host nielsen.mail.dk:443 ssl:False [getaddrinfo failed] (Attempt 2)
+2025-08-04 18:34:44,064 [DEBUG] [11] https://tf-ds.com: ClientError Cannot connect to host tf-ds.com:443 ssl:False [getaddrinfo failed] (Attempt 2)
+2025-08-04 18:34:44,065 [DEBUG] [56] https://guldkystens.dk: ClientError Cannot connect to host guldkystens.dk:443 ssl:False [getaddrinfo failed] (Attempt 2)
+2025-08-04 18:34:44,165 [DEBUG] [7] https://kbbyg.dk: ClientError Cannot connect to host kbbyg.dk:443 ssl:False [getaddrinfo failed] (Attempt 2)
+2025-08-04 18:34:44,234 [DEBUG] [9] https://nielsen.mail.dk: DNS failure - False (Attempt 3)
+2025-08-04 18:34:44,267 [DEBUG] [11] https://tf-ds.com: DNS failure - False (Attempt 3)
+2025-08-04 18:34:44,268 [DEBUG] [56] https://guldkystens.dk: DNS failure - False (Attempt 3)
+2025-08-04 18:34:44,384 [DEBUG] [7] https://kbbyg.dk: DNS failure - False (Attempt 3)
+2025-08-04 18:34:45,399 [DEBUG] Checked liveness for 94 URLs, 13 live
+2025-08-04 18:34:45,401 [DEBUG] Rensede DataFrame med 94 aktive rækker
+2025-08-04 18:34:45,405 [INFO] Gemte 94 aktive virksomheder → cvr_data.csv
+2025-08-04 18:34:45,405 [INFO] ✔  Workflow afsluttet kl. 18:34:45
