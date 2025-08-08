@@ -34,7 +34,6 @@ jobs:
           ls -1t debug_*.html 2>/dev/null | head -n 3 | xargs -I{} cp -f {} share/ 2>/dev/null || true
           ls -1t final_view*.html 2>/dev/null | head -n 3 | xargs -I{} cp -f {} share/ 2>/dev/null || true
 
-      # --- Diagnose: sikre secrets + filer findes ---
       - name: Verify secrets (masking safe)
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -67,24 +66,23 @@ jobs:
           head -n 10 gist.json || true
           test "$CODE" = "200" || (echo "Cannot read gist. Token scope/owner or GIST_ID is wrong." && exit 1)
 
-      # --- Byg payload + PATCH med curl (ingen gh auth) ---
       - name: Build JSON payload
         run: |
           set -euo pipefail
           python - <<'PY'
-import json, os
-files={}
-for n in os.listdir("share"):
-    p=os.path.join("share",n)
-    try:
-        with open(p,"r",encoding="utf-8",errors="ignore") as f:
-            files[n]={"content":f.read()}
-    except Exception:
-        files[n]={"content":""}
-payload={"files":files,"description":"Vexto debug snapshot (auto-update)"}
-open("gist_payload.json","w",encoding="utf-8").write(json.dumps(payload))
-print("Prepared gist_payload.json with", len(files), "files")
-PY
+          import json, os
+          files = {}
+          for n in os.listdir("share"):
+              p = os.path.join("share", n)
+              try:
+                  with open(p, "r", encoding="utf-8", errors="ignore") as f:
+                      files[n] = {"content": f.read()}
+              except Exception:
+                  files[n] = {"content": ""}
+          payload = {"files": files, "description": "Vexto debug snapshot (auto-update)"}
+          open("gist_payload.json", "w", encoding="utf-8").write(json.dumps(payload))
+          print("Prepared gist_payload.json with", len(files), "files")
+          PY
           wc -c gist_payload.json || true
           head -c 400 gist_payload.json && echo || true
 
