@@ -32,7 +32,7 @@ jobs:
           cp -f config/scoring_rules.yml share/ || true
           cp -f tests/test_fetcher_matrix.py share/ || true
           cp -f tests/debug_csv.py share/ || true
-          # Tag evt. de seneste 3 debug-HTML'er hvis de findes
+          # Tag de seneste 3 debug-HTML'er hvis de findes
           ls -1t debug_*.html 2>/dev/null | head -n 3 | xargs -I{} cp -f {} share/ 2>/dev/null || true
           ls -1t final_view*.html 2>/dev/null | head -n 3 | xargs -I{} cp -f {} share/ 2>/dev/null || true
 
