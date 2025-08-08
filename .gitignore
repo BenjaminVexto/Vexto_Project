@@ -12,3 +12,27 @@ venv/
 
 # VSCode indstillinger du ikke vil versionere
 .vscode/
+
+# Secrets
+.env
+
+# IDE & py caches
+.vscode/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.egg-info/
+
+# Kørsel/diagnose-output
+.http_diskcache/
+output/
+logs/
+tests/output/
+
+# Debug artefakter
+final_view*.html
+debug_*.html
+*vexto_log_*.txt
+website_liveness.log
+*.png
+*.jpg
