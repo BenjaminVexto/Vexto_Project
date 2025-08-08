@@ -34,22 +34,72 @@ jobs:
           ls -1t debug_*.html 2>/dev/null | head -n 3 | xargs -I{} cp -f {} share/ 2>/dev/null || true
           ls -1t final_view*.html 2>/dev/null | head -n 3 | xargs -I{} cp -f {} share/ 2>/dev/null || true
 
-      - name: Ensure GH CLI installed
-        run: |
-          if ! command -v gh >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y gh
-          fi
-          gh --version
-
-      - name: Update Secret Gist (one file at a time)
+      # --- Diagnose: sikre secrets + filer findes ---
+      - name: Verify secrets (masking safe)
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}   # gh bruger denne automatisk
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GIST_ID: ${{ secrets.GIST_ID }}
         run: |
+          test -n "$GH_TOKEN" || (echo "GH_TOKEN missing" && exit 1)
+          test -n "$GIST_ID" || (echo "GIST_ID missing" && exit 1)
+          echo "GIST_ID length: ${#GIST_ID}"
+          echo "First 6 of GIST_ID: ${GIST_ID:0:6}"
+
+      - name: List files to upload
+        run: |
           shopt -s nullglob
-          for f in share/*; do
-            echo "Uploading $f"
-            gh gist edit "$GIST_ID" "$f"
-          done
-          echo "Done."
+          ls -l share || true
+          COUNT=$(ls -1 share/* 2>/dev/null | wc -l | tr -d ' ')
+          echo "Files in share/: $COUNT"
+          test "$COUNT" -gt 0 || (echo "No files to upload — check copy paths" && exit 1)
+
+      - name: Verify Gist access via API
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GIST_ID: ${{ secrets.GIST_ID }}
+        run: |
+          set -euo pipefail
+          CODE=$(curl -sS -o gist.json -w '%{http_code}' \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/gists/$GIST_ID)
+          echo "GET /gists/$GIST_ID HTTP $CODE"
+          head -n 10 gist.json || true
+          test "$CODE" = "200" || (echo "Cannot read gist. Token scope/owner or GIST_ID is wrong." && exit 1)
+
+      # --- Byg payload + PATCH med curl (ingen gh auth) ---
+      - name: Build JSON payload
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+import json, os
+files={}
+for n in os.listdir("share"):
+    p=os.path.join("share",n)
+    try:
+        with open(p,"r",encoding="utf-8",errors="ignore") as f:
+            files[n]={"content":f.read()}
+    except Exception:
+        files[n]={"content":""}
+payload={"files":files,"description":"Vexto debug snapshot (auto-update)"}
+open("gist_payload.json","w",encoding="utf-8").write(json.dumps(payload))
+print("Prepared gist_payload.json with", len(files), "files")
+PY
+          wc -c gist_payload.json || true
+          head -c 400 gist_payload.json && echo || true
+
+      - name: PATCH Secret Gist via API
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GIST_ID: ${{ secrets.GIST_ID }}
+        run: |
+          set -euo pipefail
+          CODE=$(curl -sS -o resp.json -w '%{http_code}' \
+            -X PATCH \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/gists/$GIST_ID \
+            -d @gist_payload.json)
+          echo "PATCH /gists/$GIST_ID HTTP $CODE"
+          head -n 20 resp.json || true
+          test "$CODE" = "200" || (echo "Gist update failed." && exit 1)
