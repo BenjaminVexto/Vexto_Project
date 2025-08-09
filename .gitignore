@@ -36,3 +36,9 @@ debug_*.html
 website_liveness.log
 *.png
 *.jpg
+
+# Midlertidige/arbejdsfiler
+*.csv
+
+# Lokalt delt mappe til gist-upload
+share/
