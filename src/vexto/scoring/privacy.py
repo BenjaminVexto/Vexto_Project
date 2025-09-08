@@ -2,6 +2,9 @@
 
 import re
 
+# src/vexto/scoring/privacy.py (NY)
+
+
 __all__ = ["strip_pii"]
 
 def strip_pii(text: str) -> str:

@@ -1,4 +1,5 @@
 # src/vexto/scoring/trust_signal_fetcher.py
+
 import logging
 from bs4 import BeautifulSoup
 from .schemas import ConversionMetrics

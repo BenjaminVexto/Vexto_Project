@@ -43,3 +43,6 @@ website_liveness.log
 
 # Lokalt delt mappe til gist-upload
 share/
+.env
+*.env
+.env.*

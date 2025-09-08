@@ -9,6 +9,7 @@ import json
 import requests
 import time
 import os
+import re
 import logging
 from collections import defaultdict
 from typing import List, Dict, Any
@@ -22,13 +23,28 @@ except ImportError:
     print("Sørg for, at miljøvariablerne ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD og ELASTICSEARCH_URL er sat manuelt.")
 
 # --- Opsætning af Logging ---
+# Niveau og format kan styres fra .env
+_level_name = os.getenv("VEXTO_ES_LOG_LEVEL", "INFO").upper()
+_level = getattr(logging, _level_name, logging.INFO)
+
 log = logging.getLogger("vexto.es")
-log.setLevel(logging.INFO)
+log.setLevel(_level)
+
 if not log.handlers:
     handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
+    fmt = os.getenv("VEXTO_ES_LOG_FMT", "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    handler.setFormatter(logging.Formatter(fmt))
     log.addHandler(handler)
+
+# Slå dobbelt-logging (propagation til root) fra som default
+log.propagate = os.getenv("VEXTO_ES_LOG_PROPAGATE", "0").lower() in {"1","true","yes","on"}
+
+# Valgfri debug af request payloads (URL-parametre + Body) med truncation
+_LOG_PAYLOAD = os.getenv("VEXTO_ES_LOG_PAYLOAD", "0").lower() in {"1","true","yes","on"}
+_TRUNC = int(os.getenv("VEXTO_ES_TRUNCATE", "700"))
+
+def _maybe_trunc(s: str, n: int = _TRUNC) -> str:
+    return s if len(s) <= n else s[:n] + " … (truncated)"
 
 
 # --- Konfiguration for CVR API-hentning ---
@@ -122,7 +138,12 @@ def _make_es_query(branche: str, postnumre: List[int], include_active_only: bool
             "Vrvirksomhed.virksomhedMetadata.ophørsDato",
             # Fjernet: Vrvirksomhed.telefonNummer og Vrvirksomhed.elektroniskPost
             # da Vrvirksomhed.virksomhedMetadata.nyesteKontaktoplysninger nu er den samlede kilde
-            "Vrvirksomhed.deltagerRelation"
+            "Vrvirksomhed.deltagerRelation",
+            # === NYE FELTER: ansatte ===
+            "Vrvirksomhed.virksomhedMetadata.nyesteAarsbeskaeftigelse.antalAnsatte",
+            "Vrvirksomhed.virksomhedMetadata.nyesteAarsbeskaeftigelse.antalInklusivEjere",
+            "Vrvirksomhed.virksomhedMetadata.nyesteAarsbeskaeftigelse.intervalKodeAntalAnsatte",
+            "Vrvirksomhed.virksomhedMetadata.nyesteAarsbeskaeftigelse.intervalKodeAntalInklusivEjere"        
         ],
         "query": { "bool": es_query_bool },
         "sort": [{"_doc": "asc"}],
@@ -167,11 +188,11 @@ def _exponential_backoff_retry(func: Any, *args: Any, **kwargs: Any) -> requests
     while retries < max_retries:
         try:
             if log.isEnabledFor(logging.DEBUG):
-                log.debug(f"Sender forespørgsel til {request_url}")
-                if request_params:
-                    log.debug(f"URL-parametre: {json.dumps(request_params, indent=2, ensure_ascii=False)}")
-                if request_json_body:
-                    log.debug(f"Body: {json.dumps(request_json_body, indent=2, ensure_ascii=False)}")
+                log.debug("Sender forespørgsel til %s", request_url)
+                if _LOG_PAYLOAD and request_params:
+                    log.debug("URL-parametre: %s", _maybe_trunc(json.dumps(request_params, indent=2, ensure_ascii=False)))
+                if _LOG_PAYLOAD and request_json_body:
+                    log.debug("Body: %s", _maybe_trunc(json.dumps(request_json_body, indent=2, ensure_ascii=False)))
 
             response = func(*args, **kwargs)
             response.raise_for_status()

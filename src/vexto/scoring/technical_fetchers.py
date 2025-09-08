@@ -4,8 +4,6 @@ import logging
 from urllib.parse import urljoin, urlparse, urlunparse
 from datetime import datetime, timezone
 from bs4 import BeautifulSoup
-
-# Sørg for at importere de korrekte typer
 from .schemas import TechnicalSEO
 from .http_client import AsyncHtmlClient
 from .robots_sitemap_fetcher import discover_sitemap_locations

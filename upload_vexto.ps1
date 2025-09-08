@@ -1,4 +1,4 @@
-# ===== upload_vexto.ps1 (preflight + chunked + per-file fallback + 422 logging) =====
+# ===== upload_vexto.ps1 (preflight + chunked + per-file fallback + legacy cleanup) =====
 $ErrorActionPreference = 'Stop'
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
 
@@ -23,10 +23,14 @@ Write-Host ("GIST_ID  set: " + [bool]$env:GIST_ID)
 if (-not $env:GH_TOKEN) { throw "GH_TOKEN missing. Put it in .env as GH_TOKEN=ghp_xxx" }
 if (-not $env:GIST_ID)  { throw "GIST_ID missing. Put it in .env as GIST_ID=xxxxxxxx..." }
 
+# Normalize GIST_ID if user pasted a full URL
+if ($env:GIST_ID -match 'gist\.github\.com\/[^\/]+\/([0-9a-f]+)') { $env:GIST_ID = $Matches[1] }
+
 # --- Whitelist ---
 $whitelist = @(
   'main.py',
   'fetcher_diagnose_full.py',
+  'test_contact_finder.py',
   'config\scoring_rules.yml',
   'src\vexto\scoring\analyzer.py',
   'src\vexto\scoring\authority_fetcher.py',
@@ -40,6 +44,7 @@ $whitelist = @(
   'src\vexto\scoring\http_client.py',
   'src\vexto\scoring\image_fetchers.py',
   'src\vexto\scoring\link_fetcher.py',
+  'src\vexto\scoring\log_utils.py',
   'src\vexto\scoring\performance_fetcher.py',
   'src\vexto\scoring\privacy.py',
   'src\vexto\scoring\privacy_fetchers.py',
@@ -52,7 +57,9 @@ $whitelist = @(
   'src\vexto\scoring\tracking_fetchers.py',
   'src\vexto\scoring\trust_signal_fetcher.py',
   'src\vexto\scoring\url_finder.py',
-  'src\vexto\scoring\website_fetchers.py'
+  'src\vexto\scoring\website_fetchers.py',
+  'src\vexto\enrichment\contact_finder.py',
+  'src\vexto\data_processing\data_cleaner.py'
 )
 
 # --- Load old hash cache ---
@@ -76,38 +83,44 @@ $existingAbs  = @()
 $currentNames = @()
 $toUpload     = @()
 $newHashes    = @{}
+$script:LegacyList = @()
 
 foreach ($rel in $whitelist) {
   $abs = Join-Path $root $rel
-  if (-not (Test-Path $abs -PathType Leaf)) {
-    Write-Host "(skip) Not found: $rel"
-    continue
-  }
+  if (-not (Test-Path $abs -PathType Leaf)) { Write-Host "(skip) Not found: $rel"; continue }
+
   $existingAbs += $abs
-  $name = [IO.Path]::GetFileName($abs)
-  $currentNames += $name
+  $relKey  = ($rel -replace '\\','/')
+
+  # Unik Gist-nøgle for ALLE filer (full path -> underscores)
+  $gistKey = ($rel -replace '[\\/]', '_')                # fx src_vexto_scoring_image_fetchers.py
+
+  # Legacy-navne der kan ligge på Gist
+  $legacyKey  = ($rel -replace '[\\/]', '__')            # gammelt dobbelt-underscore-navn
+  $legacyBase = [IO.Path]::GetFileName($rel)             # gammelt rent basenavn (fx image_fetchers.py)
+
+  $currentNames += $gistKey
   $hash = (Get-FileHash -LiteralPath $abs -Algorithm SHA256).Hash
-  $newHashes[$name] = $hash
-  if (-not $oldHashes.ContainsKey($name) -or $oldHashes[$name] -ne $hash) {
-    $toUpload += @{ abs = $abs; name = $name }
+  $newHashes[$gistKey] = $hash
+
+  if (-not $oldHashes.ContainsKey($gistKey) -or $oldHashes[$gistKey] -ne $hash) {
+    $toUpload += @{ abs = $abs; relKey = $relKey; key = $gistKey }
   }
+
+  # Saml legacy-navne til oprydning
+  if ($legacyKey -and $script:LegacyList -notcontains $legacyKey) { $script:LegacyList += $legacyKey }
+  if ($gistKey -ne $legacyBase -and $script:LegacyList -notcontains $legacyBase) { $script:LegacyList += $legacyBase }
 }
 
-# --- Determine deletions ---
+# --- Determine deletions from cache ---
 $toDelete = @()
 foreach ($oldName in $oldHashes.Keys) {
   if ($currentNames -notcontains $oldName) { $toDelete += $oldName }
 }
-
-Write-Host ("Files existing locally: " + $existingAbs.Count)
-Write-Host ("Changed/new to upload: " + $toUpload.Count)
-Write-Host ("To delete from Gist:   " + $toDelete.Count)
-
-if ($existingAbs.Count -eq 0) { throw "No whitelisted files found - nothing to do." }
-if ($toUpload.Count -eq 0 -and $toDelete.Count -eq 0) {
-  Write-Host "No changes detected. Nothing to upload or delete."
-  Write-Host "== upload_vexto.ps1 done =="
-  exit 0
+if ($script:LegacyList) {
+  foreach ($legacy in $script:LegacyList) {
+    if ($oldHashes.ContainsKey($legacy) -and $toDelete -notcontains $legacy) { $toDelete += $legacy }
+  }
 }
 
 # --- HTTP setup (Bearer) ---
@@ -118,28 +131,52 @@ $headers = @{
 }
 $uri = ("https://api.github.com/gists/" + $env:GIST_ID)
 
-# --- Preflight: verify write access (harmless description patch) ---
+# --- Preflight: harmless description patch ---
 try {
   $diag = @{ description = "vexto-sync preflight $(Get-Date -Format o)" } | ConvertTo-Json -Depth 5 -Compress
   Invoke-WebRequest -Method PATCH -Uri $uri -Headers $headers -ContentType "application/json; charset=utf-8" -Body $diag -TimeoutSec 20 | Out-Null
   Write-Host "Preflight OK (write access confirmed)."
 } catch {
-  $msg = $_.Exception.Message
-  throw "Auth/preflight failed: $msg"
+  $msg = $_.Exception.Message; throw "Auth/preflight failed: $msg"
 }
 
+# --- Live Gist cleanup: mark legacy files present on remote for deletion ---
+$gistMeta = $null
+try { $resp = Invoke-WebRequest -Method GET -Uri $uri -Headers $headers -TimeoutSec 20; $gistMeta = $resp.Content | ConvertFrom-Json } catch {}
+if ($gistMeta -and $script:LegacyList) {
+  foreach ($legacy in $script:LegacyList) {
+    if ($gistMeta.files.PSObject.Properties[$legacy]) {
+      if ($toDelete -notcontains $legacy) { $toDelete += $legacy }
+    }
+  }
+}
+
+# --- Normalize deletions: don't delete keys we're updating (prevents 422) ---
+$uploadKeys = @($toUpload | ForEach-Object { $_.key })
+if ($uploadKeys.Count -gt 0 -and $toDelete.Count -gt 0) {
+  $beforeDel = $toDelete.Count
+  $toDelete  = $toDelete | Where-Object { $uploadKeys -notcontains $_ }
+  if ($toDelete.Count -lt $beforeDel) {
+    Write-Host ("Normalized deletions: removed {0} collisions with upserts." -f ($beforeDel - $toDelete.Count))
+  }
+}
+
+Write-Host ("Files existing locally: " + $existingAbs.Count)
+Write-Host ("Changed/new to upload: " + $toUpload.Count)
+Write-Host ("To delete from Gist:   " + $toDelete.Count)
+if ($existingAbs.Count -eq 0) { throw "No whitelisted files found - nothing to do." }
+if ($toUpload.Count -eq 0 -and $toDelete.Count -eq 0) { Write-Host "No changes detected. Nothing to upload or delete."; Write-Host "== upload_vexto.ps1 done =="; exit 0 }
+
+# -------------------- Helpers --------------------
 function Get-BackoffSecondsFromResponse {
   param([System.Net.WebResponse]$Response)
   $fallback = 60
   if (-not $Response) { return $fallback }
   try {
-    $retryAfter = $Response.Headers["Retry-After"]
-    if ($retryAfter) { return [int]$retryAfter }
-    $remain = $Response.Headers["X-RateLimit-Remaining"]
-    $reset  = $Response.Headers["X-RateLimit-Reset"]
+    $retryAfter = $Response.Headers["Retry-After"]; if ($retryAfter) { return [int]$retryAfter }
+    $remain = $Response.Headers["X-RateLimit-Remaining"]; $reset = $Response.Headers["X-RateLimit-Reset"]
     if ($remain -and [int]$remain -le 0 -and $reset) {
-      $nowUtc = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
-      $delta  = [int]$reset - [int]$nowUtc
+      $nowUtc = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds(); $delta  = [int]$reset - [int]$nowUtc
       if ($delta -gt 0 -and $delta -lt 3600) { return $delta + 2 }
     }
   } catch {}
@@ -154,20 +191,16 @@ function Invoke-GistPatch($filesMap, $uri, $headers, $maxAttempts=4) {
       Invoke-WebRequest -Method PATCH -Uri $uri -Headers $headers -ContentType "application/json; charset=utf-8" -Body $payload -TimeoutSec 120 | Out-Null
       return $true
     } catch {
-      $resp = $_.Exception.Response
+      $resp = $_.Exception.Response; $status = $null
       if ($resp) {
-        try {
-          $reader = New-Object System.IO.StreamReader($resp.GetResponseStream())
-          $body = $reader.ReadToEnd()
-          if ($body) { Write-Host "GitHub error body: $body" }
-        } catch {}
+        try { $status = [int]$resp.StatusCode } catch {}
+        $body = $null
+        try { $reader = New-Object System.IO.StreamReader($resp.GetResponseStream()); $body = $reader.ReadToEnd() } catch {}
+        if ($body) { Write-Host "GitHub error body (status=$status):"; Write-Host $body } else { Write-Host ("GitHub returned status {0} with empty body." -f $status) }
       }
-      $status = $null; if ($resp) { $status = [int]$resp.StatusCode }
       if ($status -eq 403 -and $attempt -lt $maxAttempts) {
         $sleepSec = Get-BackoffSecondsFromResponse -Response $resp
-        Write-Host ("403 received. Backing off {0}s (attempt {1}/{2})..." -f $sleepSec,$attempt,$maxAttempts)
-        Start-Sleep -Seconds $sleepSec
-        continue
+        Write-Host ("403 received. Backing off {0}s (attempt {1}/{2})..." -f $sleepSec,$attempt,$maxAttempts); Start-Sleep -Seconds $sleepSec; continue
       }
       Write-Host ("Bulk PATCH failed (attempt {0}/{1}): {2}" -f $attempt,$maxAttempts,$_.Exception.Message)
       return $false
@@ -215,38 +248,85 @@ function Get-SafeUtf8([string]$path) {
   return ($text -replace '[\x00-\x08\x0B\x0C\x0E-\x1F]', '')
 }
 
-# --- Build payload ---
-# 1) Fjern dubletter baseret på filnavn
-$toUpload = $toUpload | Group-Object name | ForEach-Object { $_.Group[0] }
+function Rename-And-Update-SingleFile {
+  param(
+    [string]$Uri, [hashtable]$Headers,
+    [string]$TargetKey, [string]$LocalAbsPath
+  )
+  # TargetKey is the desired Gist filename (e.g., src_vexto_scoring_image_fetchers.py)
+  $base = [IO.Path]::GetFileName($LocalAbsPath)
+  $content = Get-SafeUtf8 $LocalAbsPath
+  if ($null -eq $content) { $content = "" }
 
-# 2) filesMap (opdater) + deletions
+  # Inline metadata fetch (no external func dependency)
+  $gist = $null
+  try { $resp = Invoke-WebRequest -Method GET -Uri $Uri -Headers $Headers -TimeoutSec 20; $gist = $resp.Content | ConvertFrom-Json } catch { return $false }
+
+  $hasBase = $false
+  if ($gist.files.PSObject.Properties[$base]) { $hasBase = $true }
+
+  if ($hasBase) {
+    # 1-step: rename + content
+    $payload = @{ files = @{ $base = @{ filename = $TargetKey; content = $content } } } | ConvertTo-Json -Depth 100 -Compress
+    try { Invoke-WebRequest -Method PATCH -Uri $Uri -Headers $Headers -ContentType "application/json; charset=utf-8" -Body $payload -TimeoutSec 60 | Out-Null; return $true }
+    catch {
+      # 2-step: rename -> content
+      try {
+        $payloadRename  = @{ files = @{ $base      = @{ filename = $TargetKey } } } | ConvertTo-Json -Depth 10 -Compress
+        Invoke-WebRequest -Method PATCH -Uri $Uri -Headers $Headers -ContentType "application/json; charset=utf-8" -Body $payloadRename  -TimeoutSec 60 | Out-Null
+        $payloadContent = @{ files = @{ $TargetKey = @{ content  = $content } } } | ConvertTo-Json -Depth 10 -Compress
+        Invoke-WebRequest -Method PATCH -Uri $Uri -Headers $Headers -ContentType "application/json; charset=utf-8" -Body $payloadContent -TimeoutSec 60 | Out-Null
+        return $true
+      } catch { return $false }
+    }
+  } else {
+    # no root-base file present -> plain single upload
+    $payload = @{ files = @{ $TargetKey = @{ content = $content } } } | ConvertTo-Json -Depth 100 -Compress
+    try { Invoke-WebRequest -Method PATCH -Uri $Uri -Headers $Headers -ContentType "application/json; charset=utf-8" -Body $payload -TimeoutSec 60 | Out-Null; return $true }
+    catch { return $false }
+  }
+}
+
+# --- Build payload ---
+# 1) dedup by key (scriptblock to avoid Hashtable 'Keys' collision)
+$toUpload = $toUpload | Group-Object -Property { $_.key } | ForEach-Object { $_.Group[0] }
+
+# 2) filesMap (updates) + deletions
 $filesMap = @{}
 foreach ($it in $toUpload) {
   $content = Get-SafeUtf8 $it.abs
   if ($null -eq $content) { $content = "" }
-  $filesMap[$it.name] = @{ content = $content }
-  Copy-Item $it.abs $share -Force
+  $filesMap[$it.key] = @{ content = $content }
+
+  # copy to share\... preserving folders locally
+  $dest = Join-Path $share ($it.relKey -replace '/','\')
+  $destDir = Split-Path $dest -Parent
+  if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Path $destDir | Out-Null }
+  Copy-Item $it.abs $dest -Force
 }
 foreach ($name in $toDelete) { $filesMap[$name] = $null }
 
-Write-Host ("Uploading in chunks: upserts=" + $toUpload.Count + " deletes=" + $toDelete.Count)
+Write-Host ("Uploading in chunks: upserts=" + $filesMap.Keys.Count + " deletes=" + $toDelete.Count)
 
-# --- Try chunked, then fallback per-file on 422 ---
+# --- Upload: chunked -> per-file fallback (with rename) ---
 $chunkOk = $true
-try {
-  Invoke-GistBulkPatch-Chunked -FilesMap $filesMap -Uri $uri -Headers $headers
-} catch {
-  if ($_.Exception.Message -eq 'CHUNK_422') { $chunkOk = $false } else { throw }
-}
+try { Invoke-GistBulkPatch-Chunked -FilesMap $filesMap -Uri $uri -Headers $headers }
+catch { if ($_.Exception.Message -eq 'CHUNK_422') { $chunkOk = $false } else { throw } }
 
 if (-not $chunkOk) {
   Write-Host "Chunked upload failed with 422. Falling back to per-file mode..."
   foreach ($k in $filesMap.Keys) {
-    $single = @{}
-    $single[$k] = $filesMap[$k]
+    $single = @{}; $single[$k] = $filesMap[$k]
     Write-Host ("[single] Patching {0} ..." -f $k)
     if (-not (Invoke-GistPatch -filesMap $single -uri $uri -headers $headers -maxAttempts 4)) {
-      throw "Single-file patch failed for: $k"
+      Write-Host "Single PATCH failed for $k - trying rename/update fallback..."
+      $localAbs = $null
+      foreach ($it in $toUpload) { if ($it.key -eq $k) { $localAbs = $it.abs; break } }
+      if ($null -eq $localAbs -or -not (Rename-And-Update-SingleFile -Uri $uri -Headers $headers -TargetKey $k -LocalAbsPath $localAbs)) {
+        throw "Single-file patch failed for: $k"
+      } else {
+        Write-Host "Fallback succeeded for $k"
+      }
     }
     Start-Sleep -Milliseconds 250
   }

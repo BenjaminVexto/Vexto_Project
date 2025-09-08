@@ -4,8 +4,11 @@ import logging
 import asyncio
 from urllib.parse import urljoin
 from typing import Set
-
 from bs4 import BeautifulSoup
+
+# src/vexto/scoring/robots_sitemap_fetcher.py
+
+
 from .http_client import AsyncHtmlClient
 
 log = logging.getLogger(__name__)

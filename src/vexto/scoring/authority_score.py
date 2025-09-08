@@ -1,5 +1,7 @@
 # authority_score.py
 
+# authority_score.py
+
 def calculate_authority_score(fetcher_data: dict) -> int:
     """
     Beregner en alternativ 'Authority Score v1' baseret på gratis fetcher-data.

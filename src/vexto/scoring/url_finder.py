@@ -1,3 +1,18 @@
+import re
+import sqlite3
+import httpx
+import asyncio
+import os
+import logging
+import socket
+import hashlib
+from pathlib import Path
+from dotenv import load_dotenv
+from typing import Any, Tuple, AsyncGenerator, Optional
+from urllib.parse import urljoin
+from difflib import SequenceMatcher
+import idna # idna import var i tidligere versioner, men ikke brugt, nu er den det for fuld korrekthed.
+
 """
 url_finder.py  –  VERSION 3.0 (Arkitektonisk Korrekt)
 --------------------------------------------------------
@@ -7,18 +22,6 @@ Dette er den endelige, professionelle version.
   - Modulet udstiller nu get_client() og close_client() funktioner.
   - Al "magisk" atexit-logik er fjernet for at gøre modulet 100% genbrugeligt.
 """
-import re
-import sqlite3
-import httpx
-import asyncio
-import os
-import logging
-from pathlib import Path
-from dotenv import load_dotenv
-from typing import Any, Tuple, AsyncGenerator, Optional
-from urllib.parse import urljoin
-from difflib import SequenceMatcher
-import idna # idna import var i tidligere versioner, men ikke brugt, nu er den det for fuld korrekthed.
 
 # --- Opsætning ---------------------------------------------------------------
 log = logging.getLogger(__name__)

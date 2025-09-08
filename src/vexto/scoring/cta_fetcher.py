@@ -1,5 +1,6 @@
 import logging
 from bs4 import BeautifulSoup
+
 from .schemas import ConversionMetrics  # For type hinting
 from .http_client import AsyncHtmlClient
 

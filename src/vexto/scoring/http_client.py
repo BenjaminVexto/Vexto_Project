@@ -1,6 +1,7 @@
 # src/vexto/scoring/http_client.py
 
 from __future__ import annotations
+
 import sys
 import asyncio
 import threading
@@ -9,36 +10,55 @@ import logging
 import ssl
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple, Union, Any
+from typing import Dict, Optional, Union, Any, List, Tuple, Iterable
 from urllib.parse import urlparse, urljoin
-import certifi
-import httpx
-import random
-from bs4 import BeautifulSoup
-from diskcache import Cache
-from fake_useragent import FakeUserAgentError, UserAgent
-from playwright.sync_api import sync_playwright, Browser as PlaywrightBrowser, Error as PlaywrightError, TimeoutError as PlaywrightTimeoutError
-from tenacity import AsyncRetrying, RetryError, retry_if_exception, stop_after_attempt, wait_exponential_jitter
 import os
 import json
 import tempfile
 import shutil
 import re
-from datetime import datetime
+from datetime import datetime, timezone
+import random
+import certifi
+import httpx
+from bs4 import BeautifulSoup
+from diskcache import Cache
+from fake_useragent import FakeUserAgentError, UserAgent
+from playwright.sync_api import (
+    sync_playwright,
+    Browser as PlaywrightBrowser,
+)
+from tenacity import (
+    AsyncRetrying,
+    RetryError,
+    retry_if_exception,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 
 log = logging.getLogger(__name__)
 
+# --- Optional stealth ---
 try:
     from playwright_stealth import stealth_sync
-    STEALTH_AVAILABLE = True
+    STEALTH_AVAILABLE = True 
 except ImportError:
     STEALTH_AVAILABLE = False
     log.warning("playwright-stealth ikke tilgængelig - bruger manual stealth")
 
+def _stealth_raw() -> str:
+    return (os.getenv("VEXTO_STEALTH", "0") or "").strip().lower()
+
+def _stealth_env_enabled() -> bool:
+    raw = _stealth_raw()
+    return raw in ("1", "true", "yes", "on")
+
+# --- Cache setup ---
 CACHE_DIR = Path(".http_diskcache")
 CACHE_DIR.mkdir(exist_ok=True)
 html_cache = Cache(str(CACHE_DIR / "html"), size_limit=1 * 1024**3)
 
+# --- User-Agent helpers ---
 try:
     ua_generator = UserAgent()
 except FakeUserAgentError:
@@ -48,7 +68,7 @@ FALLBACK_USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/126.0.0.0"
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/126.0.0.0",
 ]
 
 def get_random_user_agent() -> str:
@@ -62,39 +82,109 @@ def _get_headers(base_headers: Optional[Dict] = None, user_agent: Optional[str] 
         "Connection": "keep-alive",
         "Sec-CH-UA": '"Not/A)Brand";v="8", "Chromium";v="126"',
         "Sec-CH-UA-Mobile": "?0",
-        "Sec-CH-UA-Platform": '"Windows"'
+        "Sec-CH-UA-Platform": '"Windows"',
     }
     if base_headers:
         headers.update(base_headers)
     return headers
 
-def needs_rendering(html: str) -> bool:
-    """Enhanced PWA detection including state hints."""
+# --- Asset/CDN filtering for link checks ---
+ASSET_EXTENSIONS = {
+    ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".ico",
+    ".css", ".js", ".pdf", ".xml", ".mp4", ".webm",
+    ".woff", ".woff2", ".ttf", ".eot", ".zip", ".doc", ".docx",
+}
+CDN_PREFIXES = ("m2.", "cdn.", "media.", "assets.", "static.")
+
+def _is_asset_url(url: str) -> bool:
+    if not url:
+        return False
+    base = url.split("?", 1)[0].lower()
+    return any(base.endswith(ext) for ext in ASSET_EXTENSIONS)
+
+def _is_blocked_cdn(url: str) -> bool:
+    try:
+        host = urlparse(url).netloc.lower()
+    except Exception:
+        return False
+    return any(host.startswith(p) for p in CDN_PREFIXES)
+
+def should_check_link_status(url: str) -> bool:
+    """Filter links before HEAD checks."""
+    if not url:
+        return False
+    u = url.lower().split("?", 1)[0]
+    if _is_asset_url(u):
+        return False
+    if _is_blocked_cdn(u):
+        return False
+    if "/img/" in u and "/resize/" in u:
+        return False
+    return True
+
+# --- Heuristikker ---
+def needs_rendering(html: str, url: str | None = None, content_type: str | None = None) -> bool:
+    """Heuristik til at afgøre om vi bør eskalere til Playwright.
+    - Eskalér KUN ved stærke SPA-markører (Next/Nuxt/React root/Vite/INITIAL_STATE).
+    - Hvis WordPress (generator/wp-content/wp-includes) → SKIP SPA-eskalering,
+      medmindre stærke markører også findes.
+    - Behold særregler for kontakt-URL'er og ikke-HTML endpoints.
+    """
+    u = (url or "").lower()
+    ct = (content_type or "").lower()
+
+    # Skip kendte ikke-HTML endpoints (robots/sitemaps/rss/xml/txt)
+    if u.endswith((".xml", ".txt")) or "sitemap" in u or "robots" in u or "rss" in u:
+        return False
+    if "xml" in ct or "text/plain" in ct:
+        return False
+
+    # Kontakt-/formular-URL’er er ofte JS-drevne → eskalér
+    if u and any(k in u for k in ("kontakt", "contact", "kontaktformular", "support", "kundeservice", "formular", "form")):
+        log.info("Contact-like URL detected - rendering required.")
+        return True
+
     if not html:
         return True
+
     lower = html.lower()
-    # Immediate PWA indicators
-    pwa_hints = [
-        "react-root", "ng-version", "next.js", "webpack", "vite", "astro-island", "svelte", "data-rh=", "blazor",
-        "vue-app", "data-cmp-src", "__nuxt__", "nuxt-loading", "data-server-rendered", "vue-meta", "magento",
-        "vue-storefront", "__initial_state__"
-    ]
-    if any(hint in lower for hint in pwa_hints):
-        log.info("PWA/SPA indicators detected - rendering required.")
+
+    # WordPress-indikatorer (gate)
+    is_wordpress = (
+        "wp-content/" in lower
+        or "wp-includes/" in lower
+        or re.search(r'<meta[^>]+name=["\']generator["\'][^>]+wordpress', lower, re.I) is not None
+    )
+
+    # Stærke SPA-markører (kræves for eskalering)
+    strong_spa_markers = (
+        "__next_data__",          # Next.js bootstrap
+        "data-reactroot",         # React root
+        "__initial_state__",      # Hydration state (generelt)
+        "window.__",              # Hydration namespace
+        "__nuxt__",               # Nuxt
+        "id=\"__nuxt\"",          # eksplicit container
+        "vite",                   # Vite boot
+        "data-server-rendered",   # Nuxt/Vue SSR-hint
+    )
+    has_strong = any(m in lower for m in strong_spa_markers)
+
+    # WP: skip SPA-eskalering hvis ikke stærke markører også findes
+    if is_wordpress and not has_strong:
+        return False
+
+    if has_strong:
+        log.info("Strong SPA markers detected - rendering required.")
         return True
-    # High script count = SPA
-    if lower.count('<script') > 20:
-        log.info("High script density - likely SPA.")
-        return True
-    # Short HTML = CSR
-    if len(html) < 5000:
-        log.info("Short HTML - likely client-side rendered.")
-        return True
-    # State reference check
-    if '__initial_state__' in lower or 'window.__' in lower:
+
+    # Fjern generiske triggers (script-densitet/short-HTML) for at undgå false positives
+    # Behold state-initialization som sidste stærke signal
+    if "__initial_state__" in lower or "window.__" in lower:
         log.info("State initialization patterns found - rendering required.")
         return True
+
     return False
+
 
 RETRY_POLICY = AsyncRetrying(
     retry=retry_if_exception(
@@ -143,13 +233,124 @@ def _looks_like_placeholder(html: Optional[str], url: str = "") -> bool:
     return False
 
 def is_bot_detected(html: str, url: str = "") -> bool:
+    # Skip non-HTML like sitemaps
     if url.lower().endswith('.xml') or 'sitemap' in url.lower():
         log.debug(f"Skipping bot detection for XML or sitemap URL: {url}")
         return False
-    lower = html.lower()
-    patterns = ["access denied", "unusual traffic", "bot detection", "challenge", "cloudflare", "datadome", "sorry, something went wrong"]
-    return any(p in lower for p in patterns)
 
+    lower = (html or "").lower()
+
+    # Strammere “challenge”-mønstre
+    challenge_core = any(p in lower for p in (
+        "just a moment", "attention required", "verifying your browser",
+        "checking your browser", "datadome", "ddom-js", "bot detection",
+        "unusual traffic", "access denied"
+    ))
+
+    # 'cloudflare' alene er ikke nok — kræv cf + challenge for at dømme
+    has_cf = "cloudflare" in lower
+    if challenge_core:
+        return True
+    if has_cf:
+        # kræv yderligere stærke indikatorer før vi dømmer
+        return any(p in lower for p in ("just a moment", "attention required", "verifying your browser"))
+
+    return False
+
+# --------------------------------------------------------------------
+# Early-return heuristics (bruges af hydratoren)
+# --------------------------------------------------------------------
+MIN_CONTENT_LEN = int(os.getenv("VEXTO_MIN_CONTENT_LEN", "15000"))
+PRODUCT_URL_HINTS = ("/produkt", "/product", "/p/", "/products/")
+
+def _looks_like_product(url: str) -> bool:
+    u = (url or "").lower()
+    return any(h in u for h in PRODUCT_URL_HINTS)
+
+def _extract_core_signals_from_html(html: str) -> dict:
+    out = {"canonical": None, "h1_count": 0, "product_schema": False, "breadcrumbs": False}
+    if not html:
+        return out
+    try:
+        soup = BeautifulSoup(html, "html.parser")
+        link = soup.find("link", rel=lambda v: v and "canonical" in v.lower())
+        if link and link.get("href"):
+            out["canonical"] = link.get("href")
+        out["h1_count"] = len(soup.find_all("h1"))
+        for s in soup.find_all("script", type=lambda t: t and "ld+json" in t.lower()):
+            txt = (s.string or s.get_text() or "").lower()
+            if '"@type"' in txt:
+                if '"product"' in txt:
+                    out["product_schema"] = True
+                if '"breadcrumblist"' in txt:
+                    out["breadcrumbs"] = True
+                if out["product_schema"] and out["breadcrumbs"]:
+                    break
+    except Exception:
+        pass
+    return out
+
+def _core_html_ok(html: str, expect_product: bool) -> bool:
+    if not html or len(html) < MIN_CONTENT_LEN:
+        return False
+    sig = _extract_core_signals_from_html(html)
+    if expect_product:
+        return bool(sig["canonical"]) and sig["product_schema"]
+    return bool(sig["canonical"]) and sig["h1_count"] > 0
+
+def _verify_state_content(page) -> dict:
+    try:
+        return page.evaluate("""
+        () => {
+            if (window.__INITIAL_STATE__) {
+                const s = JSON.stringify(window.__INITIAL_STATE__);
+                return {
+                    hasState: true,
+                    size: s.length,
+                    hasCanonical: s.includes('canonical'),
+                    hasProduct: s.includes('product'),
+                    hasCategory: s.includes('category'),
+                    hasPrice: s.includes('price')
+                };
+            }
+            return { hasState: false };
+        }
+        """)
+    except Exception:
+        return {'hasState': False}
+
+def _missing_core_signals(page, html: str) -> bool:
+    try:
+        state = _verify_state_content(page)
+        dom_canon = False
+        try:
+            dom_canon = bool(page.evaluate("() => !!document.querySelector('link[rel=\"canonical\"]')"))
+        except Exception:
+            pass
+        if state.get('hasCanonical') or dom_canon:
+            return False
+        if html:
+            sig = _extract_core_signals_from_html(html)
+            if sig["canonical"] or sig["product_schema"] or sig["breadcrumbs"]:
+                return False
+        return True
+    except Exception:
+        return True
+
+FOOTER_SELECTORS = "footer,[role='contentinfo'],.footer,.page-footer,#footer,.site-footer,.global-footer"
+
+def _wait_for_footer(page, timeout: int = 8000) -> bool:
+    try:
+        page.wait_for_selector(FOOTER_SELECTORS, timeout=timeout)
+        log.info("✅ Footer detected - page fully loaded")
+        return True
+    except Exception:
+        log.debug(f"Footer not found (selectors: {FOOTER_SELECTORS})")
+        return False
+
+# --------------------------------------------------------------------
+# Playwright thread fetcher
+# --------------------------------------------------------------------
 class _PlaywrightThreadFetcher:
     def __init__(self):
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="pw-thread")
@@ -165,7 +366,7 @@ class _PlaywrightThreadFetcher:
             timeout=httpx.Timeout(45.0, connect=10.0),
             follow_redirects=True,
             http2=True,
-            verify=_ssl_context(True)
+            verify=_ssl_context(True),
         )
 
     def _bootstrap(self):
@@ -190,12 +391,12 @@ class _PlaywrightThreadFetcher:
                     "--disable-gpu",
                     "--window-size=1920,1080",
                     "--ignore-certificate-errors",
-                    "--enable-features=NetworkService,NetworkServiceInProcess"
+                    "--enable-features=NetworkService,NetworkServiceInProcess",
                 ]
                 self._browser = self._playwright_instance.chromium.launch(
                     headless=False,
                     args=launch_args,
-                    ignore_default_args=['--enable-automation']
+                    ignore_default_args=['--enable-automation'],
                 )
                 self._is_ready = True
                 log.info(f"Playwright-browser ({self._browser_type}) startet succesfuldt.")
@@ -208,32 +409,25 @@ class _PlaywrightThreadFetcher:
         self._bootstrap()
 
     def _detect_pwa_site(self, url: str) -> bool:
-        """Enhanced PWA/SPA detection."""
         pwa_indicators = [
             'inventarland.dk', 'magento', 'vue-storefront', 'nuxt', 'react', 'pwa', 'spa', 'ssr', 'csr', 'vue', 'angular', 'svelte'
         ]
         return any(indicator in url.lower() for indicator in pwa_indicators)
 
     def _handle_cookies_advanced(self, page):
-        """Enhanced cookie handling with more selectors."""
         try:
             cookie_selectors = [
-                # Danish specific
                 "button:has-text('Accepter')", "button:has-text('Godkend')",
                 "button:has-text('Tillad')", "button:has-text('OK')",
-                # English
                 "button:has-text('Accept')", "button:has-text('Allow')",
                 "button:has-text('Agree')", "button:has-text('Continue')",
-                # ARIA labels
                 "button[aria-label*='accept' i]", "button[aria-label*='consent' i]",
                 "button[aria-label*='cookie' i]",
-                # Common IDs and classes
                 "#onetrust-accept-btn-handler", ".cc-btn.cc-accept",
                 ".cookie-accept", ".btn-consent", "button.accept-cookies",
                 "[id*='cookie'] button", "[class*='cookie'] button",
                 "[data-testid*='cookie']", "[data-cy*='cookie']",
-                # Generic button patterns
-                "button[class*='accept']", "button[id*='accept']"
+                "button[class*='accept']", "button[id*='accept']",
             ]
             for selector in cookie_selectors:
                 try:
@@ -245,363 +439,301 @@ class _PlaywrightThreadFetcher:
                         return
                 except Exception:
                     continue
-            # Fallback: Hide cookie overlays
             log.info("No clickable cookie button found; hiding overlays via JS.")
             page.evaluate("""
-                [...document.querySelectorAll(
-                    "[id*='cookie' i], [class*='cookie' i], [id*='consent' i], [class*='consent' i], [class*='overlay'], [id*='modal']"
-                )].forEach(el => {
-                    if (el.style) {
-                        el.style.display = 'none';
-                        el.style.visibility = 'hidden';
-                        el.style.opacity = '0';
-                    }
-                });
+            [...document.querySelectorAll(
+                "[id*='cookie' i], [class*='cookie' i], [id*='consent' i], [class*='consent' i], [class*='overlay'], [id*='modal']"
+            )].forEach(el => {
+                if (el.style) {
+                    el.style.display = 'none';
+                    el.style.visibility = 'hidden';
+                    el.style.opacity = '0';
+                }
+            });
             """)
         except Exception as e:
             log.warning(f"Cookie handling failed: {e}")
 
-    def _force_lazy_load_images(self, page):
-        """Force all lazy-loaded images to load."""
+    def _force_lazy_load_images(self, page) -> int:
         try:
-            # Method 1: Scroll to trigger intersection observers
             page.evaluate("""
-                // Scroll through entire page to trigger lazy loading
-                const scrollHeight = document.body.scrollHeight;
-                const step = 500;
-                let currentPosition = 0;
-                
-                const scrollInterval = setInterval(() => {
-                    window.scrollTo(0, currentPosition);
-                    currentPosition += step;
-                    
-                    if (currentPosition >= scrollHeight) {
-                        clearInterval(scrollInterval);
-                        window.scrollTo(0, 0);
-                    }
-                }, 100);
+            const scrollHeight = document.body.scrollHeight;
+            const step = 500;
+            let currentPosition = 0;
+            const scrollInterval = setInterval(() => {
+              window.scrollTo(0, currentPosition);
+              currentPosition += step;
+              if (currentPosition >= scrollHeight) {
+                clearInterval(scrollInterval);
+                window.scrollTo(0, 0);
+              }
+            }, 100);
             """)
             page.wait_for_timeout(3000)
-            
-            # Method 2: Force load all images with data-src or data-lazy attributes
             images_loaded = page.evaluate("""
-                (() => {
-                    let count = 0;
-                    const images = document.querySelectorAll('img[data-src], img[data-lazy], img[loading="lazy"], img[data-original]');
-                    
-                    images.forEach(img => {
-                        // Get the lazy source
-                        const lazySrc = img.getAttribute('data-src') || 
-                                       img.getAttribute('data-lazy') || 
-                                       img.getAttribute('data-original');
-                        
-                        if (lazySrc && !img.src.includes(lazySrc)) {
-                            img.src = lazySrc;
-                            img.removeAttribute('loading');
-                            count++;
-                        }
-                        
-                        // Trigger load event
-                        img.dispatchEvent(new Event('load'));
-                    });
-                    
-                    // Also handle background images
-                    const elementsWithLazyBg = document.querySelectorAll('[data-bg], [data-background]');
-                    elementsWithLazyBg.forEach(el => {
-                        const bg = el.getAttribute('data-bg') || el.getAttribute('data-background');
-                        if (bg) {
-                            el.style.backgroundImage = `url(${bg})`;
-                            count++;
-                        }
-                    });
-                    
-                    return count;
-                })()
+            (() => {
+                let count = 0;
+                const images = document.querySelectorAll('img[data-src], img[data-lazy], img[loading="lazy"], img[data-original]');
+                images.forEach(img => {
+                    const lazySrc = img.getAttribute('data-src') ||
+                                    img.getAttribute('data-lazy') ||
+                                    img.getAttribute('data-original');
+                    if (lazySrc && !img.src.includes(lazySrc)) {
+                        img.src = lazySrc;
+                        img.removeAttribute('loading');
+                        count++;
+                    }
+                    img.dispatchEvent(new Event('load'));
+                });
+                const elementsWithLazyBg = document.querySelectorAll('[data-bg], [data-background]');
+                elementsWithLazyBg.forEach(el => {
+                    const bg = el.getAttribute('data-bg') || el.getAttribute('data-background');
+                    if (bg) {
+                        el.style.backgroundImage = `url(${bg})`;
+                        count++;
+                    }
+                });
+                return count;
+            })()
             """)
-            
             if images_loaded > 0:
                 log.info(f"✅ Force-loaded {images_loaded} lazy images")
-                page.wait_for_timeout(2000)  # Wait for images to actually load
-                
-            # Method 3: Trigger all intersection observers manually
+                page.wait_for_timeout(2000)
             page.evaluate("""
-                // Force trigger all IntersectionObservers
-                if (window.IntersectionObserver) {
-                    const observers = [];
-                    const originalObserver = window.IntersectionObserver;
-                    
-                    // Get all observed elements
-                    document.querySelectorAll('*').forEach(el => {
-                        if (el._intersectionObserver) {
-                            el._intersectionObserver.observe(el);
-                        }
-                    });
-                    
-                    // Simulate all elements being visible
-                    window.dispatchEvent(new Event('scroll'));
-                    window.dispatchEvent(new Event('resize'));
-                }
+            if (window.IntersectionObserver) {
+                window.dispatchEvent(new Event('scroll'));
+                window.dispatchEvent(new Event('resize'));
+            }
             """)
-            
             return images_loaded
-            
         except Exception as e:
             log.warning(f"Lazy loading handler failed: {e}")
             return 0
 
     def _simulate_user_interaction_advanced(self, page):
-        """Advanced user simulation with realistic patterns INCLUDING lazy load."""
         try:
-            # Random entry point
             entry_x, entry_y = random.randint(100, 500), random.randint(100, 400)
             page.mouse.move(entry_x, entry_y)
             page.wait_for_timeout(random.randint(300, 800))
-            # Dummy click for engagement
             page.mouse.click(entry_x + random.randint(-50, 50), entry_y + random.randint(-50, 50))
             page.wait_for_timeout(random.randint(500, 1000))
-            # Progressive scrolling with realistic timing
+
             scroll_positions = [200, 400, 600, 900, 1200]
             for pos in scroll_positions:
                 page.mouse.wheel(0, pos)
                 page.wait_for_timeout(random.randint(400, 900))
-            # Occasional hover simulation
+
             if random.random() < 0.3:
                 hover_x, hover_y = random.randint(200, 800), random.randint(200, 600)
                 page.mouse.move(hover_x, hover_y)
                 page.wait_for_timeout(random.randint(200, 500))
-            # Full scroll to trigger lazy loading
+
             page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             page.wait_for_timeout(1500)
-            # Return to top with realistic timing
             page.evaluate("window.scrollTo({top: 0, behavior: 'smooth'})")
             page.wait_for_timeout(1000)
-            
-            # NOW FORCE LAZY LOAD
-            loaded_count = self._force_lazy_load_images(page)
-            
-            # Final verification
+
+            _ = self._force_lazy_load_images(page)
             final_check = page.evaluate("""
-                () => {
-                    const images = document.querySelectorAll('img');
-                    let loaded = 0;
-                    let total = images.length;
-                    
-                    images.forEach(img => {
-                        if (img.complete && img.naturalHeight !== 0) {
-                            loaded++;
-                        }
-                    });
-                    
-                    return { loaded, total, percentage: (loaded/total * 100).toFixed(1) };
-                }
+            () => {
+              const images = document.querySelectorAll('img');
+              let loaded = 0;
+              let total = images.length;
+              images.forEach(img => {
+                if (img.complete && img.naturalHeight !== 0) loaded++;
+              });
+              return { loaded, total, percentage: (loaded/total * 100).toFixed(1) };
+            }
             """)
-            
-            log.info(f"📷 Image loading status: {final_check['loaded']}/{final_check['total']} ({final_check['percentage']}%)")
-            
+            log.info(f" Image loading status: {final_check['loaded']}/{final_check['total']} ({final_check['percentage']}%)")
         except Exception as e:
             log.warning(f"Advanced user simulation failed: {e}")
 
     def _force_vue_refresh(self, page):
-        """Force Vue/Nuxt state refresh and wait."""
         try:
             page.evaluate("""
-                // Multiple refresh strategies
-                if (window.$nuxt && window.$nuxt.$router) {
-                    const currentRoute = window.$nuxt.$router.currentRoute;
-                    window.$nuxt.$router.replace(currentRoute.fullPath);
-                }
-                // Force re-render via events
-                window.dispatchEvent(new Event('resize'));
-                window.dispatchEvent(new Event('scroll'));
-                // Force Vue reactivity update
-                if (window.Vue && window.Vue.nextTick) {
-                    window.Vue.nextTick(() => {
-                        console.log('Vue nextTick executed');
-                    });
-                }
-                // Trigger intersection observers
-                window.scrollTo(0, 1);
-                window.scrollTo(0, 0);
+            if (window.$nuxt && window.$nuxt.$router) {
+              const currentRoute = window.$nuxt.$router.currentRoute;
+              window.$nuxt.$router.replace(currentRoute.fullPath);
+            }
+            window.dispatchEvent(new Event('resize'));
+            window.dispatchEvent(new Event('scroll'));
+            if (window.Vue && window.Vue.nextTick) {
+              window.Vue.nextTick(() => { console.log('Vue nextTick executed'); });
+            }
+            window.scrollTo(0, 1);
+            window.scrollTo(0, 0);
             """)
-            # Wait for refresh to take effect
             page.wait_for_timeout(3000)
-            # Check if refresh worked
-            return page.wait_for_function("""
-                () => window.__INITIAL_STATE__ && Object.keys(window.__INITIAL_STATE__).length > 0
-            """, timeout=5000)
+            return page.wait_for_function(
+                "() => window.__INITIAL_STATE__ && Object.keys(window.__INITIAL_STATE__).length > 0", timeout=5000
+            )
         except Exception as e:
             log.warning(f"Vue refresh failed: {e}")
             raise e
 
     def _handle_pwa_hydration_hybrid(self, page, url: str, hydration_requests: list) -> Optional[str]:
-        """Kombineret PWA hydration med alle tricks PLUS lazy loading."""
-        log.info("🔄 Starting hybrid PWA hydration...")
-        # Step 1: Wait for framework
+        log.info(" Starting hybrid PWA hydration...")
         try:
             page.wait_for_function("""
-                () => window.Vue || window.$nuxt || window.__NUXT__ || document.querySelector('[data-server-rendered]') || document.querySelector('[id*="app"]') || document.querySelector('[class*="vue"]')
+                () => window.Vue || window.$nuxt || window.__NUXT__ ||
+                document.querySelector('[data-server-rendered]') ||
+                document.querySelector('[id*="app"]') || document.querySelector('[class*="vue"]')
             """, timeout=15000)
             log.info("✅ Vue/Nuxt framework detected")
         except Exception:
             log.warning("⚠️ Framework not detected")
-        
-        # Step 2: Enhanced user simulation (includes lazy loading now)
+
         self._simulate_user_interaction_advanced(page)
-        
-        # Step 3: Wait for API requests
         if hydration_requests:
-            log.info(f"🔍 Waiting for {len(hydration_requests)} API requests to complete...")
+            log.info(f" Waiting for {len(hydration_requests)} API requests to complete...")
             try:
                 page.wait_for_function("() => document.readyState === 'complete'", timeout=10000)
             except Exception:
                 pass
-        
-        # Step 4: Multi-strategy __INITIAL_STATE__ detection
+
         strategies = [
-            # Direct object check (runtime)
-            lambda: page.wait_for_function("""
-                () => window.__INITIAL_STATE__ && typeof window.__INITIAL_STATE__ === 'object' && Object.keys(window.__INITIAL_STATE__).length > 0
-            """, timeout=8000),
-            # Script tag detection
+            lambda: page.wait_for_function(
+                "() => window.__INITIAL_STATE__ && typeof window.__INITIAL_STATE__ === 'object' && Object.keys(window.__INITIAL_STATE__).length > 0",
+                timeout=8000
+            ),
             lambda: page.wait_for_selector("script:has-text('__INITIAL_STATE__')", timeout=8000),
-            # Canonical-specific check
-            lambda: page.wait_for_function("""
-                () => window.__INITIAL_STATE__ && JSON.stringify(window.__INITIAL_STATE__).includes('canonical')
-            """, timeout=8000),
-            # Force refresh strategy
-            lambda: self._force_vue_refresh(page)
+            lambda: page.wait_for_function(
+                "() => window.__INITIAL_STATE__ && JSON.stringify(window.__INITIAL_STATE__).includes('canonical')",
+                timeout=8000
+            ),
+            lambda: self._force_vue_refresh(page),
         ]
-        
-        # Løkken afbrydes, så snart en strategi finder 'canonical'
+        successful_strategy = None
+        skip_2_3 = False
+
         for i, strategy in enumerate(strategies, 1):
+            if skip_2_3 and i in (2, 3):
+                log.info(f"⏭️ Skipping strategy {i} - already sufficient after Strategy 1")
+                continue
+
             try:
-                log.info(f"🎯 Hydration strategy {i}/4...")
+                log.info(f" Hydration strategy {i}/4...")
                 strategy()
                 log.info(f"✅ Strategy {i} succeeded!")
-                # Check actual state content
+                successful_strategy = i
                 try:
-                    state_check = page.evaluate("""
-                        () => {
-                            if (window.__INITIAL_STATE__) {
-                                const state = window.__INITIAL_STATE__;
-                                const hasCanonical = JSON.stringify(state).includes('canonical');
-                                return {
-                                    hasState: true,
-                                    size: JSON.stringify(state).length,
-                                    hasCanonical: hasCanonical,
-                                    keys: Object.keys(state).slice(0, 5)
-                                };
-                            }
-                            return { hasState: false };
-                        }
-                    """)
+                    state_check = _verify_state_content(page)
                     if state_check.get('hasState'):
-                        log.info(f"🎉 State verified: {state_check['size']} chars, canonical: {state_check.get('hasCanonical', False)}")
+                        log.info(f" State verified: {state_check.get('size', 0)} chars, canonical: {state_check.get('hasCanonical', False)}")
                         if state_check.get('hasCanonical'):
-                            return page.content() # RETUR HER, HVIS KANONISK ER FUNDET
+                            try:
+                                page.wait_for_timeout(400)
+                            except Exception:
+                                pass
+                            return page.content()
+                    if i == 1:
+                        html_s1 = page.content()
+                        expect_product = _looks_like_product(url)
+                        state_ok_by_size = state_check.get('size', 0) > 50000
+                        state_ok_by_signals = state_check.get('hasCanonical') or sum([
+                            state_check.get('hasProduct', False),
+                            state_check.get('hasCategory', False),
+                            state_check.get('hasPrice', False),
+                        ]) >= 2
+                        dom_ok = _core_html_ok(html_s1, expect_product=expect_product)
+                        if state_ok_by_signals or state_ok_by_size or dom_ok:
+                            if _missing_core_signals(page, html_s1):
+                                log.info("Hydration: Strategy 1 ok → skipping 2/3, checking Strategy 4 (missing core signals)")
+                                skip_2_3 = True
+                                # NEW: Early-return hvis vi allerede har canonical + nok indhold
+                                if state_check.get('hasCanonical') and state_check.get('size', 0) > 20000:
+                                    log.info("Early-return: canonical present and content size > 20000 → skipping Strategy 4.")
+                                    return html_s1
+                            else:
+                                log.info("Hydration: Strategy 1 ok → skipping Strategies 2/3 (core signals present)")
+                                return html_s1
                 except Exception as e:
                     log.warning(f"State verification failed: {e}")
-                
+
             except Exception as e:
                 log.warning(f"❌ Strategy {i} failed: {e}")
                 continue
 
-        # Ultimate iframe fallback (køres kun hvis ingen af de andre virkede)
-        log.info("🏗️ Trying iframe isolation fallback...")
-        try:
-            page.evaluate(f'''
-                const iframe = document.createElement('iframe');
-                iframe.src = '{url}';
-                iframe.style.display = 'none';
-                document.body.appendChild(iframe);
-                iframe.onload = () => {{
-                    if (iframe.contentWindow && iframe.contentWindow.__INITIAL_STATE__) {{
-                        window._IFRAME_STATE = iframe.contentWindow.__INITIAL_STATE__;
-                        console.log('Iframe state captured');
-                    }}
-                }};
-            ''')
-            page.wait_for_function('() => window._IFRAME_STATE !== undefined', timeout=15000)
-            iframe_state = page.evaluate('() => window._IFRAME_STATE')
-            if iframe_state:
-                log.info("🎉 Iframe fallback succeeded!")
-                # Inject state into main window
-                page.evaluate('(state) => window.__INITIAL_STATE__ = state', iframe_state)
-        except Exception as e:
-            log.warning(f"Iframe fallback failed: {e}")
-            
-        # Final content retrieval
-        try:
-            page.wait_for_selector("footer", timeout=8000)
-            log.info("✅ Footer detected - page fully loaded")
-        except Exception:
-            log.warning("⚠️ Footer not found")
-        return page.content()
 
     def _extract_canonical_hybrid(self, page, html_content: str, url: str) -> dict:
-        """Extract canonical data using both runtime and HTML parsing."""
-        canonical_data = {}
-        
-        # Method 1: Runtime extraction (preferred)
+        """Kombiner runtime + HTML parsing til canonical hints, med filtering og normalisering."""
+        canonical_data: Dict[str, Any] = {}
+
+        # Method 1: Runtime state (filter navigation/breadcrumb/header/footer)
         try:
             runtime_state = page.evaluate("() => window.__INITIAL_STATE__")
-            if runtime_state:
-                canonical_data['runtime_state'] = runtime_state
-                canonical_data['runtime_success'] = True
-                # Recursive search for canonical fields
-                def find_canonical_keys(obj, path=""):
-                    results = {}
-                    if isinstance(obj, dict):
-                        for key, value in obj.items():
-                            new_path = f"{path}.{key}" if path else key
-                            if 'canonical' in key.lower():
-                                results[new_path] = value
-                                log.info(f"🎯 Runtime canonical found: {new_path} = {value}")
-                            results.update(find_canonical_keys(value, new_path))
-                    elif isinstance(obj, list):
-                        for i, item in enumerate(obj):
-                            results.update(find_canonical_keys(item, f"{path}[{i}]"))
-                    return results
-                canonical_fields = find_canonical_keys(runtime_state)
-                canonical_data['canonical_fields'] = canonical_fields
-            else:
-                canonical_data['runtime_success'] = False
-        except Exception as e:
-            log.warning(f"Runtime extraction failed: {e}")
+        except Exception:
+            runtime_state = None
+
+        if runtime_state:
+            canonical_data['runtime_state'] = runtime_state
+            canonical_data['runtime_success'] = True
+
+            blocked = ("menucategories", "categoriesmap", "navigation", "header", "footer", "breadcrumb", "menu")
+            def walk(obj, path=""):
+                found = {}
+                if isinstance(obj, dict):
+                    for k, v in obj.items():
+                        p = f"{path}.{k}" if path else k
+                        if isinstance(v, (dict, list)):
+                            found.update(walk(v, p))
+                        elif isinstance(v, str) and "canonical" in k.lower():
+                            if any(b in p.lower() for b in blocked):
+                                continue
+                            s = v.strip()
+                            if s and s.lower() not in ("none", "null", "false"):
+                                found[p] = s
+                elif isinstance(obj, list):
+                    for i, v in enumerate(obj):
+                        p = f"{path}[{i}]"
+                        if isinstance(v, (dict, list)):
+                            found.update(walk(v, p))
+                return found
+
+            raw_fields = walk(runtime_state)
+            normalized_fields: Dict[str, str] = {}
+            for pth, val in raw_fields.items():
+                cand = val if val.startswith("http") else urljoin(url, val)
+                # samme domæne
+                try:
+                    if urlparse(cand).netloc == urlparse(url).netloc:
+                        normalized_fields[pth] = cand
+                except Exception:
+                    continue
+            if normalized_fields:
+                canonical_data['canonical_fields'] = normalized_fields
+
+        else:
             canonical_data['runtime_success'] = False
-        
-        # Method 2: HTML regex parsing (backup)
-        try:
-            state_pattern = r'window\.__INITIAL_STATE__\s*=\s*({.+?});'
-            matches = re.findall(state_pattern, html_content, re.DOTALL)
-            if matches:
-                canonical_data['html_matches'] = len(matches)
-                for i, match in enumerate(matches):
-                    try:
-                        parsed_state = json.loads(match)
-                        if 'canonical' in str(parsed_state).lower():
-                            canonical_data[f'html_state_{i}'] = parsed_state
-                            log.info(f"📄 HTML canonical found in match {i}")
-                    except json.JSONDecodeError:
-                        continue
-            else:
-                canonical_data['html_matches'] = 0
-        except Exception as e:
-            log.warning(f"HTML extraction failed: {e}")
-            canonical_data['html_success'] = False
-        
-        # Method 3: Traditional <link rel="canonical"> check
+
+        # Method 2: traditionel <link rel="canonical">
         try:
             canonical_link = page.get_attribute('link[rel="canonical"]', 'href', timeout=2000)
-            if canonical_link:
-                canonical_data['link_canonical'] = canonical_link
-                log.info(f"🔗 Traditional canonical found: {canonical_link}")
+        except Exception:
+            canonical_link = None
+        if canonical_link:
+            canonical_data['link_canonical'] = canonical_link if canonical_link.startswith("http") else urljoin(url, canonical_link)
+
+        # Method 3: og:url
+        try:
+            og_url = page.get_attribute("meta[property='og:url']", "content", timeout=1000)
+            if og_url:
+                canonical_data['og_url'] = og_url if og_url.startswith("http") else urljoin(url, og_url)
         except Exception:
             pass
-        
+
+        # Method 4: Regex fallback for inline state (let)
+        try:
+            state_pattern = r'window\.__INITIAL_STATE__\s*=\s*({.+?});'
+            matches = re.findall(state_pattern, html_content or "", re.DOTALL)
+            canonical_data['html_matches'] = len(matches)
+        except Exception:
+            canonical_data['html_matches'] = 0
+
         return canonical_data
-    
-    def _sync_fetch(self, url: str, ua: str, retry_count: int = 0) -> Optional[Dict[str, Any]]:
+
+    def _sync_fetch(self, url: str, ua: str, stealth_flag: bool, retry_count: int = 0) -> Optional[Dict[str, Any]]:
         with self._fetch_lock:
             self._active_fetches += 1
         try:
@@ -614,7 +746,7 @@ class _PlaywrightThreadFetcher:
 
             state_path = os.path.join(tempfile.gettempdir(), "vexto-states", f"{self._browser_type}_{urlparse(url).netloc}.json")
             os.makedirs(os.path.dirname(state_path), exist_ok=True)
-            storage_state = {}
+            storage_state: Dict[str, Any] = {}
             if os.path.exists(state_path):
                 try:
                     with open(state_path, 'r') as f:
@@ -622,21 +754,26 @@ class _PlaywrightThreadFetcher:
                 except json.JSONDecodeError as e:
                     log.warning(f"Invalid storage state file for {url}: {e}")
 
-            # PWA detection
             is_pwa_site = self._detect_pwa_site(url)
 
-            # Pre-flight HTTPX check for baseline
-            try:
-                headers = _get_headers({"User-Agent": ua})
-                response = self._http_client.get(url, headers=headers)
-                html = response.text
-                java_script_enabled = needs_rendering(html) or is_pwa_site
-            except Exception:
-                java_script_enabled = True
+            java_script_enabled = True
+            if not is_pwa_site:
+                # Kun preflight GET for ikke-PWA (P0.3)
+                try:
+                    headers = _get_headers({"User-Agent": ua})
+                    response = self._http_client.get(url, headers=headers)
+                    html = response.text
+                    java_script_enabled = needs_rendering(html) or is_pwa_site
+                    if not java_script_enabled:
+                        # Hvis det ligner en ren statisk side, returnér HTTPX-resultat uden Playwright
+                        if is_bot_detected(html, url):
+                            log.error(f"❌ Bot detection in static GET for {url}")
+                            return {"html": None, "canonical_data": {}}
+                        return {"html": html, "canonical_data": {}}
+                except Exception:
+                    java_script_enabled = True  # eskaler
 
-            # Enhanced viewport for PWA sites
             viewport_config = {"width": 1366, "height": 768} if is_pwa_site else {"width": 1920, "height": 1080}
-            
             with self._browser.new_context(
                 storage_state=storage_state if storage_state else None,
                 user_agent=ua,
@@ -646,63 +783,60 @@ class _PlaywrightThreadFetcher:
                 java_script_enabled=java_script_enabled,
                 bypass_csp=True,
                 permissions=['geolocation'],
-                geolocation={'latitude': 55.6761, 'longitude': 12.5683},  # Copenhagen
-                timezone_id='Europe/Copenhagen'
+                geolocation={'latitude': 55.6761, 'longitude': 12.5683},
+                timezone_id='Europe/Copenhagen',
             ) as context:
                 page = context.new_page()
-                
-                # Stealth package integration
-                if STEALTH_AVAILABLE:
-                    try:
-                        stealth_sync(page)
-                        log.info("✅ playwright-stealth applied")
-                    except Exception as e:
-                        log.warning(f"Stealth package failed: {e}")
-                
-                # Manual stealth as backup
-                page.add_init_script("""
-                    // Advanced stealth for PWA sites
+
+                # --- Call-time gate (log beslutningen)
+                _raw = _stealth_raw()
+                _enabled = _raw in ("1","true","yes","on")
+                log.info(f"[stealth] gate: VEXTO_STEALTH={_raw!r} -> {'ON' if _enabled else 'OFF'}")
+
+                # --- Stealth besluttet ved call-tid (override > env) ---
+                resolved_stealth = bool(stealth_flag)
+                log.info(f"[stealth] resolved={resolved_stealth} (override), env={os.getenv('VEXTO_STEALTH','?')!r}")
+                if STEALTH_AVAILABLE and resolved_stealth:
+                    stealth_sync(page)
+                    log.info("✅ playwright-stealth applied (resolved=ON)")
+                else:
+                    log.info("playwright-stealth skipped (resolved=OFF or not available)")
+
+                # Anti-bot init-script KUN når stealth er ON
+                if resolved_stealth:
+                    page.add_init_script("""
                     Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-                    // Override automation detection
                     delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
                     delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
                     delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
-                    // Chrome object mocking
                     window.chrome = { runtime: {}, loadTimes: function() {}, csi: function() {}, app: {} };
-                    // Permissions override
                     const originalQuery = window.navigator.permissions.query;
                     if (originalQuery) {
-                        window.navigator.permissions.query = (parameters) => (
-                            parameters.name === 'notifications' ?
-                            Promise.resolve({ state: 'default' }) :
-                            originalQuery(parameters)
-                        );
+                    window.navigator.permissions.query = (parameters) => (
+                        parameters.name === 'notifications' ?
+                        Promise.resolve({ state: 'default' }) :
+                        originalQuery(parameters)
+                    );
                     }
-                    // Mock plugins + languages for Danish context
                     Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5], });
                     Object.defineProperty(navigator, 'languages', { get: () => ['da-DK', 'da', 'en-US', 'en'], });
-                    // Window dimensions consistency
                     window.outerHeight = screen.height;
                     window.outerWidth = screen.width;
-                """)
+                    """)
 
-                # Request interception for API detection
-                hydration_requests = []
+                hydration_requests: list[str] = []
                 if is_pwa_site:
                     def handle_request(request):
                         request_url = request.url.lower()
                         if any(keyword in request_url for keyword in ['graphql', '/api/', 'ajax', 'json']):
                             hydration_requests.append(request.url)
-                            log.debug(f"🔍 Detected API call: {request.url}")
+                            log.debug(f" Detected API call: {request.url}")
                     page.on('request', handle_request)
 
-                log.info(f"🚀 Playwright fetching {url} (PWA: {is_pwa_site}, retry: {retry_count})...")
-                
+                log.info(f" Playwright fetching {url} (PWA: {is_pwa_site}, retry: {retry_count})...")
                 try:
-                    # Navigate with longer timeout for PWA
                     timeout = 90000 if is_pwa_site else 60000
                     page.goto(url, wait_until="domcontentloaded", timeout=timeout)
-                    # Basic network settle
                     try:
                         page.wait_for_load_state("networkidle", timeout=15000)
                     except Exception:
@@ -711,43 +845,181 @@ class _PlaywrightThreadFetcher:
                     log.warning(f"Navigation failed: {e}")
                     return {"html": None, "canonical_data": {}}
 
-                # Handle cookies first
                 self._handle_cookies_advanced(page)
 
-                # PWA-specific hydration or standard rendering
                 if is_pwa_site:
                     html_content = self._handle_pwa_hydration_hybrid(page, url, hydration_requests)
                 else:
-                    if java_script_enabled:
-                        self._simulate_user_interaction_advanced(page)
-                    try:
-                        page.wait_for_selector("footer", timeout=10000)
-                        log.info("✅ Footer loaded")
-                    except Exception:
-                        log.warning("⚠️ Footer not found")
+                    self._simulate_user_interaction_advanced(page)
+                    _wait_for_footer(page, timeout=10000)
                     html_content = page.content()
 
                 if not html_content:
-                    return {"html": None, "canonical_data": {}}
+                    # Grace: kort vent og nyt forsøg
+                    try:
+                        page.wait_for_timeout(1500)
+                        html_content = page.content()
+                    except Exception:
+                        html_content = ""
+                    # Last resort: hent hele DOM'en via JS
+                    if not html_content:
+                        try:
+                            html_content = page.evaluate("() => document.documentElement.outerHTML") or ""
+                        except Exception:
+                            pass
+                    if not html_content:
+                        # Grace: kort vent og nyt forsøg
+                        try:
+                            page.wait_for_timeout(1500)
+                            html_content = page.content()
+                        except Exception:
+                            html_content = ""
+                        # Last resort: hent hele DOM'en via JS
+                        if not html_content:
+                            try:
+                                html_content = page.evaluate("() => document.documentElement.outerHTML") or ""
+                            except Exception:
+                                pass
+                        if not html_content:
+                            return {"html": None, "canonical_data": {}}
 
-                # Dual extraction (runtime + regex)
                 canonical_data = self._extract_canonical_hybrid(page, html_content, url)
 
-                # Debug save with timestamp
+                # --- NYT: Analytics runtime-hook ---
+                try:
+                    analytics = page.evaluate("""
+                    () => {
+                    const out = {
+                        hasGA4: false, hasGTM: false, hasFB: false,
+                        ga4Id: null, fbPixelId: null,
+                        // ekstra id’er vi kan finde
+                        gtmContainerId: null, ttPixelId: null, pinterestTagId: null,
+                        snapPixelId: null, linkedinPartnerId: null, bingUetId: null
+                    };
+
+                    // dataLayer / GTM / GA4
+                    try {
+                        if (typeof dataLayer !== 'undefined' && Array.isArray(dataLayer)) {
+                        out.hasGTM = true;
+                        for (const item of dataLayer) {
+                            if (!item || typeof item !== 'object') continue;
+                            const s = JSON.stringify(item);
+                            const g = s.match(/G-[A-Z0-9\-]{6,}/);
+                            if (g && !out.ga4Id) out.ga4Id = g[0];
+                            const sendTo = s.match(/send_to["']?\s*:\s*["'](G-[A-Z0-9\-]{6,})["']/i);
+                            if (sendTo && !out.ga4Id) out.ga4Id = sendTo[1];
+                        }
+                        }
+                    } catch(e){}
+
+                    // gtag/gtag.js
+                    try { if (typeof gtag !== 'undefined') out.hasGA4 = true; } catch(e){}
+                    try {
+                        const scripts = Array.from(document.scripts || []);
+                        for (const s of scripts) {
+                        const src = s.src || "";
+                        const txt = s.innerHTML || "";
+                        if (src.includes('googletagmanager.com/gtag/js')) {
+                            out.hasGA4 = true;
+                            const m = src.match(/id=(G-[A-Z0-9\-]{6,})/i);
+                            if (m && !out.ga4Id) out.ga4Id = m[1];
+                        }
+                        if (src.includes('googletagmanager.com/gtm.js')) {
+                            out.hasGTM = true;
+                            const m2 = src.match(/id=(GTM-[A-Z0-9]+)/i);
+                            if (m2 && !out.gtmContainerId) out.gtmContainerId = m2[1];
+                        }
+                        if (txt.includes("gtag(")) out.hasGA4 = true;
+                        }
+                    } catch(e){}
+
+                    // Meta Pixel (fbq)
+                    try {
+                        if (typeof fbq !== 'undefined') out.hasFB = true;
+                        const ns = Array.from(document.getElementsByTagName('noscript'));
+                        for (const n of ns) {
+                        const t = n.innerHTML || "";
+                        if (t.includes('facebook.com/tr')) out.hasFB = true;
+                        }
+                        const scripts = Array.from(document.scripts || []);
+                        for (const s of scripts) {
+                        const txt = s.innerHTML || "";
+                        const m = txt.match(/fbq\(['"]init['"]\s*,\s*['"](\d+)['"]\)/i);
+                        if (m && !out.fbPixelId) out.fbPixelId = m[1];
+                        }
+                    } catch(e){}
+
+                    // Andre udbredte pixels (let signaturjagt)
+                    try {
+                        const html = document.documentElement.outerHTML;
+                        const find = (re) => { const m = html.match(re); return m ? m[1] || m[0] : null; };
+                        // TikTok
+                        out.ttPixelId = out.ttPixelId || find(/tiktok(?:Pixel)?Id["']?\s*[:=]\s*["']?([A-Z0-9_:-]{5,})/i);
+                        // Pinterest
+                        out.pinterestTagId = out.pinterestTagId || find(/pin(?:terest)?(?:Tag)?Id["']?\s*[:=]\s*["']?([A-Z0-9_:-]{4,})/i);
+                        // Snapchat
+                        out.snapPixelId = out.snapPixelId || find(/snap(?:chat)?PixelId["']?\s*[:=]\s*["']?([A-Z0-9_:-]{4,})/i);
+                        // LinkedIn Insight
+                        out.linkedinPartnerId = out.linkedinPartnerId || find(/linkedin(?:Insight)?Id["']?\s*[:=]\s*["']?(\d{4,})/i);
+                        // Bing UET
+                        out.bingUetId = out.bingUetId || find(/(UET-\w{6,}|bingUetId["']?\s*[:=]\s*["']?([A-Z0-9\-]{6,}))/i);
+                    } catch(e){}
+
+                    return out;
+                    }
+                    """)
+                except Exception:
+                    analytics = {}
+
+                # Pak analytics ind i canonical_data som analyzer forventer
+                try:
+                    if isinstance(canonical_data, dict):
+                        canonical_data["analytics"] = analytics
+                        # Dupliker top-level hints for analyzer.pick(...)
+                        # GA4
+                        if analytics.get("ga4Id"):
+                            canonical_data["ga4Id"] = analytics["ga4Id"]
+                            canonical_data["ga_measurement_id"] = analytics["ga4Id"]
+                        # GTM
+                        if analytics.get("gtmContainerId"):
+                            canonical_data["gtmContainerId"] = analytics["gtmContainerId"]
+                            canonical_data["gtm"] = True
+                            canonical_data["hasGTM"] = True
+                        # Meta Pixel
+                        if analytics.get("fbPixelId"):
+                            canonical_data["fbPixelId"] = analytics["fbPixelId"]
+                        # TikTok / Pinterest / Snapchat / LinkedIn / Bing UET
+                        for k in ("ttPixelId","pinterestTagId","snapPixelId","linkedinPartnerId","bingUetId"):
+                            if analytics.get(k):
+                                canonical_data[k] = analytics[k]
+                except Exception:
+                    pass
+
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 domain = urlparse(url).netloc.replace('.', '_')
                 path = urlparse(url).path.replace('/', '_') or 'index'
                 html_filename = f"debug_{domain}_{path}_{timestamp}.html"
-                with open(html_filename, "w", encoding="utf-8") as f:
-                    f.write(html_content)
-                log.info(f"💾 Saved debug HTML: {html_filename}")
-                
-                # Final bot detection check
-                if is_bot_detected(html_content, url):
-                    log.error(f"❌ Bot detection in final HTML for {url}")
-                    return {"html": None, "canonical_data": {}}
+                try:
+                    with open(html_filename, "w", encoding="utf-8") as f:
+                        f.write(html_content)
+                    log.info(f" Saved debug HTML: {html_filename}")
+                except Exception:
+                    pass
 
-                # Save storage state for next visit
+                if is_bot_detected(html_content, url):
+                    # Soft-fail: bevar PW-HTML hvis der er stærke signaler
+                    try:
+                        sig = _extract_core_signals_from_html(html_content)
+                        strong = (len(html_content) >= max(20000, MIN_CONTENT_LEN // 2)) and (sig.get("canonical") or sig.get("h1_count", 0) > 0)
+                    except Exception:
+                        strong = False
+
+                    if strong:
+                        log.warning(f"Bot heuristics tripped on {url}, but core signals present (keeping Playwright HTML).")
+                    else:
+                        log.error(f"❌ Bot detection in final HTML for {url} (dropping)")
+                        return {"html": None, "canonical_data": {}, "reason": "bot_detected"}
+
                 try:
                     storage_state = context.storage_state()
                     with open(state_path, 'w') as f:
@@ -755,8 +1027,14 @@ class _PlaywrightThreadFetcher:
                 except Exception as e:
                     log.warning(f"Storage state save failed: {e}")
 
-                return {"html": html_content, "canonical_data": canonical_data}
-                
+                # ← VIGTIGT: returnér ALTID Playwright-resultatet her
+                return {
+                    "html": html_content,
+                    "canonical_data": canonical_data,
+                    "stealth_applied": resolved_stealth
+                }
+
+
         except Exception as e:
             log.error(f"Fatal error for {url}: {e}", exc_info=True)
             return {"html": None, "canonical_data": {}}
@@ -764,17 +1042,19 @@ class _PlaywrightThreadFetcher:
             with self._fetch_lock:
                 self._active_fetches -= 1
 
-    async def fetch(self, url: str, ua: str) -> Optional[Dict[str, Any]]:
+    async def fetch(self, url: str, ua: str, stealth_flag: bool) -> Optional[Dict[str, Any]]:
         if not self._is_ready:
             return {"html": None, "canonical_data": {}}
-        return await asyncio.get_running_loop().run_in_executor(self._executor, self._sync_fetch, url, ua)
+        return await asyncio.get_running_loop().run_in_executor(
+            self._executor, self._sync_fetch, url, ua, stealth_flag
+        )
 
     async def close(self):
         def _sync_close():
             if self._active_fetches > 0:
                 log.warning(f"Waiting for {self._active_fetches} active fetches to complete before closing...")
-                while self._active_fetches > 0:
-                    time.sleep(0.1)
+            while self._active_fetches > 0:
+                time.sleep(0.1)
             try:
                 if self._browser:
                     self._browser.close()
@@ -785,7 +1065,7 @@ class _PlaywrightThreadFetcher:
                 if hasattr(self, '_http_client'):
                     self._http_client.close()
 
-        if self._executor._shutdown:
+        if getattr(self._executor, "_shutdown", False):
             return
         try:
             await asyncio.get_running_loop().run_in_executor(self._executor, _sync_close)
@@ -802,23 +1082,223 @@ class _PlaywrightThreadFetcher:
             except Exception as e:
                 log.warning(f"Failed to clean up profiles: {e}")
 
+# --------------------------------------------------------------------
+# Top-level batch HEAD with filtering (bruges bl.a. af image_fetchers)
+# --------------------------------------------------------------------
+async def batch_head_requests(
+    client: "AsyncHtmlClient",
+    urls: List[str],
+    *,
+    timeout: float = 5.0,
+    concurrency: int = 10,
+    follow_redirects: bool = True,
+    cap: int = 50,
+) -> List[dict]:
+    """
+    Returnerer liste af dicts: {url, status, content_length, content_type, final_url}
+    - Filtrerer assets/CDN/resize-URLs
+    - Dedupper + cap'er
+    """
+    if not urls:
+        return []
+
+    # filter + dedup + cap
+    seen = set()
+    to_probe: List[str] = []
+    for u in urls:
+        if not u or not should_check_link_status(u):
+            continue
+        if u not in seen:
+            seen.add(u)
+            to_probe.append(u)
+        if len(to_probe) >= cap:
+            break
+
+    sem = asyncio.Semaphore(concurrency)
+
+    async def _probe(u: str) -> dict:
+        async with sem:
+            # 1) Prøv HEAD med eksponentiel backoff (3 forsøg)
+            for attempt in range(3):
+                try:
+                    resp = await client.head(u, timeout=timeout, follow_redirects=follow_redirects)
+                    if resp is not None and resp.status_code < 400:
+                        cl = resp.headers.get("content-length")
+                        ct = resp.headers.get("content-type")
+                        return {
+                            "url": u,
+                            "status": resp.status_code,
+                            "content_length": int(cl) if cl and str(cl).isdigit() else None,
+                            "content_type": ct,
+                            "final_url": str(getattr(resp, "url", u)),
+                        }
+                    # HEAD ikke tilladt eller 4xx/5xx → fald tilbage til GET
+                    break
+                except Exception:
+                    # Backoff ved fejl (fx ConnectionTerminated)
+                    await asyncio.sleep(0.5 * (2 ** attempt))
+
+            # 2) Fallback: let GET med Range-header (minimér payload)
+            try:
+                r2 = await client.httpx_get(
+                    u,
+                    timeout=timeout,
+                    follow_redirects=follow_redirects,
+                    headers={"Range": "bytes=0-0"},
+                )
+                cl2 = r2.headers.get("content-length")
+                ct2 = r2.headers.get("content-type")
+                return {
+                    "url": u,
+                    "status": r2.status_code,
+                    "content_length": int(cl2) if cl2 and str(cl2).isdigit() else None,
+                    "content_type": ct2,
+                    "final_url": str(getattr(r2, "url", u)),
+                }
+            except Exception:
+                return {"url": u, "status": None, "content_length": None, "content_type": None, "final_url": None}
+
+    return await asyncio.gather(*(_probe(u) for u in to_probe))
+
+# --------------------------------------------------------------------
+# Public HTTP/HTML client (async)
+# --------------------------------------------------------------------
 class AsyncHtmlClient:
-    def __init__(self, *, max_connections: int = 10, total_timeout: float = 45.0, verify_ssl: bool = True, ca_bundle: Optional[Path] = None, proxy: Optional[str] = None):
+    def __init__(
+        self,
+        *,
+        max_connections: int = 10,
+        total_timeout: float = 45.0,
+        verify_ssl: bool = True,
+        ca_bundle: Optional[Path] = None,
+        proxy: Optional[str] = None,
+        stealth: Optional[bool] = None,   # <- NY: per-klient override
+    ):
         self._sem = asyncio.Semaphore(max_connections)
         proxy = proxy or os.getenv("HTTP_PROXY")
         self._httpx_client = httpx.AsyncClient(
             headers={"Accept-Language": "en-US,en;q=0.9,da;q=0.8"},
-            timeout=httpx.Timeout(total_timeout, connect=10.0),
+            timeout=httpx.Timeout(total_timeout, connect=10.0, read=total_timeout, write=total_timeout),
             follow_redirects=True,
             http2=True,
             verify=_ssl_context(verify_ssl, ca_bundle),
-            proxy=proxy
+            proxy=proxy,
+            limits=httpx.Limits(max_connections=30, max_keepalive_connections=10),
         )
         self._pw_thread = _PlaywrightThreadFetcher()
         self._url_locks: Dict[str, asyncio.Lock] = {}
         self.last_fetch_method: Optional[str] = None
         self._is_closed: bool = False
         self.user_agent = get_random_user_agent()
+        self._stealth_override: Optional[bool] = stealth
+        self.last_stealth_resolved: Optional[bool] = None
+
+        # P0.2: Domæne-cache for robots/sitemap
+        self._domain_cache: Dict[str, Dict[str, Optional[str]]] = {}  # {domain: {"robots": str|None, "sitemap": str|None}}
+
+    def _check_analytics_runtime(self, page) -> dict:
+        """
+        Kører i Playwright-runtime og detekterer GA4/GTM/Meta Pixel + forsøger at udtrække ID'er.
+        Returnerer et sikkert dict (fail-closed).
+        """
+        import logging
+        log = logging.getLogger(__name__)
+        try:
+            analytics = page.evaluate("""
+                () => {
+                    const out = {
+                        hasGA4: false,
+                        hasGTM: false,
+                        hasFB: false,
+                        ga4Id: null,
+                        fbPixelId: null,
+                        details: []
+                    };
+
+                    try {
+                        if (typeof gtag !== 'undefined') { out.hasGA4 = true; out.details.push('gtag found'); }
+                    } catch(e) {}
+
+                    try {
+                        if (typeof ga !== 'undefined')   { out.hasGA4 = true; out.details.push('ga (UA) found'); }
+                    } catch(e) {}
+
+                    try {
+                        if (typeof dataLayer !== 'undefined' && Array.isArray(dataLayer)) {
+                            out.hasGTM = true; out.details.push('dataLayer found');
+                            for (const item of dataLayer) {
+                                if (item && typeof item === 'object') {
+                                    const s = JSON.stringify(item);
+                                    const m = s.match(/G-[A-Z0-9]+/);
+                                    if (m && !out.ga4Id) out.ga4Id = m[0];
+                                }
+                            }
+                        }
+                    } catch(e) {}
+
+                    try {
+                        if (typeof fbq !== 'undefined')  { out.hasFB  = true; out.details.push('fbq found'); }
+                    } catch(e) {}
+                    try {
+                        if (typeof _fbq !== 'undefined') { out.hasFB  = true; out.details.push('_fbq found'); }
+                    } catch(e) {}
+
+                    try {
+                        const scripts = Array.from(document.getElementsByTagName('script'));
+                        for (const s of scripts) {
+                            const src = s.src || '';
+                            const txt = s.innerHTML || '';
+
+                            if (src.includes('googletagmanager.com/gtag/js')) {
+                                out.hasGA4 = true;
+                                const idm = src.match(/id=(G-[A-Z0-9]+)/);
+                                if (idm) out.ga4Id = out.ga4Id || idm[1];
+                            }
+                            if (src.includes('googletagmanager.com/gtm.js')) {
+                                out.hasGTM = true;
+                            }
+                            if (src.includes('connect.facebook.net') && src.includes('fbevents.js')) {
+                                out.hasFB = true;
+                            }
+
+                            if (txt.includes('gtag(')) out.hasGA4 = true;
+
+                            const pxm = txt.match(/fbq\\('init'\\s*,\\s*'(\\d+)'\\)/);
+                            if (pxm && !out.fbPixelId) { out.hasFB = true; out.fbPixelId = pxm[1]; }
+                        }
+                    } catch(e) {}
+
+                    try {
+                        const nos = Array.from(document.getElementsByTagName('noscript'));
+                        for (const n of nos) {
+                            const t = n.innerHTML || '';
+                            if (t.includes('facebook.com/tr')) out.hasFB = true;
+                            if (t.includes('googletagmanager.com')) out.hasGTM = true;
+                        }
+                    } catch(e) {}
+
+                    return out;
+                }
+            """)
+
+            # 🔧 Korrekt Python-hale (ingen JS-try/catch her)
+            if not isinstance(analytics, dict):
+                analytics = {}
+
+            return analytics
+
+        except Exception as e:
+            log.warning(f"Analytics runtime check failed: {e}")
+            return {
+                'hasGA4': False,
+                'hasGTM': False,
+                'hasFB': False,
+                'ga4Id': None,
+                'fbPixelId': None,
+                'details': []
+            }
+
+
 
     async def startup(self):
         await asyncio.get_running_loop().run_in_executor(self._pw_thread._executor, self._pw_thread.start)
@@ -836,12 +1316,11 @@ class AsyncHtmlClient:
             return True
         return False
 
+    # --- httpx wrappers ---
     async def get(self, url: str, **kwargs) -> httpx.Response:
-        """Compatibility method to match expected interface"""
         return await self.httpx_get(url, **kwargs)
 
     async def get_response(self, url: str, **kwargs) -> httpx.Response:
-        """Get response for compatibility with technical SEO"""
         return await self.httpx_get(url, **kwargs)
 
     async def httpx_get(self, url: str, **kwargs) -> httpx.Response:
@@ -853,15 +1332,89 @@ class AsyncHtmlClient:
         if await self._check_if_closed(url):
             return None
         headers = _get_headers(kwargs.pop("headers", None), user_agent=self.user_agent)
-        async with self._sem:
-            try:
-                response = await self._httpx_client.request("HEAD", url, headers=headers, **kwargs)
-                response.elapsed_time_ms = int(response.elapsed.total_seconds() * 1000)
-                return response
-            except httpx.RequestError as e:
-                log.warning(f"HEAD request til {url} fejlede: {e}")
-                return None
 
+        for attempt in range(3):
+            async with self._sem:
+                try:
+                    resp = await self._httpx_client.request("HEAD", url, headers=headers, **kwargs)
+                    resp.elapsed_time_ms = int(resp.elapsed.total_seconds() * 1000)
+
+                    # Fallback til GET hvis serveren ikke understøtter HEAD
+                    if resp.status_code in (405, 501) or resp.status_code is None:
+                        g_headers = {**headers, "Range": "bytes=0-0"}
+                        get_resp = await self._httpx_client.request("GET", url, headers=g_headers, **kwargs)
+                        get_resp.elapsed_time_ms = int(get_resp.elapsed.total_seconds() * 1000)
+                        return get_resp
+
+                    return resp
+
+                except (httpx.RemoteProtocolError, httpx.ProtocolError) as e:
+                    if attempt < 2:
+                        await asyncio.sleep(0.5 * (2 ** attempt))
+                        continue
+                    log.warning(f"HEAD request til {url} fejlede permanent: {e}")
+                    return None
+
+                except httpx.RequestError as e:
+                    if attempt < 2 and "ConnectionTerminated" in str(e):
+                        await asyncio.sleep(0.5 * (2 ** attempt))
+                        continue
+                    log.warning(f"HEAD request til {url} fejlede: {e}")
+                    return None
+
+    # --- P0.2: Domain-level robots/sitemap cache ---
+    def _domain_key(self, base_url: str) -> str:
+        try:
+            return urlparse(base_url).netloc.lower()
+        except Exception:
+            return ""
+
+    async def get_robots_txt(self, base_url: str) -> Optional[str]:
+        domain = self._domain_key(base_url)
+        if not domain:
+            return None
+        cache = self._domain_cache.setdefault(domain, {})
+        if "robots" in cache:
+            return cache["robots"]
+        robots_url = urljoin(f"https://{domain}", "/robots.txt")
+        try:
+            r = await self.httpx_get(robots_url, timeout=10)
+            content = r.text if r.status_code == 200 else None
+        except Exception:
+            content = None
+        cache["robots"] = content
+        return content
+
+    async def get_sitemap_url(self, base_url: str) -> Optional[str]:
+        domain = self._domain_key(base_url)
+        if not domain:
+            return None
+        cache = self._domain_cache.setdefault(domain, {})
+        if "sitemap" in cache:
+            return cache["sitemap"]
+
+        robots = await self.get_robots_txt(base_url)
+        if robots:
+            for line in robots.splitlines():
+                if line.lower().startswith("sitemap:"):
+                    sm = line.split(":", 1)[1].strip()
+                    cache["sitemap"] = sm
+                    return sm
+
+        for path in ("/sitemap.xml", "/sitemap/sitemap.xml", "/sitemap_index.xml", "/wp-sitemap.xml"):
+            candidate = urljoin(f"https://{domain}", path)
+            try:
+                h = await self.head(candidate, timeout=8, follow_redirects=True)
+                if h and h.status_code < 400:
+                    cache["sitemap"] = candidate
+                    return candidate
+            except Exception:
+                continue
+
+        cache["sitemap"] = None
+        return None
+
+    # --- Metrics helpers ---
     async def check_sitemap_freshness(self, url: str) -> bool:
         try:
             response = await self.httpx_get(url)
@@ -872,36 +1425,32 @@ class AsyncHtmlClient:
             if not html:
                 log.warning(f"No sitemap content for {url} (status: missing)")
                 return False
+            import xml.etree.ElementTree as ET
             try:
-                from datetime import datetime
-                import xml.etree.ElementTree as ET
                 root = ET.fromstring(html)
-                log.debug(f"Sitemap XML: {html[:200]}")
                 if root.tag.endswith('sitemapindex'):
                     for sitemap in root.findall(".//{http://www.sitemaps.org/schemas/sitemap/0.9}sitemap"):
                         loc = sitemap.find("{http://www.sitemaps.org/schemas/sitemap/0.9}loc")
                         if loc is not None and loc.text:
-                            log.debug(f"Checking subsitemap: {loc.text}")
                             if await self.check_sitemap_freshness(loc.text):
                                 return True
                     log.info(f"Sitemap index {url} has no fresh subsitemaps (status: missing)")
                     return False
+
                 for url_elem in root.findall(".//{http://www.sitemaps.org/schemas/sitemap/0.9}url"):
                     lastmod = url_elem.find("{http://www.sitemaps.org/schemas/sitemap/0.9}lastmod")
                     if lastmod is not None and lastmod.text:
+                        txt = lastmod.text.strip()
+                        # simple ISO parsing
+                        txt = txt.replace("Z", "+00:00")
                         try:
-                            for fmt in ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z"]:
-                                try:
-                                    lastmod_date = datetime.strptime(lastmod.text, fmt)
-                                    if (datetime.now() - lastmod_date.replace(tzinfo=None)).days < 30:
-                                        log.info(f"Sitemap {url} is fresh (lastmod: {lastmod.text}) (status: ok)")
-                                        return True
-                                    break
-                                except ValueError:
-                                    continue
-                            log.warning(f"Invalid lastmod format in sitemap {url}: {lastmod.text} (status: error)")
-                        except Exception as e:
-                            log.warning(f"Could not parse lastmod {lastmod.text} in sitemap {url}: {e} (status: error)")
+                            dt = datetime.fromisoformat(txt)
+                        except Exception:
+                            m = re.match(r"(\d{4}-\d{2}-\d{2})", txt)
+                            dt = datetime.fromisoformat(m.group(1) + "T00:00:00+00:00") if m else None
+                        if dt and (datetime.now(timezone.utc) - dt.astimezone(timezone.utc)).days < 30:
+                            log.info(f"Sitemap {url} is fresh (lastmod: {txt}) (status: ok)")
+                            return True
                 log.info(f"Sitemap {url} has no recent or valid lastmod dates (status: missing)")
                 return False
             except Exception as e:
@@ -912,8 +1461,8 @@ class AsyncHtmlClient:
             return False
 
     async def check_analytics(self, url: str) -> Dict[str, bool]:
+        
         html_result = await self.get_raw_html(url)
-        # Handle different return formats
         html = None
         if isinstance(html_result, str):
             html = html_result
@@ -921,15 +1470,52 @@ class AsyncHtmlClient:
             html = html_result[0]
         elif isinstance(html_result, dict) and html_result.get('html'):
             html = html_result['html']
-        
+
         if not html:
             log.info(f"No HTML for analytics check on {url} (status: missing)")
-            return {"has_ga4": False, "has_meta_pixel": False}
-        
-        has_ga4 = any(x in html for x in ["gtag.js", "googletagmanager.com", "gtm.js", "ga.js"])
-        has_meta_pixel = any(x in html for x in ["fbq(", "connect.facebook.net", "pixel/facebook.com"])
-        log.info(f"Analytics check for {url}: GA4={has_ga4}, Meta Pixel={has_meta_pixel} (status: ok)")
-        return {"has_ga4": has_ga4, "has_meta_pixel": has_meta_pixel}
+            return {"has_ga4": False, "has_meta_pixel": False, "has_gtm": False}
+
+        text = html or ""
+
+        patterns = {
+            "gtm": [
+                r"googletagmanager\.com/gtm\.js",
+                r"\bGTM-[A-Z0-9]{6,8}\b",
+                r"\b(?:window\.)?dataLayer\s*=\s*(?:window\.)?dataLayer\s*\|\|\s*\[",  # init-variant
+                r"dataLayer\.push\s*\(",
+            ],
+            "ga4": [
+                r"(?:https?:\/\/)?(?:www\.)?googletagmanager\.com/gtag/js\?id=G-[A-Z0-9]{4,16}",
+                r"gtag\s*\(\s*['\"]js['\"]\s*,",
+                r"gtag\s*\(\s*['\"]config['\"]\s*,\s*['\"]G-[A-Z0-9]{4,16}['\"]",
+            ],
+            "ga4_soft": [
+                r"\bG-[A-Z0-9]{4,16}\b",
+                r"(?:measurement_id|measurementId)['\"]?\s*:\s*['\"]G-[A-Z0-9]{4,16}['\"]",
+            ],
+            "meta": [
+                r"\bf(bq|_fbq)\s*\(",
+                r"connect\.facebook\.net/.*/fbevents\.js",
+                r"facebook\.com/tr\?",
+                r"(?:pixelId|pixel_id)",
+            ],
+        }
+
+        def any_match(pats: list[str]) -> bool:
+            return any(re.search(p, text, re.IGNORECASE) for p in pats)
+
+        has_gtm = any_match(patterns["gtm"])
+        has_ga4 = any_match(patterns["ga4"]) or any_match(patterns["ga4_soft"])
+        # Hvis GTM er til stede, så prøv en ekstra GA4-config match (via GTM-template)
+        if has_gtm and not has_ga4:
+            if re.search(r"gtag\s*\(\s*['\"]config['\"]\s*,\s*['\"]G-[A-Z0-9]{6,12}['\"]", text, re.IGNORECASE):
+                has_ga4 = True
+
+        has_meta_pixel = any_match(patterns["meta"])
+
+        log.info(f"Analytics check for {url}: GA4={has_ga4}, Meta Pixel={has_meta_pixel}, GTM={has_gtm} (status: ok)")
+        return {"has_ga4": bool(has_ga4), "has_meta_pixel": bool(has_meta_pixel), "has_gtm": bool(has_gtm)}
+
 
     async def test_response_time(self, url: str) -> float:
         start = time.time()
@@ -938,14 +1524,19 @@ class AsyncHtmlClient:
         log.info(f"Raw response time for {url}: {elapsed:.2f} ms")
         return elapsed
 
-    async def get_raw_html(self, url: str, force: bool = False, return_soup: bool = False, force_playwright: bool = False, depth: int = 0) -> Union[str, Tuple[str, Dict], Dict[str, Any], None]:
+    async def get_raw_html(
+        self,
+        url: str,
+        force: bool = False,
+        return_soup: bool = False,
+        force_playwright: bool = False,
+        depth: int = 0
+    ) -> Union[str, tuple[BeautifulSoup, Dict[str, Any]], Dict[str, Any], None]:
         """
-        Get raw HTML with proper return format handling.
-        
-        Returns:
-            - If return_soup=True: (BeautifulSoup, canonical_data) or None
-            - If force_playwright=True or escalated to Playwright: {"html": str, "canonical_data": dict}
-            - Otherwise: str (HTML content) or None
+        Returnerer:
+         - return_soup=True: (BeautifulSoup, canonical_data)
+         - Playwright-case: {"html": str, "canonical_data": dict}
+         - Ellers: str (HTML) eller None
         """
         if self._is_closed:
             log.warning(f"Forsøg på at kalde get_raw_html på lukket klient: {url}")
@@ -954,7 +1545,6 @@ class AsyncHtmlClient:
             log.warning(f"Max depth reached for {url}; stopping.")
             return None
 
-        # Special handling for always-HTTPX domains
         if urlparse(url).netloc in ALWAYS_HTTPX:
             try:
                 html = (await self.httpx_get(url)).text
@@ -967,24 +1557,26 @@ class AsyncHtmlClient:
                 log.warning(f"HTTPX fetch failed for {url}: {e}")
                 return None
 
-        # Check cache first
-        if not force and not force_playwright and (html := html_cache.get(url)) is not None:
-            log.debug(f"Cache hit for {url}")
-            if return_soup:
-                return (BeautifulSoup(html, "lxml"), {})
-            return html
+        if not force and not force_playwright:
+            cached = html_cache.get(url)
+            if cached is not None:
+                log.debug(f"Cache hit for {url}")
+                if return_soup:
+                    return (BeautifulSoup(cached, "lxml"), {})
+                return cached
 
         lock = self._url_locks.setdefault(url, asyncio.Lock())
         async with lock:
-            # Double-check cache after acquiring lock
-            if not force and not force_playwright and (html := html_cache.get(url)) is not None:
-                if return_soup:
-                    return (BeautifulSoup(html, "lxml"), {})
-                return html
+            if not force and not force_playwright:
+                cached = html_cache.get(url)
+                if cached is not None:
+                    if return_soup:
+                        return (BeautifulSoup(cached, "lxml"), {})
+                    return cached
 
             html_content: Optional[str] = None
-            canonical_data: Dict = {}
-            
+            canonical_data: Dict[str, Any] = {}
+
             try:
                 if force_playwright:
                     raise httpx.RequestError("Playwright blev tvunget manuelt for at få renderet indhold.")
@@ -992,47 +1584,78 @@ class AsyncHtmlClient:
                 response = await self.httpx_get(url)
                 html_content = response.text
                 self.last_fetch_method = "httpx"
-                
+
                 if _looks_like_placeholder(html_content, url):
                     raise httpx.RequestError("Placeholder content; escalate to Playwright")
                 if needs_rendering(html_content) and not (url.lower().endswith(('.xml', '.txt')) or 'sitemap' in url.lower() or 'robots' in url.lower()):
                     raise httpx.RequestError("Dynamic content; escalate to Playwright")
-                    
+
             except (httpx.RequestError, RetryError) as e:
                 log.info(f"Escalating to Playwright for {url}: {e}")
-                pw_result = await self._pw_thread.fetch(url, self.user_agent)
+                # Beslut stealth ved call-tid: override > env
+                stealth_flag = self._stealth_override if self._stealth_override is not None else _stealth_env_enabled()
+                pw_result = await self._pw_thread.fetch(url, self.user_agent, stealth_flag)
                 self.last_fetch_method = "playwright"
-                
+                try:
+                    self.last_stealth_resolved = bool(pw_result.get("stealth_applied"))
+                except Exception:
+                    pass
+
                 if not pw_result or not pw_result.get('html'):
-                    log.error(f"Playwright failed to fetch HTML for {url}. Aborting.")
+                    why = (pw_result or {}).get('reason', 'unknown')
+                    log.warning(f"Playwright returned no usable HTML for {url}. Reason={why}. Falling back to HTTPX.")
+                    try:
+                        r_fallback = await self.httpx_get(url)
+                        html_fallback = r_fallback.text
+                        if not _looks_like_placeholder(html_fallback, url):
+                            self.last_fetch_method = "httpx_fallback"
+                            html_cache.set(url, html_fallback, expire=3600)
+                            if return_soup:
+                                return (BeautifulSoup(html_fallback, "lxml"), {})
+                            return html_fallback
+                    except Exception as e:
+                        log.error(f"HTTPX fallback failed for {url}: {e}", exc_info=True)
                     return None
-                    
+
                 html_content = pw_result['html']
                 canonical_data = pw_result.get('canonical_data', {})
-                
-                if is_bot_detected(html_content, url):
+
+            # Soft bot-check: bevar Playwright-HTML hvis der er stærke signaler
+            if is_bot_detected(html_content, url):
+                try:
+                    sig = _extract_core_signals_from_html(html_content)
+                    strong = (
+                        len(html_content or "") >= max(20000, MIN_CONTENT_LEN // 2)
+                        and (sig.get("canonical") or (sig.get("h1_count", 0) > 0))
+                    )
+                except Exception:
+                    strong = False
+
+                if strong:
+                    log.warning(f"Bot heuristics tripped in get_raw_html for {url}, but core signals present → keeping Playwright HTML.")
+                else:
                     log.error(f"❌ Bot detection triggered after max retries for {url}. Aborting.")
                     return None
 
-            # Cache valid HTML
             if html_content and not is_bot_detected(html_content, url):
                 html_cache.set(url, html_content, expire=3600)
             elif html_content:
                 log.warning(f"Not caching HTML for {url} due to bot detection.")
 
-            # Return appropriate format
             if return_soup and html_content:
                 try:
                     return (BeautifulSoup(html_content, "lxml"), canonical_data)
                 except Exception as e:
                     log.warning(f"Kunne ikke parse HTML til BeautifulSoup for {url}: {e}")
                     return None
-            
-            # If we used Playwright, return the dict format with canonical data
+
             if self.last_fetch_method == "playwright":
-                return {"html": html_content, "canonical_data": canonical_data}
-            
-            # Otherwise return just the HTML string
+                return {
+                    "html": html_content,
+                    "canonical_data": canonical_data,
+                    "stealth_applied": self.last_stealth_resolved
+                }
+
             return html_content
 
     async def close(self):
@@ -1049,5 +1672,3 @@ class AsyncHtmlClient:
             await asyncio.shield(self._httpx_client.aclose())
         except Exception as e:
             log.error(f"Fejl ved lukning af httpx: {e}", exc_info=True)
-
-__all__ = ["AsyncHtmlClient", "get_random_user_agent", "html_cache", "needs_rendering"]

@@ -10,6 +10,7 @@ Hoved-dirigent for Vexto-workflowet:
 """
 from __future__ import annotations
 import logging
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -29,11 +30,14 @@ from vexto.data_processing.data_cleaner import clean_and_prepare_cvr_data
 
 # --- Logging ---------------------------------------------------------------
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s  %(levelname)-8s %(name)s: %(message)s",
-    datefmt="%H:%M:%S",
+    level=os.getenv("VEXTO_LOG_LEVEL", "INFO").upper(),
+    format=os.getenv("VEXTO_LOG_FMT", "%(asctime)s  %(levelname)-8s %(name)s: %(message)s"),
+    datefmt=os.getenv("VEXTO_LOG_DATEFMT", "%H:%M:%S"),
 )
-logging.getLogger("vexto.es").setLevel(logging.DEBUG)
+
+# Lad .env styre ES-loggeren (default INFO). Undgå at tvinge DEBUG.
+_es_level = os.getenv("VEXTO_ES_LOG_LEVEL", "INFO").upper()
+logging.getLogger("vexto.es").setLevel(getattr(logging, _es_level, logging.INFO))
 
 # --- Faste stier -----------------------------------------------------------
 OUTPUT_DIR = PROJECT_DIR / "output"
