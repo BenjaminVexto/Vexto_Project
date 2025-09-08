@@ -1,4 +1,6 @@
 # ===== upload_vexto.ps1 (preflight + chunked + per-file fallback + legacy cleanup) =====
+if ($env:SKIP_GIST -eq '1') { Write-Host "Skipping Gist sync (SKIP_GIST=1)"; exit 0 }
+
 $ErrorActionPreference = 'Stop'
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
 
