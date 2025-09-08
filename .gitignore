@@ -29,6 +29,7 @@ __pycache__/
 output/
 logs/
 tests/output/
+.http_diskcache/html/cache.db
 
 # Debug artefakter
 final_view*.html
