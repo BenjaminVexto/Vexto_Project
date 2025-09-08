@@ -42,9 +42,53 @@ from typing import Any, Iterable, Optional
 from vexto.scoring.http_client import _accept_encoding
 
 try:
-    from vexto.scoring.http_client import AsyncHtmlClient  
+    # Kræver at AsyncHtmlClient findes i jeres http_client
+    from vexto.scoring.http_client import AsyncHtmlClient
 except Exception:
-    AsyncHtmlClient = None
+    AsyncHtmlClient = None  # type: ignore
+
+_SHARED_PW_CLIENT = None  # type: ignore
+
+def _norm_url_for_fetch(u: str) -> str:
+    """Normalisér URL for dedup: fjern trailing slash (undtagen '/'), drop fragment."""
+    try:
+        s = urlsplit(u)
+        path = re.sub(r"/{2,}", "/", s.path or "/")
+        if path != "/" and path.endswith("/"):
+            path = path[:-1]
+        base = f"{s.scheme}://{s.netloc}{path}"
+        return base + (f"?{s.query}" if s.query else "")
+    except Exception:
+        return u
+
+def _is_contact_like(u: str) -> bool:
+    p = (u or "").lower()
+    return any(k in p for k in (
+        "/kontakt", "/contact", "/kontakt-os", "/contact-us",
+        "/om", "/about", "/om-os", "/about-us",
+        "/team", "/medarbejder", "/people", "/staff"
+    ))
+
+def _fetch_with_playwright_sync(url: str) -> str:
+    """Renderer side med delt Playwright-klient (singleton)."""
+    if AsyncHtmlClient is None:
+        return ""
+    import asyncio
+    async def _go(u: str) -> str:
+        global _SHARED_PW_CLIENT
+        if _SHARED_PW_CLIENT is None:
+            _SHARED_PW_CLIENT = AsyncHtmlClient(stealth=True)
+            await _SHARED_PW_CLIENT.startup()
+        res = await _SHARED_PW_CLIENT.get_raw_html(u, force_playwright=True)
+        if isinstance(res, dict):
+            return (res.get("html") or "")
+        return res or ""
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop.run_until_complete(_go(url))
 
 
 # -------------------------- Valgfri eksterne libs -----------------------------
@@ -140,7 +184,9 @@ def _discover_profile_links(base_url: str, html: str, max_links: int = 40) -> li
 # Rolle-ord (generiske)
 EXEC_ROLES = {
     "ceo","cto","cfo","coo","cmo","cpo","cio","chair","founder","co-founder",
-    "direktør","formand"
+    "direktør","formand",
+    # DK-varianter som ofte står på kontakt-/team-sider
+    "medindehaver","medejer","ejer"
 }
 MANAGER_ROLES = {
     "manager","head","lead","chef","leder","afdelingsleder","projektleder","produktchef"
@@ -470,6 +516,24 @@ def _merge(a: ContactCandidate, b: ContactCandidate) -> ContactCandidate:
     a.hints.update(b.hints or {})
     return a
 
+def _looks_404(html: str | None) -> bool:
+    if not html:
+        return True
+    h = html.lower()
+    # typiske CMS 404-markører
+    needles = [
+        "404", "not found", "page not found", "siden blev ikke fundet",
+        "error-404", "error 404", "wp-block-404", "nothing was found", "ingenting blev fundet",
+    ]
+    # Kræv både '404' og mindst én “not found”-frase, for at undgå false positives
+    if "404" in h and any(n in h for n in ("not found", "siden blev ikke fundet", "page not found", "error-404")):
+        return True
+    # meget kort HTML er ofte 404/fejl
+    if len(h) < 400:
+        return True
+    return False
+
+
 # ------------------------------- Cache & HTTP ---------------------------------
 
 def _cache_path_for(url: str, cache_dir: Optional[Path]) -> Optional[Path]:
@@ -769,6 +833,28 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
                 name=name, title=title, emails=[em], phones=[],
                 source="dom", url=url, dom_distance=0, hints={"near": near[:180], "cfemail": True}
             ))
+        
+        # tel: links med nær-navn/titel (BS4 fallback)
+        for t in html_or_tree.select("a[href^='tel:']"):
+            href = t.get("href", "")
+            pn = _normalize_phone(href)
+            if not pn:
+                continue
+            container = t.parent or t
+            near = " ".join(list(container.stripped_strings))[:260] if container else ""
+            name = None
+            m_name = re.search(rf"({_NAME_WINDOW_REGEX()})", near)
+            if m_name:
+                name = _collapse_ws(m_name.group(1))
+            title = None
+            m_title = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", near)
+            if m_title:
+                title = _sanitize_title(m_title.group(1))
+            out.append(ContactCandidate(
+                name=name, title=title, emails=[], phones=[pn],
+                source="dom", url=url, dom_distance=0, hints={"near": near[:180], "tel": True}
+            ))
+
         return out
 
     # ren regex fallback
@@ -827,6 +913,26 @@ def _extract_from_dom(url: str, html_or_tree) -> list[ContactCandidate]:
         out.append(ContactCandidate(
             name=name, title=title, emails=[em], phones=[],
             source="dom", url=url, dom_distance=dist, hints={"near": text_blob[:180]}
+        ))
+    
+    for t in html_or_tree.css("a[href^='tel:']"):
+        pn = _normalize_phone(t.attributes.get("href", ""))
+        if not pn:
+            continue
+        container = t.parent or t
+        text_blob = _near_text(container, 260)
+        name = None
+        m = re.search(rf"({_NAME_WINDOW_REGEX()})", text_blob)
+        if m:
+            name = _collapse_ws(m.group(1))
+        title = None
+        m2 = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", text_blob)
+        if m2:
+            title = _sanitize_title(m2.group(1))
+        dist = _dom_distance(t, container) or (0 if name else 1)
+        out.append(ContactCandidate(
+            name=name, title=title, emails=[], phones=[pn],
+            source="dom", url=url, dom_distance=dist, hints={"near": text_blob[:180], "tel": True}
         ))
     return out
 
@@ -1110,8 +1216,14 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
     # Vælg containere der ofte rummer kort
     containers = []
     css_roots = [
+        # WordPress core blocks
         ".wp-block-columns", ".wp-block-group", ".team", ".team-grid",
         ".is-layout-grid", ".is-layout-flow", ".is-layout-flex",
+        # Elementor layouts
+        ".elementor-section", ".elementor-container", ".elementor-row",
+        ".elementor-column", ".elementor-widget", ".elementor-widget-container",
+        ".elementor-image-box", ".elementor-team-member",
+        # Generic containers
         "section", "main", "article"
     ]
     try:
@@ -1132,9 +1244,17 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
         cards = []
         try:
             if hasattr(cont, "css"):
-                cards = cont.css("figure, .wp-block-column, .wp-block-media-text, .team-member, .wp-block-group > div, .is-layout-flow > div")
+                cards = cont.css(
+                    "figure, article, "
+                    ".wp-block-column, .wp-block-media-text, .team-member, .wp-block-group > div, .is-layout-flow > div, "
+                    ".elementor-column, .elementor-widget, .elementor-widget-container, .elementor-image-box, .elementor-team-member"
+                )
             elif hasattr(cont, "select"):
-                cards = cont.select("figure, .wp-block-column, .wp-block-media-text, .team-member, .wp-block-group > div, .is-layout-flow > div") or cont.select("div, figure")
+                cards = cont.select(
+                    "figure, article, "
+                    ".wp-block-column, .wp-block-media-text, .team-member, .wp-block-group > div, .is-layout-flow > div, "
+                    ".elementor-column, .elementor-widget, .elementor-widget-container, .elementor-image-box, .elementor-team-member"
+                ) or cont.select("div, figure, article")
         except Exception:
             cards = []
 
@@ -1330,15 +1450,26 @@ def _score_candidate(c: ContactCandidate) -> ScoredContact:
 class ContactFinder:
     """Henter 1–N sider, udtrækker kandidater, dedupliker, scorer og returnerer top-1."""
 
-    def __init__(self, timeout: float = DEFAULT_TIMEOUT, parallel: int = 4,
-                 cache_dir: Optional[str] = ".http_diskcache/html",
-                 use_browser: str = "auto"):  # "auto" | "always" | "never"
+    def __init__(
+        self,
+        timeout: float = DEFAULT_TIMEOUT,
+        parallel: int = 4,
+        cache_dir: Optional[str] = ".http_diskcache/html",
+        use_browser: str = "auto",  # 'auto' | 'always' | 'never'
+    ):
         self.timeout = timeout
         self.parallel = max(1, int(parallel))
         self.cache_dir = Path(cache_dir) if cache_dir else None
-        self.use_browser = use_browser
-        self._async_client = None  # lazy
 
+        # Browser-politik
+        self.use_browser = (use_browser or "auto").lower().strip()
+        if self.use_browser not in {"auto", "always", "never"}:
+            self.use_browser = "auto"
+
+        # Per-kørsel HTML cache + “allerede renderet” set (normaliserede URLs)
+        self._html_cache_local: dict[str, str] = {}
+        self._rendered_once: set[str] = set()
+    
     def _render_with_async_client(self, url: str) -> Optional[str]:
         """Kør AsyncHtmlClient i separat tråd/loop for sync-kald."""
         if AsyncHtmlClient is None:
@@ -1372,18 +1503,41 @@ class ContactFinder:
         t.start(); t.join()
         return result_holder["html"]  # kan være None
 
-    def _maybe_js_enhance(self, url: str, html: str) -> str:
-        """Returnér evt. JS-renderet HTML, hvis det giver mening."""
+    def _maybe_js_enhance(self, url: str, original_html: str) -> str:
+        """
+        Beslut om vi skal render’e med Playwright.
+        - Aldrig på 404/”not found”-sider
+        - Dedupliker via normaliseret URL (ingen dobbeltrender af /kontakt vs /kontakt/)
+        - 'never' -> aldrig render; 'always' -> render kun “kontakt/om/team”-agtige sider
+        - 'auto' (default) -> render hvis Elementor/WP-markører ELLER kontakt/om/team med tynd HTML
+        """
+        html = original_html or ""
+        key = _norm_url_for_fetch(url)
+
+        # Politikken 'never': brug bare original HTML
         if self.use_browser == "never":
             return html
-        should_render = (self.use_browser == "always") or _is_contactish_url(url) or _needs_js(html)
-        if not should_render:
+
+        # Hvis vi allerede har renderet denne side i denne kørsel, så brug cache/original
+        if key in self._rendered_once:
+            return html or self._html_cache_local.get(key, "")
+
+        # Rendér aldrig 404/”not found”
+        if _looks_404(html):
             return html
-        rendered = self._render_with_async_client(url)
-        # Brug kun hvis vi reelt fik mere DOM tilbage
-        if rendered and len(rendered) >= len(html) + 500:
-            return rendered
-        return html
+
+        lower = html.lower()
+
+        # Heuristik: skal vi render’e?
+        should_render = False
+
+        def is_contact_like(u: str) -> bool:
+            p = (u or "").lower()
+            return any(k in p for k in (
+                "/kontakt", "/contact", "/kontakt-os", "/contact-us",
+                "/om", "/about", "/om-os", "/about-us",
+                "/team", "/medarbejder", "/people", "/staff"
+            ))
 
 
     def _pages_to_try(self, url: str, limit_pages: int = 4) -> list[str]:
@@ -1396,6 +1550,30 @@ class ContactFinder:
                 ordered.append(u)
                 seen.add(u)
         return ordered[:max(1, limit_pages)]
+
+    def _fetch_text_smart(self, url: str) -> str:
+        """Billig HTTP først; render én gang for kontakt/om/team-sider eller hvis HTML er tom."""
+        key = _norm_url_for_fetch(url)
+        cached = self._html_cache_local.get(key)
+        if cached is not None:
+            return cached
+
+        html = ""
+        # 1) Prøv hurtig HTTP (httpx/requests via vores eksisterende _fetch_text)
+        with contextlib.suppress(Exception):
+            html = _fetch_text(url, self.timeout, self.cache_dir)
+
+        # 2) Vurdér om vi bør render’e
+        need_js = self.use_playwright and (_is_contact_like(url) or not html or "elementor" in (html.lower() if html else ""))
+        if need_js and key not in self._rendered_once:
+            rendered = _fetch_with_playwright_sync(url)
+            if rendered:
+                html = rendered
+            self._rendered_once.add(key)
+
+        self._html_cache_local[key] = html or ""
+        return html or ""
+
 
     @staticmethod
     def _abs(base: str, path: str) -> str:
@@ -1462,7 +1640,7 @@ class ContactFinder:
         # 1) Hent forsiden først (så vi kan lave discovery)
         htmls: dict[str, str] = {}
         try:
-            root_html = _fetch_text(url, self.timeout, self.cache_dir)
+            root_html = self._fetch_text_smart(url)
             htmls[url] = root_html
         except Exception:
             root_html = ""
@@ -1480,12 +1658,13 @@ class ContactFinder:
         pages_ordered = [url] + priority_pages + discovered + static_pages
 
         # Deduplikér med orden bevaret
-        seen = set()
-        pages_unique = []
+        seen_norm: set[str] = set()
+        pages_unique: list[str] = []
         for u in pages_ordered:
-            if u not in seen:
+            k = _norm_url_for_fetch(u)
+            if k not in seen_norm:
                 pages_unique.append(u)
-                seen.add(u)
+                seen_norm.add(k)
 
         # Skær ned til limit_pages
         pages = pages_unique[:max(1, limit_pages)]
@@ -1494,12 +1673,19 @@ class ContactFinder:
         # 3) Hent resten parallelt (root er evt. allerede hentet)
         to_fetch = [u for u in pages if u not in htmls]
         if to_fetch:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.parallel) as ex:
-                futs = {ex.submit(_fetch_text, u, self.timeout, self.cache_dir): u for u in to_fetch}
-                for fut in concurrent.futures.as_completed(futs):
-                    u = futs[fut]
+            if self.use_playwright:
+                # Sekventielt når PW er aktiv → undgå flere browser-instanser og dobbeltrender
+                for u in to_fetch:
                     with contextlib.suppress(Exception):
-                        htmls[u] = fut.result()
+                        htmls[u] = self._fetch_text_smart(u)
+            else:
+                # Hurtig parallel fetch når vi kun bruger HTTP
+                with concurrent.futures.ThreadPoolExecutor(max_workers=self.parallel) as ex:
+                    futs = {ex.submit(self._fetch_text_smart, u): u for u in to_fetch}
+                    for fut in concurrent.futures.as_completed(futs):
+                        u = futs[fut]
+                        with contextlib.suppress(Exception):
+                            htmls[u] = fut.result()
 
         log.debug("Pages fetched (%d): %s", len(htmls), list(htmls.keys()))
 
