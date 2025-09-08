@@ -2,10 +2,11 @@
 
 import asyncio
 import logging
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
 from collections import Counter
+import json
 
 from . import (
     http_client, website_fetchers, technical_fetchers, performance_fetcher,
@@ -22,7 +23,7 @@ from .schemas import (
 log = logging.getLogger(__name__)
 print("Loading analyzer.py from:", __file__)
 
-# Default dictionaries remain the same
+# -------------------- DEFAULTS --------------------
 DEFAULT_BASIC_SEO: BasicSEO = {
     'h1': None, 'h1_count': 0, 'h1_texts': None,
     'meta_description': None, 'meta_description_length': 0,
@@ -83,43 +84,141 @@ DEFAULT_SECURITY_METRICS: SecurityMetrics = {
     'x_content_type_options_enabled': False, 'x_frame_options_enabled': False
 }
 
-def log_metric_status(metric: str, value: any, status: str = "ok"):
+def log_metric_status(metric: str, value: Any, status: str = "ok"):
     log.info(f"[{status}] {metric}: {value}")
 
+# -------------------- HELPERS (NYE) --------------------
+def _deep_get(obj: Any, path: str, default=None):
+    """Hent dybe nøgler via 'a.b.0.c' notation."""
+    try:
+        cur = obj
+        for part in path.split('.'):
+            if isinstance(cur, list) and part.isdigit():
+                cur = cur[int(part)]
+            elif isinstance(cur, dict):
+                cur = cur.get(part)
+            else:
+                return default
+        return cur
+    except Exception:
+        return default
+
+def _extract_canonical_from_html(html: str, base_url: str) -> Optional[str]:
+    soup = BeautifulSoup(html or "", "html.parser")
+    link = soup.find("link", rel=lambda v: v and "canonical" in v.lower())
+    href = (link.get("href") if link else None) or None
+    if not href:
+        return None
+    return href if href.startswith("http") else urljoin(base_url, href)
+
+def _extract_runtime_state_from_html(html: str) -> Optional[dict]:
+    """Prøv at finde __INITIAL_STATE__ i scripts."""
+    soup = BeautifulSoup(html or "", "html.parser")
+    for s in soup.find_all("script"):
+        txt = (s.string or s.get_text() or "").strip()
+        if "__INITIAL_STATE__" in txt:
+            try:
+                start = txt.find("{")
+                end = txt.rfind("}")
+                if start != -1 and end != -1 and end > start:
+                    return json.loads(txt[start:end+1])
+            except Exception:
+                pass
+    return None
+
+def resolve_canonical(base_url: str, rendered_html: str, runtime_state: Optional[dict]) -> Tuple[Optional[str], str]:
+    """
+    Returnerer (canonical_url, source) hvor source er 'dom', 'runtime' eller 'none'.
+    """
+    dom_canonical = _extract_canonical_from_html(rendered_html, base_url)
+    if dom_canonical:
+        return dom_canonical, "dom"
+
+    state = runtime_state or _extract_runtime_state_from_html(rendered_html)
+    if not state:
+        return None, "none"
+
+    candidate_paths = (
+        "category-next.menuCategories.1.custom_canonical_url",
+        "category-next.menuCategories.2.custom_canonical_url",
+        "category.current_path.0.custom_canonical_url",
+        "category.list.0.custom_canonical_url",
+        "category-next.categoriesMap.2.custom_canonical_url",
+    )
+    for p in candidate_paths:
+        v = _deep_get(state, p)
+        if isinstance(v, str) and v.strip():
+            href = v if v.startswith("http") else ("/" + v.strip("/"))
+            return urljoin(base_url, href), "runtime"
+    return None, "none"
+
+def detect_schema(rendered_html: str) -> Tuple[bool, List[str]]:
+    """JSON-LD + let microdata indikator."""
+    types: List[str] = []
+    found = False
+    soup = BeautifulSoup(rendered_html or "", "html.parser")
+
+    # JSON-LD
+    for s in soup.find_all("script", type=lambda v: v and "ld+json" in v.lower()):
+        try:
+            data = json.loads(s.string or "{}")
+            found = True
+            if isinstance(data, list):
+                for item in data:
+                    t = item.get("@type") if isinstance(item, dict) else None
+                    if isinstance(t, list):
+                        types.extend([str(x) for x in t])
+                    elif isinstance(t, str):
+                        types.append(t)
+            elif isinstance(data, dict):
+                t = data.get("@type")
+                if isinstance(t, list):
+                    types.extend([str(x) for x in t])
+                elif isinstance(t, str):
+                    types.append(t)
+        except Exception:
+            continue
+
+    # Microdata (let indikator)
+    if not found:
+        if soup.find(attrs={"itemscope": True}) or soup.find(attrs={"itemtype": True}):
+            found = True
+    return found, sorted(set(types))
+
+# -------------------- RAW RESULT PARSER --------------------
 def _extract_html_and_canonical_data(raw_result):
     """
     Robust extraction af HTML og canonical data fra forskellige return formater.
-    
     Returns:
-        tuple: (html_content: str, canonical_data: dict)
+      tuple: (html_content: str, canonical_data: dict)
     """
     if raw_result is None:
         return None, {}
-    
+
     # Format 1: Dict format fra Playwright
     if isinstance(raw_result, dict):
         html_content = raw_result.get('html')
         canonical_data = raw_result.get('canonical_data', {})
         return html_content, canonical_data
-    
+
     # Format 2: Tuple format (html, canonical_data)
     elif isinstance(raw_result, tuple) and len(raw_result) == 2:
         html_content, canonical_data = raw_result
-        # Tjek om anden element faktisk er canonical_data (dict) eller HTML string
+        # Anden del kan være HTML string – så tom canonical_data
         if isinstance(canonical_data, str):
-            # Dette er faktisk HTML, canonical_data er tom
             return html_content, {}
         return html_content, canonical_data if isinstance(canonical_data, dict) else {}
-    
+
     # Format 3: Bare HTML string
     elif isinstance(raw_result, str):
         return raw_result, {}
-    
+
     # Ukendt format
     else:
         log.warning(f"Unknown raw_result format: {type(raw_result)}")
         return None, {}
 
+# -------------------- HOVEDANALYSE --------------------
 async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_pages: int = 50) -> UrlAnalysisData:
     # Valider URL
     if url.startswith('https://https://') or url.startswith('http://http://'):
@@ -150,52 +249,48 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
         "ux_ui_score": 0,
         "niche_score": 0,
     }
-    
-    # FLYTTET UD AF LOOP: Kald GMB og Authority én gang for hoveddomænet
+
+    # GMB + Authority kun én gang
     parsed_url = urlparse(url)
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-    
-    # GMB data - kun én gang
+
     gmb_data = await gmb_fetcher.fetch_gmb_data(client, url)
     analysis_data['social_and_reputation'].update(gmb_data)
     log.info(f"GMB data fetched once: review_count={gmb_data.get('gmb_review_count', 0)}, rating={gmb_data.get('gmb_average_rating', 0)}")
-    
-    # Authority data - kun én gang
+
     authority_data = await authority_fetcher.get_authority(client, url)
-    analysis_data['authority'].update(authority_data)
-    log.info(f"Authority data fetched once: DA={authority_data.get('domain_authority', 0)}, PA={authority_data.get('page_authority', 0)}")
-    
+    analysis_data['authority'].update(authority_data or {})
+    log.info(f"Authority data fetched once: DA={analysis_data['authority'].get('domain_authority', 0)}, PA={analysis_data['authority'].get('page_authority', 0)}")
+
     page_count = 0
-    h1_texts = []
-    keyword_scores = []
-    emails = set()
-    phones = set()
-    form_counts = []
+    h1_texts: List[str] = []
+    keyword_scores: List[float] = []
+    emails, phones = set(), set()
+    form_counts: List[int] = []
     trust_signals = set()
-    word_counts = []
+    word_counts: List[int] = []
 
-    main_page_data = None
-    canonical_found = False
+    main_page_data: Optional[dict] = None
 
-    parsed_url = urlparse(url)
-    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    # Technical + Content for base
     raw_result = await client.get_raw_html(base_url, force=True)
-    html_content, canonical_data = _extract_html_and_canonical_data(raw_result)
+    html_content, _ = _extract_html_and_canonical_data(raw_result)
     if html_content:
         soup = BeautifulSoup(html_content, "lxml")
-    
-        # Technical SEO (inkl. sitemap/robots.txt)
         tech_result = await technical_fetchers.fetch_technical_seo_data(client, base_url)
         analysis_data['technical_seo'].update(tech_result)
-    
-        # Content metrics (inkl. blog-detection)
+
         content_data = await content_fetcher.fetch_content_data(client, soup, base_url)
         analysis_data['content'].update(content_data)
-    
+    else:
+        tech_result = DEFAULT_TECHNICAL_SEO.copy()
+        content_data = DEFAULT_CONTENT_METRICS.copy()
+
+    # Loop over crawlede URLs
     for crawled_url in crawled_urls.get('visited_urls', {url}):
         raw_result = await client.get_raw_html(crawled_url, force=True)
         html_content, canonical_data = _extract_html_and_canonical_data(raw_result)
-        
+
         if not html_content:
             log.error(f"Could not fetch usable HTML for {crawled_url}")
             continue
@@ -206,20 +301,16 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
 
         # Sync parsers
         basic_seo_result = website_fetchers.parse_basic_seo_from_soup(soup, crawled_base_url)
-        
-        # Forbedret canonical håndtering
+
+        # -------- Canonical håndtering (forbedret) --------
+        # 1) Brug Playwright canonical_data hvis tilgængelig (din eksisterende logik)
         if not basic_seo_result.get('canonical_url') and canonical_data and isinstance(canonical_data, dict):
             log.debug(f"Fallback to Playwright canonical_data for {crawled_url}: {canonical_data}")
-            
-            # Prioriter link canonical
             if canonical_data.get('link_canonical'):
                 basic_seo_result['canonical_url'] = urljoin(crawled_base_url, canonical_data['link_canonical'])
                 basic_seo_result['canonical_source'] = 'playwright_link'
                 basic_seo_result['canonical_error'] = None
-                canonical_found = True
                 log.info(f"Used Playwright link canonical: {basic_seo_result['canonical_url']}")
-            
-            # Fallback til canonical fields
             elif canonical_data.get('canonical_fields') and isinstance(canonical_data['canonical_fields'], dict):
                 for path, value in canonical_data['canonical_fields'].items():
                     if value and str(value).strip() not in ('None', 'null', '', 'false', 'False'):
@@ -229,23 +320,42 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
                             basic_seo_result['canonical_url'] = urljoin(crawled_base_url, str(value))
                         basic_seo_result['canonical_source'] = 'playwright_runtime_state'
                         basic_seo_result['canonical_error'] = None
-                        canonical_found = True
                         log.info(f"Used Playwright canonical: {basic_seo_result['canonical_url']} from {path}")
                         break
 
-        # Gem hovedsiden eller første side med gyldig canonical
+        # 2) Hvis stadig ingen canonical → DOM/runtime resolver (NY)
+        if not basic_seo_result.get('canonical_url'):
+            runtime_state = canonical_data.get('runtime_state') if isinstance(canonical_data, dict) else None
+            resolved, src = resolve_canonical(
+                base_url=crawled_url,
+                rendered_html=html_content or "",
+                runtime_state=runtime_state
+            )
+            if resolved:
+                basic_seo_result['canonical_url'] = resolved
+                basic_seo_result['canonical_source'] = src
+                basic_seo_result['canonical_error'] = None
+                log.info(f"[canonical][fallback] Using resolved canonical ({src}): {resolved}")
+
+        # -------- Schema / JSON-LD detektion (NY) --------
+        schema_found, schema_types = detect_schema(html_content or "")
+        basic_seo_result['schema_markup_found'] = bool(schema_found)
+        if schema_types:
+            basic_seo_result['schema_types'] = schema_types
+
+        # Gem hovedsiden/bedste side for canonical + basismetadata
         if crawled_url == url:
             main_page_data = basic_seo_result
         elif not main_page_data or (not main_page_data.get('canonical_url') and basic_seo_result.get('canonical_url')):
             main_page_data = basic_seo_result
             log.info(f"Updated main_page_data with canonical from {crawled_url}: {basic_seo_result.get('canonical_url')}")
-            
-        # Saml data fra siden
+
+        # Saml data
         if basic_seo_result.get('h1_texts'):
             h1_texts.extend(basic_seo_result['h1_texts'])
         if basic_seo_result.get('word_count'):
             word_counts.append(basic_seo_result['word_count'])
-            
+
         social_result = social_fetchers.find_social_media_links(soup)
         privacy_result = privacy_fetchers.detect_cookie_banner(soup)
         trust_data = privacy_fetchers.detect_trust_signals(soup)
@@ -254,13 +364,12 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
         emails.update(contact_data.get('emails_found', []))
         phones.update(contact_data.get('phone_numbers_found', []))
         form_data = form_fetcher.analyze_forms(soup)
-        form_counts.extend(form_data.get('form_field_counts', []))
         tracking_data = await tracking_fetchers.fetch_tracking_data(client, soup)
         if content_data.get('keyword_relevance_score'):
             keyword_scores.append(content_data['keyword_relevance_score'])
         cta_data = await cta_fetcher.fetch_cta_data(client, soup)
 
-        # Kun de væsentligste async tasks per side
+        # Async tasks (kun vigtigste pr. side)
         tasks = {
             "tech": technical_fetchers.fetch_technical_seo_data(client, crawled_url),
             "psi": performance_fetcher.get_performance(client, crawled_url) if crawled_url == url else None,  # Kun hovedsiden
@@ -268,8 +377,6 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
             "js_size": performance_fetcher.calculate_js_size(client, soup, crawled_url),
             "images": image_fetchers.fetch_image_stats(client, soup, crawled_url),
         }
-        
-        # Filter None tasks
         filtered_tasks = {k: v for k, v in tasks.items() if v is not None}
         results = await asyncio.gather(*(filtered_tasks.values()), return_exceptions=True)
         results_map = dict(zip(filtered_tasks.keys(), results))
@@ -282,21 +389,19 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
             return res or default_value.copy()
 
         basic_seo_result.update(get_result("images", {}))
-        if crawled_url == url:  # Kun opdater performance og security for hovedsiden
+        if crawled_url == url:
             performance_result = get_result("psi", DEFAULT_PERFORMANCE_METRICS)
             performance_result.update(get_result("js_size", {}))
             analysis_data['performance'].update(performance_result)
             analysis_data['security'].update(get_result("security", DEFAULT_SECURITY_METRICS))
-            
-        # Aggregér data
+
+        # Aggregér sektioner
         for section, data in [
-            ("basic_seo", basic_seo_result), 
+            ("basic_seo", basic_seo_result),
             ("technical_seo", tech_result),
             ("content", content_data),
-            ("social_and_reputation", social_result), 
-            ("conversion", {
-                **tracking_data, **contact_data, **form_data, **trust_data, **cta_data
-            }), 
+            ("social_and_reputation", social_result),
+            ("conversion", {**tracking_data, **contact_data, **form_data, **trust_data, **cta_data}),
             ("privacy", privacy_result)
         ]:
             for key, value in data.items():
@@ -311,7 +416,6 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
                         current = []
                     analysis_data[section][key] = list(set(current + value))
                 else:
-                    # Don't overwrite with None values
                     if value is not None or analysis_data[section].get(key) is None:
                         analysis_data[section][key] = value
         page_count += 1
@@ -321,7 +425,7 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
 
     # Smart aggregation efter loop
     if main_page_data:
-        # Canonical håndtering - FORBEDRET
+        # Canonical
         if main_page_data.get('canonical_url'):
             analysis_data['basic_seo']['canonical_url'] = main_page_data['canonical_url']
             analysis_data['basic_seo']['canonical_source'] = main_page_data.get('canonical_source', 'unknown')
@@ -330,97 +434,81 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
         else:
             analysis_data['basic_seo']['canonical_error'] = "No canonical found on any page"
             log.info(f"[canonical][missing] No canonical found on any crawled page")
-            
+
+        # Schema
         analysis_data['basic_seo']['schema_markup_found'] = main_page_data.get('schema_markup_found', False)
-        
-        # Use main page title and meta description
+        if 'schema_types' in main_page_data:
+            analysis_data['basic_seo']['schema_types'] = main_page_data['schema_types']
+
+        # Title/description
         analysis_data['basic_seo']['title_text'] = main_page_data.get('title_text')
         analysis_data['basic_seo']['title_length'] = main_page_data.get('title_length', 0)
         analysis_data['basic_seo']['meta_description'] = main_page_data.get('meta_description')
         analysis_data['basic_seo']['meta_description_length'] = main_page_data.get('meta_description_length', 0)
-        
-    # Log canonical status
-    log_metric_status("canonical_url", analysis_data['basic_seo']['canonical_url'], 
-                     "ok" if analysis_data['basic_seo']['canonical_url'] else "missing")
-    log_metric_status("schema_markup_found", analysis_data['basic_seo']['schema_markup_found'], 
-                     "ok" if analysis_data['basic_seo']['schema_markup_found'] else "missing")
-    
+
+    # Log canonical/schema status
+    log_metric_status("canonical_url", analysis_data['basic_seo'].get('canonical_url'),
+                      "ok" if analysis_data['basic_seo'].get('canonical_url') else "missing")
+    log_metric_status("schema_markup_found", analysis_data['basic_seo'].get('schema_markup_found'),
+                      "ok" if analysis_data['basic_seo'].get('schema_markup_found') else "missing")
+
     # H1 aggregation
     if h1_texts:
         most_common_h1 = Counter(h1_texts).most_common(1)[0][0]
         analysis_data['basic_seo']['h1'] = most_common_h1
-        analysis_data['basic_seo']['h1_count'] = len(h1_texts) / max(page_count, 1)  # Average
-        analysis_data['basic_seo']['h1_texts'] = list(set(h1_texts))[:5]  # Max 5 unique
+        analysis_data['basic_seo']['h1_count'] = len(h1_texts) / max(page_count, 1)
+        analysis_data['basic_seo']['h1_texts'] = list(set(h1_texts))[:5]
         log_metric_status("h1", most_common_h1, "ok")
     else:
         log_metric_status("h1", None, "missing")
-        
+
     # Keyword relevance score
     if keyword_scores:
         analysis_data['content']['keyword_relevance_score'] = max(keyword_scores)
         log_metric_status("keyword_relevance_score", analysis_data['content']['keyword_relevance_score'], "ok")
-        
+
     # Average word count
     if word_counts:
         analysis_data['content']['average_word_count'] = sum(word_counts) // len(word_counts)
         analysis_data['basic_seo']['word_count'] = analysis_data['content']['average_word_count']
-        
-    # Contact and trust signals
-    analysis_data['conversion']['emails_found'] = list(emails)
-    analysis_data['conversion']['phone_numbers_found'] = list(phones)
-    analysis_data['conversion']['form_field_counts'] = form_counts
-    analysis_data['conversion']['trust_signals_found'] = list(trust_signals)
-    
-    # Calculate CTA score based on collected data
+
+    # CTA score (samme model)
     cta_score = 0
-    if emails:
-        cta_score += 35
-    if phones:
-        cta_score += 35
-    if form_counts:
-        cta_score += 30
-    if trust_signals:
-        cta_score += 30
-    if analysis_data['conversion'].get('cta_analysis'):
-        cta_score += 30
-    # Cap at reasonable maximum
+    if emails: cta_score += 35
+    if phones: cta_score += 35
+    if form_counts: cta_score += 30
+    if trust_signals: cta_score += 30
+    if analysis_data['conversion'].get('cta_analysis'): cta_score += 30
     analysis_data['conversion']['cta_score'] = min(cta_score, 60)
-    
-    log_metric_status("emails_found", analysis_data['conversion']['emails_found'], 
-                     "ok" if emails else "missing")
-    log_metric_status("phone_numbers_found", analysis_data['conversion']['phone_numbers_found'], 
-                     "ok" if phones else "missing")
-    log_metric_status("form_field_counts", analysis_data['conversion']['form_field_counts'], 
-                     "ok" if form_counts else "missing")
-    log_metric_status("trust_signals_found", analysis_data['conversion']['trust_signals_found'], 
-                     "ok" if trust_signals else "missing")
-    
-    # Average numeric values hvis vi har flere sider
+
+    log_metric_status("emails_found", analysis_data['conversion']['emails_found'], "ok" if emails else "missing")
+    log_metric_status("phone_numbers_found", analysis_data['conversion']['phone_numbers_found'], "ok" if phones else "missing")
+    log_metric_status("form_field_counts", analysis_data['conversion']['form_field_counts'], "ok" if form_counts else "missing")
+    log_metric_status("trust_signals_found", analysis_data['conversion']['trust_signals_found'], "ok" if trust_signals else "missing")
+
+    # Gennemsnit for numeriske værdier ved >1 side
     if page_count > 1:
         for section in ['basic_seo', 'performance', 'technical_seo']:
             for key, value in analysis_data[section].items():
-                if isinstance(value, (int, float)) and key not in ['status_code', 'is_https', 'total_pages_crawled', 
+                if isinstance(value, (int, float)) and key not in ['status_code', 'is_https', 'total_pages_crawled',
                                                                    'total_links_found', 'broken_links_count']:
                     analysis_data[section][key] = value / page_count
-                    
-    # Default values for missing data
+
+    # Defaults/korrektioner
     if not analysis_data['authority']['domain_authority']:
         analysis_data['authority']['domain_authority'] = 10
         log_metric_status("domain_authority", 10, "missing")
     else:
         log_metric_status("domain_authority", analysis_data['authority']['domain_authority'], "ok")
-        
-    # Copy GMB score to authority
+
     analysis_data['authority']['gmb_profile_complete'] = analysis_data['social_and_reputation'].get('gmb_profile_complete', 0)
-    log_metric_status("gmb_profile_complete", analysis_data['authority']['gmb_profile_complete'], 
-                     "ok" if analysis_data['authority']['gmb_profile_complete'] else "missing")
-    
-    # Content metrics
+    log_metric_status("gmb_profile_complete", analysis_data['authority']['gmb_profile_complete'],
+                      "ok" if analysis_data['authority']['gmb_profile_complete'] else "missing")
+
     analysis_data['content']['days_since_last_post'] = 99999 if not analysis_data['content'].get('latest_post_date') else analysis_data['content']['days_since_last_post']
     analysis_data['content']['internal_link_score'] = analysis_data['technical_seo'].get('internal_link_score', 0)
-    
-    log_metric_status("days_since_last_post", analysis_data['content']['days_since_last_post'], 
-                     "missing" if analysis_data['content']['days_since_last_post'] == 99999 else "ok")
+    log_metric_status("days_since_last_post", analysis_data['content']['days_since_last_post'],
+                      "missing" if analysis_data['content']['days_since_last_post'] == 99999 else "ok")
     log_metric_status("internal_link_score", analysis_data['content']['internal_link_score'], "ok")
 
     log.info(f"Analysis complete for: {url}")

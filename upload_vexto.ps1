@@ -1,4 +1,4 @@
-# ===== upload_vexto.ps1 (single bulk PATCH + proper 403 backoff) =====
+# ===== upload_vexto.ps1 (preflight + chunked + per-file fallback + 422 logging) =====
 $ErrorActionPreference = 'Stop'
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
 
@@ -23,7 +23,7 @@ Write-Host ("GIST_ID  set: " + [bool]$env:GIST_ID)
 if (-not $env:GH_TOKEN) { throw "GH_TOKEN missing. Put it in .env as GH_TOKEN=ghp_xxx" }
 if (-not $env:GIST_ID)  { throw "GIST_ID missing. Put it in .env as GIST_ID=xxxxxxxx..." }
 
-# --- Whitelist: code + config only ---
+# --- Whitelist ---
 $whitelist = @(
   'main.py',
   'fetcher_diagnose_full.py',
@@ -66,12 +66,12 @@ if (Test-Path $cachePath) {
   } catch { Write-Host "Cache unreadable. Rebuilding..." }
 }
 
-# --- Prepare share/ for optional local inspection ---
+# --- Prepare share/ ---
 Write-Host "Preparing share folder..."
 if (Test-Path $share) { Remove-Item $share -Recurse -Force -ErrorAction SilentlyContinue }
 New-Item -ItemType Directory -Path $share | Out-Null
 
-# --- Compute current hashes and deltas ---
+# --- Compute deltas ---
 $existingAbs  = @()
 $currentNames = @()
 $toUpload     = @()
@@ -93,7 +93,7 @@ foreach ($rel in $whitelist) {
   }
 }
 
-# --- Determine deletions (in cache but not local) ---
+# --- Determine deletions ---
 $toDelete = @()
 foreach ($oldName in $oldHashes.Keys) {
   if ($currentNames -notcontains $oldName) { $toDelete += $oldName }
@@ -110,13 +110,23 @@ if ($toUpload.Count -eq 0 -and $toDelete.Count -eq 0) {
   exit 0
 }
 
-# --- HTTP setup ---
+# --- HTTP setup (Bearer) ---
 $headers = @{
-  "Authorization" = ("token " + $env:GH_TOKEN)
+  "Authorization" = ("Bearer " + $env:GH_TOKEN)
   "Accept"        = "application/vnd.github+json"
-  "User-Agent"    = "vexto-sync/1.1 (PowerShell)"
+  "User-Agent"    = "vexto-sync/1.2 (PowerShell)"
 }
 $uri = ("https://api.github.com/gists/" + $env:GIST_ID)
+
+# --- Preflight: verify write access (harmless description patch) ---
+try {
+  $diag = @{ description = "vexto-sync preflight $(Get-Date -Format o)" } | ConvertTo-Json -Depth 5 -Compress
+  Invoke-WebRequest -Method PATCH -Uri $uri -Headers $headers -ContentType "application/json; charset=utf-8" -Body $diag -TimeoutSec 20 | Out-Null
+  Write-Host "Preflight OK (write access confirmed)."
+} catch {
+  $msg = $_.Exception.Message
+  throw "Auth/preflight failed: $msg"
+}
 
 function Get-BackoffSecondsFromResponse {
   param([System.Net.WebResponse]$Response)
@@ -136,64 +146,117 @@ function Get-BackoffSecondsFromResponse {
   return $fallback
 }
 
-function Invoke-GistBulkPatch-WithBackoff {
-  param(
-    [Parameter(Mandatory=$true)][hashtable]$FilesMap,  # name -> @{ content="..." } or $null
-    [Parameter(Mandatory=$true)][string]$Uri,
-    [Parameter(Mandatory=$true)][hashtable]$Headers,
-    [int]$MaxAttempts = 4
-  )
-  $payload = @{ files = $FilesMap } | ConvertTo-Json -Depth 7 -Compress
-  for ($attempt=1; $attempt -le $MaxAttempts; $attempt++) {
+# return $true on 2xx; $false otherwise; writes error body if any
+function Invoke-GistPatch($filesMap, $uri, $headers, $maxAttempts=4) {
+  $payload = @{ files = $filesMap } | ConvertTo-Json -Depth 100 -Compress
+  for ($attempt=1; $attempt -le $maxAttempts; $attempt++) {
     try {
-      Invoke-WebRequest -Method Patch -Uri $Uri -Headers $Headers -ContentType "application/json; charset=utf-8" -Body $payload -TimeoutSec 120 | Out-Null
+      Invoke-WebRequest -Method PATCH -Uri $uri -Headers $headers -ContentType "application/json; charset=utf-8" -Body $payload -TimeoutSec 120 | Out-Null
       return $true
     } catch {
       $resp = $_.Exception.Response
+      if ($resp) {
+        try {
+          $reader = New-Object System.IO.StreamReader($resp.GetResponseStream())
+          $body = $reader.ReadToEnd()
+          if ($body) { Write-Host "GitHub error body: $body" }
+        } catch {}
+      }
       $status = $null; if ($resp) { $status = [int]$resp.StatusCode }
-      if ($status -eq 403 -and $attempt -lt $MaxAttempts) {
+      if ($status -eq 403 -and $attempt -lt $maxAttempts) {
         $sleepSec = Get-BackoffSecondsFromResponse -Response $resp
-        Write-Host ("403 received. Backing off {0}s (attempt {1}/{2})..." -f $sleepSec,$attempt,$MaxAttempts)
+        Write-Host ("403 received. Backing off {0}s (attempt {1}/{2})..." -f $sleepSec,$attempt,$maxAttempts)
         Start-Sleep -Seconds $sleepSec
         continue
       }
-      Write-Host ("Bulk PATCH failed (attempt {0}/{1}): {2}" -f $attempt,$MaxAttempts,$_.Exception.Message)
+      Write-Host ("Bulk PATCH failed (attempt {0}/{1}): {2}" -f $attempt,$maxAttempts,$_.Exception.Message)
       return $false
     }
   }
   return $false
 }
 
-# --- Build single bulk payload (changed + deletions) ---
-$filesMap = @{}
+function Get-ApproxUtf8Size($s) { if ($null -eq $s) { return 0 } ([Text.Encoding]::UTF8.GetByteCount($s)) }
 
-# changed/new
+function Split-FilesMapBySize {
+  param([hashtable]$FilesMap, [int]$maxBytes=700000, [int]$maxFiles=6)
+  $chunks = @(); $current=@{}; $curSize=0; $curCount=0
+  foreach ($k in $FilesMap.Keys) {
+    $entry = $FilesMap[$k]
+    $addSize = 100 + [Text.Encoding]::UTF8.GetByteCount($k)
+    if ($null -ne $entry -and $entry.ContainsKey("content")) { $addSize += Get-ApproxUtf8Size($entry["content"]) }
+    if (($curCount -ge $maxFiles) -or ($curSize + $addSize -gt $maxBytes)) {
+      if ($current.Count -gt 0) { $chunks += ,$current; $current=@{}; $curSize=0; $curCount=0 }
+    }
+    $current[$k] = $entry; $curSize += $addSize; $curCount++
+  }
+  if ($current.Count -gt 0) { $chunks += ,$current }
+  return ,$chunks
+}
+
+function Invoke-GistBulkPatch-Chunked {
+  param([hashtable]$FilesMap, [string]$Uri, [hashtable]$Headers)
+  $parts = Split-FilesMapBySize -FilesMap $FilesMap -maxBytes 700000 -maxFiles 6
+  $idx=0
+  foreach ($part in $parts) {
+    $idx++
+    Write-Host ("Uploading chunk {0}/{1} ({2} files)..." -f $idx, $parts.Count, $part.Keys.Count)
+    Write-Host "Chunk $idx filer:"; $part.Keys | ForEach-Object { Write-Host " - $_" }
+    if (-not (Invoke-GistPatch -filesMap $part -uri $Uri -headers $Headers -maxAttempts 4)) { throw "CHUNK_422" }
+    Start-Sleep -Milliseconds 400
+  }
+}
+
+# --- Helper: sanitize file content (strip NUL + control chars except CR/LF/TAB) ---
+function Get-SafeUtf8([string]$path) {
+  $bytes = [System.IO.File]::ReadAllBytes($path)
+  $bytes = $bytes | Where-Object { $_ -ne 0 }
+  $text  = [Text.Encoding]::UTF8.GetString($bytes)
+  return ($text -replace '[\x00-\x08\x0B\x0C\x0E-\x1F]', '')
+}
+
+# --- Build payload ---
+# 1) Fjern dubletter baseret på filnavn
+$toUpload = $toUpload | Group-Object name | ForEach-Object { $_.Group[0] }
+
+# 2) filesMap (opdater) + deletions
+$filesMap = @{}
 foreach ($it in $toUpload) {
-  $content = Get-Content -LiteralPath $it.abs -Raw -Encoding UTF8 -ErrorAction Stop
+  $content = Get-SafeUtf8 $it.abs
   if ($null -eq $content) { $content = "" }
   $filesMap[$it.name] = @{ content = $content }
   Copy-Item $it.abs $share -Force
 }
+foreach ($name in $toDelete) { $filesMap[$name] = $null }
 
-# deletions
-foreach ($name in $toDelete) {
-  $filesMap[$name] = $null
+Write-Host ("Uploading in chunks: upserts=" + $toUpload.Count + " deletes=" + $toDelete.Count)
+
+# --- Try chunked, then fallback per-file on 422 ---
+$chunkOk = $true
+try {
+  Invoke-GistBulkPatch-Chunked -FilesMap $filesMap -Uri $uri -Headers $headers
+} catch {
+  if ($_.Exception.Message -eq 'CHUNK_422') { $chunkOk = $false } else { throw }
 }
 
-Write-Host ("Bulk uploading: upserts=" + $toUpload.Count + " deletes=" + $toDelete.Count)
-
-# --- Single bulk PATCH with backoff ---
-if (Invoke-GistBulkPatch-WithBackoff -FilesMap $filesMap -Uri $uri -Headers $headers -MaxAttempts 4) {
-  # Update cache on success
-  foreach ($del in $toDelete) { if ($newHashes.ContainsKey($del)) { $newHashes.Remove($del) | Out-Null } }
-  $cacheOut = @{ hashes = @{} }
-  foreach ($k in $newHashes.Keys) { $cacheOut.hashes[$k] = $newHashes[$k] }
-  ($cacheOut | ConvertTo-Json -Depth 6 -Compress) | Set-Content -Encoding UTF8 $cachePath
-  Write-Host "Cache updated."
-  Write-Host "Summary: uploaded OK=$($toUpload.Count) | deleted OK=$($toDelete.Count)"
-  Write-Host "== upload_vexto.ps1 done =="
-  exit 0
-} else {
-  Write-Host "Cache NOT updated due to failures."
-  throw "Bulk upload failed. See messages above."
+if (-not $chunkOk) {
+  Write-Host "Chunked upload failed with 422. Falling back to per-file mode..."
+  foreach ($k in $filesMap.Keys) {
+    $single = @{}
+    $single[$k] = $filesMap[$k]
+    Write-Host ("[single] Patching {0} ..." -f $k)
+    if (-not (Invoke-GistPatch -filesMap $single -uri $uri -headers $headers -maxAttempts 4)) {
+      throw "Single-file patch failed for: $k"
+    }
+    Start-Sleep -Milliseconds 250
+  }
 }
+
+# --- Update cache on success ---
+foreach ($del in $toDelete) { if ($newHashes.ContainsKey($del)) { $newHashes.Remove($del) | Out-Null } }
+$cacheOut = @{ hashes = @{} }
+foreach ($k in $newHashes.Keys) { $cacheOut.hashes[$k] = $newHashes[$k] }
+($cacheOut | ConvertTo-Json -Depth 6 -Compress) | Set-Content -Encoding UTF8 $cachePath
+Write-Host "Cache updated."
+Write-Host "Summary: uploaded OK=$($toUpload.Count) | deleted OK=$($toDelete.Count)"
+Write-Host "== upload_vexto.ps1 done =="

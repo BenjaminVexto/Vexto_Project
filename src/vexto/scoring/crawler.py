@@ -9,9 +9,16 @@ from .http_client import AsyncHtmlClient
 
 log = logging.getLogger(__name__)
 
-# Tilføj denne funktion for at undgå NameError
+# Behold din eksisterende helper, så caller ikke brydes
 def log_metric_status(metric, value, status):
     log.info(f"[{status}] {metric}: {value}")
+
+# NY: defensiv cast for at undgå unhashable (fx slice-objekter)
+def _safe_as_str(x) -> str:
+    try:
+        return str(x)
+    except Exception:
+        return repr(x)
 
 async def crawl_site_for_links(
     client: AsyncHtmlClient,
@@ -21,12 +28,14 @@ async def crawl_site_for_links(
 ) -> dict:
     parsed_start = urlparse(start_url)
     base_domain = parsed_start.netloc
-    urls_to_visit = {start_url}
-    visited_urls = set()
+
+    urls_to_visit: Set[str] = { _safe_as_str(start_url) }
+    visited_urls: Set[str] = set()
     all_found_links: Set[str] = set()
     internal_links: Set[str] = set()
     exclude_extensions = {'.pdf', '.jpg', '.jpeg', '.png', '.gif', '.xml'}
 
+    # Seed fra footer hvis vi har root_soup
     if root_soup:
         footer = root_soup.find('footer') or root_soup.find(id=lambda x: x and 'footer' in x.lower()) or root_soup.find(class_=lambda x: x and 'footer' in x.lower())
         if footer:
@@ -35,10 +44,11 @@ async def crawl_site_for_links(
                 if href.startswith('/'):
                     absolute_url = urljoin(start_url, href)
                     if not any(absolute_url.lower().endswith(ext) for ext in exclude_extensions):
-                        urls_to_visit.add(absolute_url)
+                        urls_to_visit.add(_safe_as_str(absolute_url))
 
     while urls_to_visit and len(visited_urls) < max_pages:
         current_url = urls_to_visit.pop()
+        current_url = _safe_as_str(current_url)
         if current_url in visited_urls or any(current_url.lower().endswith(ext) for ext in exclude_extensions):
             continue
         visited_urls.add(current_url)
@@ -63,6 +73,7 @@ async def crawl_site_for_links(
             if not href or href.startswith(('#', 'mailto:', 'tel:', 'javascript:', 'data:', 'callto:')):
                 continue
             absolute_url = urljoin(current_url, href)
+            absolute_url = _safe_as_str(absolute_url)
             all_found_links.add(absolute_url)
             if urlparse(absolute_url).netloc == base_domain and not any(absolute_url.lower().endswith(ext) for ext in exclude_extensions):
                 internal_links.add(absolute_url)
@@ -72,6 +83,7 @@ async def crawl_site_for_links(
     internal_link_score = round((len(internal_links) / len(all_found_links) * 100) if all_found_links else 0)
 
     link_sema = asyncio.Semaphore(15)
+
     async def get_status(url: str):
         async with link_sema:
             parsed = urlparse(url)
@@ -95,7 +107,7 @@ async def crawl_site_for_links(
         log.info(f"Limiting check to {len(links_to_check)} links (of {len(all_found_links)}).")
 
     results = await asyncio.gather(*(get_status(l) for l in links_to_check))
-    broken_links = {url: status for url, status in results if 400 <= status < 500}
+    broken_links = { _safe_as_str(url): status for url, status in results if 400 <= status < 500 }
     broken_links_pct = round((len(broken_links) / len(links_to_check)) * 100) if links_to_check else 0
 
     log_metric_status("total_pages_crawled", len(visited_urls), "ok")
