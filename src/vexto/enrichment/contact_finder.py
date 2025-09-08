@@ -32,6 +32,7 @@ import logging
 import re
 import sys
 import time
+import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import lru_cache
@@ -39,6 +40,12 @@ from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 from typing import Any, Iterable, Optional
 from vexto.scoring.http_client import _accept_encoding
+
+try:
+    from vexto.scoring.http_client import AsyncHtmlClient  
+except Exception:
+    AsyncHtmlClient = None
+
 
 # -------------------------- Valgfri eksterne libs -----------------------------
 
@@ -78,6 +85,57 @@ UI_TITLE_BLACKLIST = {
     "åbningstider", "opening hours",
     "faq", "privacy", "cookies", "cookie", "policy",
 }
+
+CONTACTISH_SLUGS = (
+    "kontakt", "contact", "kontakt-os", "contact-us",
+    "team", "teams", "medarbejder", "medarbejdere",
+    "people", "staff", "ledelse", "about", "om", "om-os"
+)
+
+def _is_contactish_url(u: str) -> bool:
+    p = (urlsplit(u).path or "").strip("/").lower()
+    return any(p.endswith(sl) or f"/{sl}/" in f"/{p}/" for sl in CONTACTISH_SLUGS)
+
+def _needs_js(html: str) -> bool:
+    """Grov indikator for JS-renderet indhold."""
+    if not html:
+        return False
+    # typisk Elementor placeholder + ingen kontaktlinks
+    if "JavaScript er nødvendig" in html or "elementor" in html:
+        return True
+    if not re.search(r'href=["\']mailto:|href=["\']tel:', html, flags=re.I):
+        return True
+    return False
+
+_PROFILE_PATTERNS = [
+    r'/medarbejder(?:e)?/[\w\-]+',
+    r'/team/[\w\-]+',
+    r'/people/[\w\-]+',
+    r'/staff/[\w\-]+',
+    r'/profile/[\w\-]+',
+    r'/ansat(?:te)?/[\w\-]+',
+    r'/personale/[\w\-]+',
+]
+
+def _discover_profile_links(base_url: str, html: str, max_links: int = 40) -> list[str]:
+    """Find medarbejder-/profil-URLs i HTML (regex-baseret, hurtig)."""
+    urls: list[str] = []
+    for pat in _PROFILE_PATTERNS:
+        for m in re.finditer(rf'href=["\']({pat})["\']', html, flags=re.I):
+            try:
+                full = urljoin(base_url, m.group(1))
+                if _same_host(base_url, full):
+                    urls.append(full)
+            except Exception:
+                continue
+    # dedup + cap
+    out, seen = [], set()
+    for u in urls:
+        if u not in seen:
+            out.append(u); seen.add(u)
+        if len(out) >= max_links:
+            break
+    return out
 
 # Rolle-ord (generiske)
 EXEC_ROLES = {
@@ -824,7 +882,6 @@ def _extract_from_text_emails(url: str, html: str) -> list[ContactCandidate]:
     return out
 
 def _extract_generic_org_contacts(base_url: str, pages_html: list[tuple[str, str]]) -> list[dict]:
-    # Kun e-mails på samme apex-domæne som sitet + deduplikering af alt
     emails_on_domain: list[str] = []
     phones: list[str] = []
 
@@ -833,10 +890,23 @@ def _extract_generic_org_contacts(base_url: str, pages_html: list[tuple[str, str
 
     re_email = r"[A-Z0-9._%+\-]{1,64}@[A-Z0-9.\-]{1,255}\.[A-Z]{2,}"
 
+    def _site_tld(url: str) -> str:
+        try:
+            host = (urlsplit(url).hostname or "").lower()
+            return host.rsplit(".", 1)[-1]
+        except Exception:
+            return ""
+
+    def _is_dk_phone(pn: str) -> bool:
+        return bool(re.fullmatch(r"\+45\d{8}", pn))
+
+    def _last8(pn: str) -> str:
+        return re.sub(r"\D", "", pn)[-8:]
+
     for u, html in pages_html:
         plain = re.sub(r"<[^>]+>", " ", html)
 
-        # 1) E-mails i synlig tekst
+        # E-mails i synlig tekst
         for m in re.finditer(re_email, plain, flags=re.I):
             em = _normalize_email(m.group(0))
             if not em:
@@ -844,12 +914,11 @@ def _extract_generic_org_contacts(base_url: str, pages_html: list[tuple[str, str
             local = em.split("@", 1)[0]
             if local in {"noreply", "no-reply", "donotreply"}:
                 continue
-            # Kun samme apex-domæne som sitet
             if _email_domain_matches_site(em, base_url) and em not in seen_emails:
                 seen_emails.add(em)
                 emails_on_domain.append(em)
 
-        # 2) Cloudflare (data-cfemail)
+        # Cloudflare (data-cfemail)
         for m in re.finditer(r'data-cfemail=["\']([0-9a-fA-F]+)["\']', html):
             em = _normalize_email(_cf_decode(m.group(1)))
             if not em:
@@ -861,29 +930,44 @@ def _extract_generic_org_contacts(base_url: str, pages_html: list[tuple[str, str
                 seen_emails.add(em)
                 emails_on_domain.append(em)
 
-        # 3) Telefonnumre i synlig tekst
+        # Telefonnumre i synlig tekst
         for m in re.finditer(r"(?:\+?\d[\s\-\(\)\.]{0,3}){8,}", plain):
             pn = _normalize_phone(m.group(0))
             if pn and pn not in seen_phones:
                 seen_phones.add(pn)
                 phones.append(pn)
 
-        # 4) Telefonnumre i tel:-links
+        # Telefonnumre i tel:-links
         for m in re.finditer(r'href=["\']tel:([^"\']+)["\']', html, flags=re.I):
             pn = _normalize_phone(m.group(1))
             if pn and pn not in seen_phones:
                 seen_phones.add(pn)
                 phones.append(pn)
 
-    # Hvis vi intet fandt, så ingen fallback
+    # Dedupliker telefoner på “sidste 8 cifre” (samme nr. m. forskellig formattering)
+    uniq_by_last8 = []
+    seen_last8 = set()
+    for pn in phones:
+        k = _last8(pn)
+        if k and k not in seen_last8:
+            seen_last8.add(k)
+            uniq_by_last8.append(pn)
+    phones = uniq_by_last8
+
+    # Ved .dk-domæner – foretræk danske telefonnumre (+45XXXXXXXX)
+    if _site_tld(base_url) == "dk":
+        dk_only = [p for p in phones if _is_dk_phone(p)]
+        if dk_only:
+            phones = dk_only
+
     if not emails_on_domain and not phones:
         return []
 
     return [{
         "name": None,
         "title": None,
-        "emails": emails_on_domain[:3],  # kun samme domæne, ingen off-domain
-        "phones": phones[:3],            # deduplikkeret
+        "emails": emails_on_domain[:3],
+        "phones": phones[:3],
         "score": -1.0,
         "reasons": ["GENERIC_ORG_CONTACT"],
         "source": "page-generic",
@@ -891,7 +975,6 @@ def _extract_generic_org_contacts(base_url: str, pages_html: list[tuple[str, str
         "dom_distance": None,
         "hints": {"identity_gate_bypassed": True},
     }]
-
 
 
 def _extract_from_rdfa(url: str, tree) -> list[ContactCandidate]:
@@ -1247,10 +1330,61 @@ def _score_candidate(c: ContactCandidate) -> ScoredContact:
 class ContactFinder:
     """Henter 1–N sider, udtrækker kandidater, dedupliker, scorer og returnerer top-1."""
 
-    def __init__(self, timeout: float = DEFAULT_TIMEOUT, parallel: int = 4, cache_dir: Optional[str] = ".http_diskcache/html"):
+    def __init__(self, timeout: float = DEFAULT_TIMEOUT, parallel: int = 4,
+                 cache_dir: Optional[str] = ".http_diskcache/html",
+                 use_browser: str = "auto"):  # "auto" | "always" | "never"
         self.timeout = timeout
         self.parallel = max(1, int(parallel))
         self.cache_dir = Path(cache_dir) if cache_dir else None
+        self.use_browser = use_browser
+        self._async_client = None  # lazy
+
+    def _render_with_async_client(self, url: str) -> Optional[str]:
+        """Kør AsyncHtmlClient i separat tråd/loop for sync-kald."""
+        if AsyncHtmlClient is None:
+            return None
+
+        result_holder = {"html": None, "err": None}
+
+        def runner():
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+
+                async def go():
+                    client: AsyncHtmlClient = AsyncHtmlClient(stealth=True)  # type: ignore
+                    await client.startup()
+                    try:
+                        # Brug stærk render når vi beder om den
+                        res = await client.get_raw_html(url, force_playwright=True)  # type: ignore
+                        if isinstance(res, dict):
+                            return res.get("html", "")
+                        return res or ""
+                    finally:
+                        await client.shutdown()
+
+                result_holder["html"] = loop.run_until_complete(go())
+                loop.close()
+            except Exception as e:
+                result_holder["err"] = e
+
+        t = threading.Thread(target=runner, daemon=True)
+        t.start(); t.join()
+        return result_holder["html"]  # kan være None
+
+    def _maybe_js_enhance(self, url: str, html: str) -> str:
+        """Returnér evt. JS-renderet HTML, hvis det giver mening."""
+        if self.use_browser == "never":
+            return html
+        should_render = (self.use_browser == "always") or _is_contactish_url(url) or _needs_js(html)
+        if not should_render:
+            return html
+        rendered = self._render_with_async_client(url)
+        # Brug kun hvis vi reelt fik mere DOM tilbage
+        if rendered and len(rendered) >= len(html) + 500:
+            return rendered
+        return html
+
 
     def _pages_to_try(self, url: str, limit_pages: int = 4) -> list[str]:
         pages = [url] + [self._abs(url, p) for p in FALLBACK_PATHS]
@@ -1368,6 +1502,34 @@ class ContactFinder:
                         htmls[u] = fut.result()
 
         log.debug("Pages fetched (%d): %s", len(htmls), list(htmls.keys()))
+
+        # --- JS-render på kontakt-/team-lignende sider + find profil-links ---
+        profile_candidates: list[str] = []
+        for u in list(htmls.keys()):
+            orig = htmls[u]
+            enhanced = self._maybe_js_enhance(u, orig)
+            if enhanced is not orig:
+                htmls[u] = enhanced  # erstat med renderet DOM
+            # Opdag profiler fra denne side
+            profile_candidates.extend(_discover_profile_links(u, htmls[u], max_links=40))
+
+        # Hent profiler (respekter limit_pages)
+        remaining = max(0, limit_pages - len(htmls))
+        to_add = []
+        seen = set(htmls.keys())
+        for p in profile_candidates:
+            if p not in seen:
+                to_add.append(p); seen.add(p)
+            if len(to_add) >= remaining:
+                break
+
+        if to_add:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.parallel) as ex:
+                futs = {ex.submit(_fetch_text, p, self.timeout, self.cache_dir): p for p in to_add}
+                for fut in concurrent.futures.as_completed(futs):
+                    p = futs[fut]
+                    with contextlib.suppress(Exception):
+                        htmls[p] = fut.result()
 
         # 4) Extract + score
         all_cands: list[ContactCandidate] = []
