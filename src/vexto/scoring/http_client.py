@@ -74,11 +74,23 @@ FALLBACK_USER_AGENTS = [
 def get_random_user_agent() -> str:
     return ua_generator.random if ua_generator else random.choice(FALLBACK_USER_AGENTS)
 
+try:
+    import brotlicffi as _brotli
+except Exception:
+    try:
+        import brotli as _brotli  # type: ignore
+    except Exception:
+        _brotli = None
+
+def _accept_encoding() -> str:
+    # gzip/deflate altid; tilføj br hvis lib er tilgængelig
+    return "gzip, deflate" + (", br" if _brotli is not None else "")
+
 def _get_headers(base_headers: Optional[Dict] = None, user_agent: Optional[str] = None) -> Dict[str, str]:
     headers = {
         "User-Agent": user_agent or get_random_user_agent(),
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Encoding": _accept_encoding(),
         "Connection": "keep-alive",
         "Sec-CH-UA": '"Not/A)Brand";v="8", "Chromium";v="126"',
         "Sec-CH-UA-Mobile": "?0",
