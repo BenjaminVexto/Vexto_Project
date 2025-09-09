@@ -594,6 +594,98 @@ def _http_head_status(url: str, timeout: float = 10.0) -> Optional[int]:
     except Exception:
         return None
 
+def _resolve_redirect(u: str, timeout: float = DEFAULT_TIMEOUT) -> str:
+    """Returnér endelig URL efter redirects (HEAD). Fallback: u uændret."""
+    try:
+        import httpx
+        with httpx.Client(follow_redirects=True, timeout=timeout) as c:
+            r = c.head(u, headers={"User-Agent": "VextoContactFinder/1.0"})
+            return str(r.url) if getattr(r, "url", None) else u
+    except Exception:
+        return u
+
+def _detect_site_lang(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> str:
+    """Returnér 'da'/'en'/'' baseret på <html lang> eller simple ord-heuristikker."""
+    status, html = _safe_get(base_url, timeout=timeout)
+    if status == 0 or not html:
+        return ""
+    m = re.search(r"<html[^>]*lang=['\"]([a-zA-Z-]+)['\"]", html, flags=re.I)
+    if m:
+        return m.group(1).lower().split("-")[0]
+    da_hits = sum(1 for w in ("kontakt", "om os", "tilbage", "forside") if w in html.lower())
+    en_hits = sum(1 for w in ("contact", "about us", "back", "home") if w in html.lower())
+    if da_hits > en_hits:
+        return "da"
+    if en_hits > da_hits:
+        return "en"
+    return ""
+
+def _fetch_robots_txt(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[list[str], list[str]]:
+    """
+    Returnér (sitemaps, disallows) fra robots.txt.
+    Kun simpel parsing: 'Sitemap:' og 'Disallow:' linjer.
+    """
+    try:
+        sp = urlsplit(base_url)
+        robots_url = f"{sp.scheme}://{sp.netloc}/robots.txt"
+        status, text = _safe_get(robots_url, timeout=timeout)
+        if status == 0 or not text:
+            return [], []
+        sitemaps, disallows = [], []
+        for line in text.splitlines():
+            l = line.strip()
+            if not l or l.startswith("#"):
+                continue
+            if l.lower().startswith("sitemap:"):
+                sitemaps.append(l.split(":", 1)[1].strip())
+            elif l.lower().startswith("disallow:"):
+                dis = l.split(":", 1)[1].strip()
+                if dis and dis != "/":
+                    disallows.append(dis)
+        return sitemaps, disallows
+    except Exception:
+        return [], []
+
+def _is_disallowed(path: str, disallows: list[str]) -> bool:
+    """Simpel robots Disallow: prefix-match på sti."""
+    if not disallows:
+        return False
+    p = path or ""
+    for d in disallows:
+        if p.startswith(d):
+            return True
+    return False
+
+def _fetch_sitemap_urls(sitemap_url: str, timeout: float = DEFAULT_TIMEOUT) -> list[str]:
+    """Hent sitemap (xml eller .gz) og returnér liste af <loc>-URLs."""
+    urls: list[str] = []
+    try:
+        import httpx, io, gzip as _gz
+        with httpx.Client(follow_redirects=True, timeout=timeout) as c:
+            r = c.get(sitemap_url)
+            if r.status_code != 200:
+                return []
+            data = r.content or b""
+            if sitemap_url.lower().endswith(".gz"):
+                with _gz.GzipFile(fileobj=io.BytesIO(data)) as gz:
+                    data = gz.read()
+            text = data.decode("utf-8", errors="ignore")
+            for m in re.finditer(r"<loc>\s*([^<\s]+)\s*</loc>", text, flags=re.I):
+                urls.append(m.group(1).strip())
+    except Exception:
+        return urls
+    return urls
+
+def _sitemap_discover_urls(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> list[str]:
+    """Find sitemap-URLs via robots.txt og returnér flad liste (samme host)."""
+    sitemaps, _ = _fetch_robots_txt(base_url, timeout=timeout)
+    found: list[str] = []
+    for sm in sitemaps:
+        found.extend(_fetch_sitemap_urls(sm, timeout=timeout) or [])
+    return [u for u in found if _same_host(base_url, u)]
+
+
+
 def _discover_internal_links(base_url: str, html: str, max_links: int = 20) -> list[str]:
     """
     Scan <a href> på forsiden og returnér interne kandidatsider (kontakt/om/team/…)
@@ -1906,9 +1998,21 @@ class ContactFinder:
         priority_pages = [self._abs(url, p) for p in ("/kontakt", "/kontakt/", "/om", "/om/")]
 
         # Ny rækkefølge: root, PRIORITY, discovery, statics
-        pages_ordered = [url] + priority_pages + discovered + static_pages
+        # 0) Robots + sitemap discovery (kun samme host)
+        try:
+            sm_urls = _sitemap_discover_urls(url, timeout=self.timeout)
+        except Exception as e:
+            log.debug(f"Sitemap discovery fejl: {e!r}")
+            sm_urls = []
+        try:
+            _, disallows = _fetch_robots_txt(url, timeout=self.timeout)
+        except Exception:
+            disallows = []
 
-        # Deduplikér med orden bevaret
+        # 1) Byg rækkefølge med sitemap først (hvis fundet)
+        pages_ordered = [url] + sm_urls + priority_pages + discovered + static_pages
+
+        # 2) Deduplikér med orden bevaret
         seen_norm: set[str] = set()
         pages_unique: list[str] = []
         for u in pages_ordered:
@@ -1917,20 +2021,43 @@ class ContactFinder:
                 pages_unique.append(u)
                 seen_norm.add(k)
 
-        # HEAD-filter: drop oplagte 4xx før vi henter/rendrer (spilder ellers Playwright)
+        # 3) HEAD-cache + redirect-resolve + robots Disallow
+        _head_cache: dict[str, int] = {}
+        def _head_status_cached(u: str) -> int | None:
+            if u in _head_cache:
+                v = _head_cache[u]
+                return v if v != -1 else None
+            s = _http_head_status(u, timeout=self.timeout)
+            _head_cache[u] = s if s is not None else -1
+            return s
+
         pages_filtered: list[str] = []
         for u in pages_unique:
-            resolved = u
-            with contextlib.suppress(Exception):
-                # Resolve endelig URL (så /kontakt → /kontakt/ i plan og resultater)
-                resolved = _resolve_redirect(u, timeout=self.timeout)
-                status = _http_head_status(resolved, timeout=self.timeout)
-                if status and 400 <= status < 500:
-                    log.debug("HEAD drop (%s): %s", status, resolved)
-                    continue
+            resolved = _resolve_redirect(u, timeout=self.timeout)
+            path = (urlsplit(resolved).path or "")
+            if _is_disallowed(path, disallows):
+                log.debug("Robots Disallow skip: %s", resolved)
+                continue
+            status = _head_status_cached(resolved)
+            if status and 400 <= status < 500:
+                log.debug("HEAD drop (%s): %s", status, resolved)
+                continue
             pages_filtered.append(resolved)
 
-        # Prioritér kontakt/om/team først; dernæst korteste sti (heuristik for sandsynlighed)
+        # 4) Sprogfilter: drop engelske fallback-stier på 'da' sites (og omvendt)
+        site_lang = _detect_site_lang(url, timeout=self.timeout)
+        if site_lang == "da":
+            def _is_en(p: str) -> bool:
+                pl = (urlsplit(p).path or "").lower()
+                return any(k in pl for k in ("/contact", "/contact-us", "/about", "/about-us", "/team", "/people", "/staff", "/management", "/board"))
+            pages_filtered = [p for p in pages_filtered if not _is_en(p)]
+        elif site_lang == "en":
+            def _is_da(p: str) -> bool:
+                pl = (urlsplit(p).path or "").lower()
+                return any(k in pl for k in ("/kontakt", "/kontakt-os", "/om", "/om-os", "/medarbejder", "/medarbejdere", "/ansatte", "/ledelse"))
+            pages_filtered = [p for p in pages_filtered if not _is_da(p)]
+
+        # 5) Prioritér kontaktish + kort sti, og cap til limit
         pages_sorted = sorted(
             pages_filtered,
             key=lambda x: (0 if _is_contactish_url(x) else 1, len((urlsplit(x).path or "")))
@@ -1939,6 +2066,7 @@ class ContactFinder:
         # Skær ned til limit_pages
         pages = pages_sorted[:max(1, limit_pages)]
         log.debug("Pages planned (%d): %s", len(pages), pages)
+
 
 
         # 3) Hent resten parallelt (root er evt. allerede hentet)
@@ -1973,7 +2101,7 @@ class ContactFinder:
         merged = self._merge_dedup(all_cands)
         scored = self._score_sort(merged)
 
-        # 6) Returnér som dicts inkl. reasons
+        # 6) Returnér som dicts inkl. reasons (rå liste)
         out = [
             {
                 "name": sc.candidate.name,
@@ -1986,8 +2114,36 @@ class ContactFinder:
             }
             for sc in scored
         ]
-        log.debug("ContactFinder.find_all(%s) -> %d candidates in %.3fs", url, len(out), time.time() - t0)
-        return out
+
+        # 7) Output-clean: drop negative/GATE_FAIL og dedup pr. (email, url)
+        cleaned: list[dict] = []
+        seen_keys: set[tuple[str, str]] = set()
+
+        for r in out:
+            # Fjern støj
+            if r.get("score", 0) < 0:
+                continue
+            reasons = set(r.get("reasons") or [])
+            if "GATE_FAIL" in reasons:
+                continue
+
+            emails = r.get("emails") or []
+            url_out = r.get("url") or ""
+
+            # Dedup-logik: hvis der er emails, dedup pr. (email, url). Ellers pr. ("" , url)
+            keys = [(e.lower(), url_out) for e in emails] if emails else [("", url_out)]
+            if any(k in seen_keys for k in keys):
+                continue
+            for k in keys:
+                seen_keys.add(k)
+
+            cleaned.append(r)
+
+        log.debug(
+            "ContactFinder.find_all(%s) -> %d raw, %d cleaned in %.3fs",
+            url, len(out), len(cleaned), time.time() - t0
+        )
+        return cleaned
 
     def find(self, url: str, limit_pages: int = 4) -> Optional[dict]:
         """Returnér bedste kandidat som dict – eller None."""
