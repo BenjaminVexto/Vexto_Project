@@ -33,6 +33,7 @@ import re
 import sys
 import time
 import threading
+import logging.handlers
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import lru_cache
@@ -40,6 +41,28 @@ from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 from typing import Any, Iterable, Optional
 from vexto.scoring.http_client import _accept_encoding
+
+# Setup log directory
+log_dir = Path(__file__).resolve().parents[2] / "logs"
+log_dir.mkdir(parents=True, exist_ok=True)
+
+log_file = log_dir / "contact_finder.log"
+
+# RotatingFileHandler: 5 MB pr. fil, behold 5 filer
+handler = logging.handlers.RotatingFileHandler(
+    log_file, maxBytes=5_000_000, backupCount=5, encoding="utf-8"
+)
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+
+log = logging.getLogger("vexto.contact_finder")
+log.setLevel(logging.DEBUG)
+log.addHandler(handler)
+# valgfrit: behold konsol kun på WARNING+
+console = logging.StreamHandler()
+console.setLevel(logging.WARNING)
+console.setFormatter(formatter)
+log.addHandler(console)
 
 try:
     # Kræver at AsyncHtmlClient findes i jeres http_client
@@ -397,6 +420,16 @@ def _abs_url(base: str, href: str) -> Optional[str]:
     except Exception:
         return None
 
+def _http_head_status(url: str, timeout: float = 10.0) -> Optional[int]:
+    """Let HEAD til at afgøre om ressourcen findes. Følger redirects."""
+    try:
+        import httpx
+        with httpx.Client(follow_redirects=True, timeout=timeout) as c:
+            r = c.head(url, headers={"User-Agent": "VextoContactFinder/1.0"})
+            return r.status_code
+    except Exception:
+        return None
+
 def _discover_internal_links(base_url: str, html: str, max_links: int = 20) -> list[str]:
     """
     Scan <a href> på forsiden og returnér interne kandidatsider (kontakt/om/team/…)
@@ -473,15 +506,19 @@ def _passes_identity_gate(
 ) -> bool:
     """A: (plausibelt navn + email-match>=2) ELLER
        B: (plausibelt navn + rolle-titel) ELLER
-       C: (plausibelt navn + e-mail med samme domæne som sitet + ikke-generisk local + tæt DOM)"""
-    if not _is_plausible_name(name):
-        return False
-    if _best_email_score(emails or [], name) >= 2:
+       C: (plausibelt navn + e-mail med samme domæne som sitet + ikke-generisk local + tæt DOM)
+       D: (kontakt/om/team-side + e-mail på eget domæne + ikke-generisk local + DOM-afstand ≤ 1) — navn/titel kan mangle"""
+    has_plausible_name = _is_plausible_name(name)
+
+    # A
+    if has_plausible_name and _best_email_score(emails or [], name) >= 2:
         return True
+    # B
     t = _sanitize_title(title)
-    if t and _looks_like_role(t):
+    if has_plausible_name and t and _looks_like_role(t):
         return True
-    if url and dom_distance is not None and dom_distance <= 1:
+    # C
+    if has_plausible_name and url and dom_distance is not None and dom_distance <= 1:
         for em in (emails or []):
             try:
                 local = em.split("@", 1)[0]
@@ -489,6 +526,23 @@ def _passes_identity_gate(
                 continue
             if not _is_generic_local(local) and _email_domain_matches_site(em, url):
                 return True
+
+    # D (lempelse på kontakt-/om-/team-sider uden navn/titel)
+    if url and _is_contactish_url(url) and dom_distance is not None and dom_distance <= 1:
+        for em in (emails or []):
+            try:
+                local = em.split("@", 1)[0]
+            except Exception:
+                continue
+            if _email_domain_matches_site(em, url):
+                # ikke-generisk local accepteres direkte
+                if not _is_generic_local(local):
+                    return True
+                # initials-agtige locals (2–4 bogstaver) accepteres også på kontakt/om/team
+                letters = re.sub(r"[^a-zæøå]", "", local.lower())
+                if 2 <= len(letters) <= 4:
+                    return True
+
     return False
 
 def _dedup_key(c: ContactCandidate) -> tuple:
@@ -1454,22 +1508,56 @@ class ContactFinder:
         self,
         timeout: float = DEFAULT_TIMEOUT,
         parallel: int = 4,
-        cache_dir: Optional[str] = ".http_diskcache/html",
-        use_browser: str = "auto",  # 'auto' | 'always' | 'never'
+        cache_dir: Optional[Path] = ".http_diskcache/html",
+        use_browser: str = "auto",  # {"auto","always","never"}
     ):
         self.timeout = timeout
         self.parallel = max(1, int(parallel))
         self.cache_dir = Path(cache_dir) if cache_dir else None
 
-        # Browser-politik
-        self.use_browser = (use_browser or "auto").lower().strip()
+        # ÉN kilde til sandhed for browser-politik
+        self.use_browser = (use_browser or "auto").strip().lower()
         if self.use_browser not in {"auto", "always", "never"}:
             self.use_browser = "auto"
 
-        # Per-kørsel HTML cache + “allerede renderet” set (normaliserede URLs)
+        # Per-kørsel HTML-cache (kun for denne instans)
         self._html_cache_local: dict[str, str] = {}
+        # Normaliserede URLs som vi allerede har Playwright-renderet i denne kørsel
         self._rendered_once: set[str] = set()
-    
+        self._pw_attempted: set[str] = set()   # URLs forsøgt til PW (debounce)
+        self._pw_budget: int = 3               # maks. render pr. kørsel (kan tunes)
+
+    # ------------------------- Browser / rendering -------------------------
+
+    def _should_render(self, url: str, html: Optional[str]) -> bool:
+        """
+        Politisk + heuristisk beslutning om Playwright-rendering.
+
+        - 'never'  -> aldrig render
+        - 'always' -> render altid
+        - 'auto'   -> render hvis:
+            * URL ligner kontakt-/om-/team-side, ELLER
+            * HTML er tom/tynd eller indeholder JS-hints (fx Elementor) eller mangler kontaktlinks
+        """
+        policy = self.use_browser
+        if policy == "never":
+            return False
+        if policy == "always":
+            return True
+
+        # AUTO
+        u = url or ""
+        if _is_contactish_url(u):  # brug den definerede slug-heuristik
+            return True
+
+        txt = (html or "")
+        if not txt:
+            return True
+        if _needs_js(txt):
+            return True
+
+        return False
+
     def _render_with_async_client(self, url: str) -> Optional[str]:
         """Kør AsyncHtmlClient i separat tråd/loop for sync-kald."""
         if AsyncHtmlClient is None:
@@ -1500,80 +1588,67 @@ class ContactFinder:
                 result_holder["err"] = e
 
         t = threading.Thread(target=runner, daemon=True)
-        t.start(); t.join()
+        t.start()
+        t.join()
         return result_holder["html"]  # kan være None
 
-    def _maybe_js_enhance(self, url: str, original_html: str) -> str:
-        """
-        Beslut om vi skal render’e med Playwright.
-        - Aldrig på 404/”not found”-sider
-        - Dedupliker via normaliseret URL (ingen dobbeltrender af /kontakt vs /kontakt/)
-        - 'never' -> aldrig render; 'always' -> render kun “kontakt/om/team”-agtige sider
-        - 'auto' (default) -> render hvis Elementor/WP-markører ELLER kontakt/om/team med tynd HTML
-        """
-        html = original_html or ""
-        key = _norm_url_for_fetch(url)
-
-        # Politikken 'never': brug bare original HTML
-        if self.use_browser == "never":
-            return html
-
-        # Hvis vi allerede har renderet denne side i denne kørsel, så brug cache/original
-        if key in self._rendered_once:
-            return html or self._html_cache_local.get(key, "")
-
-        # Rendér aldrig 404/”not found”
-        if _looks_404(html):
-            return html
-
-        lower = html.lower()
-
-        # Heuristik: skal vi render’e?
-        should_render = False
-
-        def is_contact_like(u: str) -> bool:
-            p = (u or "").lower()
-            return any(k in p for k in (
-                "/kontakt", "/contact", "/kontakt-os", "/contact-us",
-                "/om", "/about", "/om-os", "/about-us",
-                "/team", "/medarbejder", "/people", "/staff"
-            ))
-
-
-    def _pages_to_try(self, url: str, limit_pages: int = 4) -> list[str]:
-        pages = [url] + [self._abs(url, p) for p in FALLBACK_PATHS]
-        # dedup bevar rækkefølge
-        seen = set()
-        ordered = []
-        for u in pages:
-            if u not in seen:
-                ordered.append(u)
-                seen.add(u)
-        return ordered[:max(1, limit_pages)]
-
     def _fetch_text_smart(self, url: str) -> str:
-        """Billig HTTP først; render én gang for kontakt/om/team-sider eller hvis HTML er tom."""
+        """
+        Billig HTTP først; render én gang for kontakt/om/team-sider
+        eller hvis HTML er tom/tynd/JS-afhængig.
+        """
         key = _norm_url_for_fetch(url)
+
+        # Lokal per-run cache
         cached = self._html_cache_local.get(key)
         if cached is not None:
             return cached
 
         html = ""
-        # 1) Prøv hurtig HTTP (httpx/requests via vores eksisterende _fetch_text)
+
+        # 1) Prøv hurtig HTTP (httpx/requests via eksisterende _fetch_text)
         with contextlib.suppress(Exception):
             html = _fetch_text(url, self.timeout, self.cache_dir)
 
-        # 2) Vurdér om vi bør render’e
-        need_js = self.use_playwright and (_is_contact_like(url) or not html or "elementor" in (html.lower() if html else ""))
-        if need_js and key not in self._rendered_once:
+        # 1b) Hvis vi kan se 404 i HTML, så drop Playwright og returnér
+        if html and _looks_404(html):
+            self._html_cache_local[key] = html or ""
+            return html or ""
+
+        # 2) Vurdér om vi bør render’e (politik: use_browser = "never" | "auto" | "always")
+        should_render = False
+        if self.use_browser == "always":
+            should_render = _is_contact_like(url)
+        elif self.use_browser == "auto":
+            lh = (html.lower() if html else "")
+            should_render = _is_contact_like(url) or (not html) or ("elementor" in lh)
+        # "never" -> False
+
+        # 2b) Render aldrig hvis URL svarer 404 (billig HEAD for tom HTML)
+        if should_render and not html:
+            with contextlib.suppress(Exception):
+                status = _http_head_status(url, timeout=self.timeout)
+                if status and 400 <= status < 500:
+                    should_render = False  # skip 4xx
+
+        if should_render and key not in self._rendered_once:
+            # Debounce + budget
+            if key in self._pw_attempted or self._pw_budget <= 0:
+                self._html_cache_local[key] = html or ""
+                return html or ""
+
+            self._pw_attempted.add(key)
+            self._pw_budget -= 1
+
             rendered = _fetch_with_playwright_sync(url)
             if rendered:
                 html = rendered
             self._rendered_once.add(key)
 
+
+        # 3) Gem i lokal cache og retur
         self._html_cache_local[key] = html or ""
         return html or ""
-
 
     @staticmethod
     def _abs(base: str, path: str) -> str:
@@ -1587,10 +1662,23 @@ class ContactFinder:
                 return m.group(1) + path
         return base.rstrip("/") + "/" + path.lstrip("/")
 
+    def _pages_to_try(self, url: str, limit_pages: int = 4) -> list[str]:
+        pages = [url] + [self._abs(url, p) for p in FALLBACK_PATHS]
+        # dedup bevar rækkefølge
+        seen = set()
+        ordered = []
+        for u in pages:
+            if u not in seen:
+                ordered.append(u)
+                seen.add(u)
+        return ordered[:max(1, limit_pages)]
+
+    # ---------------------------- Extract & score ----------------------------
+
     def _extract_all(self, url: str, html: str) -> list[ContactCandidate]:
         tree = _parse_html(html)
-        out: list[ContactCandidate] = []
 
+        out: list[ContactCandidate] = []
         # Primære extractors
         out.extend(_extract_from_jsonld(url, html))
         out.extend(_extract_from_mailtos(url, tree if tree is not None else html))
@@ -1598,7 +1686,6 @@ class ContactFinder:
         out.extend(_extract_from_text_emails(url, html))
         out.extend(_extract_from_rdfa(url, tree))
         out.extend(_extract_from_microformats(url, tree))
-
         # NEW: Staff-grid (WP blokke, team/medarbejdere)
         out.extend(_extract_from_staff_grid(url, tree))
 
@@ -1631,7 +1718,7 @@ class ContactFinder:
         scored.sort(key=lambda sc: sc.score, reverse=True)
         return scored
 
-    # --------------------------- Sync API -------------------------------------
+    # ------------------------------- Sync API ---------------------------------
 
     def find_all(self, url: str, limit_pages: int = 4) -> list[dict]:
         """Returnér alle (scored) kandidater som dicts (reasons inkluderet)."""
@@ -1646,8 +1733,8 @@ class ContactFinder:
             root_html = ""
 
         # 2) Byg liste over sider at prøve:
-        #    - discovery fra forsiden (kontakt/om/team mv.)  -> PRIORITET
-        #    - + statiske fallback-stier
+        # - discovery fra forsiden (kontakt/om/team mv.) -> PRIORITET
+        # - + statiske fallback-stier
         discovered = _discover_internal_links(url, root_html, max_links=20) if root_html else []
         static_pages = [self._abs(url, p) for p in FALLBACK_PATHS]
 
@@ -1671,175 +1758,65 @@ class ContactFinder:
         log.debug("Pages planned (%d): %s", len(pages), pages)
 
         # 3) Hent resten parallelt (root er evt. allerede hentet)
-        to_fetch = [u for u in pages if u not in htmls]
-        if to_fetch:
-            if self.use_playwright:
-                # Sekventielt når PW er aktiv → undgå flere browser-instanser og dobbeltrender
-                for u in to_fetch:
-                    with contextlib.suppress(Exception):
-                        htmls[u] = self._fetch_text_smart(u)
-            else:
-                # Hurtig parallel fetch når vi kun bruger HTTP
-                with concurrent.futures.ThreadPoolExecutor(max_workers=self.parallel) as ex:
-                    futs = {ex.submit(self._fetch_text_smart, u): u for u in to_fetch}
-                    for fut in concurrent.futures.as_completed(futs):
-                        u = futs[fut]
-                        with contextlib.suppress(Exception):
-                            htmls[u] = fut.result()
+        def fetch(u: str) -> tuple[str, str]:
+            try:
+                if u in htmls:
+                    return (u, htmls[u])
+                h = self._fetch_text_smart(u)
+                return (u, h)
+            except Exception:
+                return (u, "")
 
-        log.debug("Pages fetched (%d): %s", len(htmls), list(htmls.keys()))
-
-        # --- JS-render på kontakt-/team-lignende sider + find profil-links ---
-        profile_candidates: list[str] = []
-        for u in list(htmls.keys()):
-            orig = htmls[u]
-            enhanced = self._maybe_js_enhance(u, orig)
-            if enhanced is not orig:
-                htmls[u] = enhanced  # erstat med renderet DOM
-            # Opdag profiler fra denne side
-            profile_candidates.extend(_discover_profile_links(u, htmls[u], max_links=40))
-
-        # Hent profiler (respekter limit_pages)
-        remaining = max(0, limit_pages - len(htmls))
-        to_add = []
-        seen = set(htmls.keys())
-        for p in profile_candidates:
-            if p not in seen:
-                to_add.append(p); seen.add(p)
-            if len(to_add) >= remaining:
-                break
-
-        if to_add:
+        if len(pages) > 1 and self.parallel > 1:
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.parallel) as ex:
-                futs = {ex.submit(_fetch_text, p, self.timeout, self.cache_dir): p for p in to_add}
-                for fut in concurrent.futures.as_completed(futs):
-                    p = futs[fut]
-                    with contextlib.suppress(Exception):
-                        htmls[p] = fut.result()
+                for u, h in ex.map(fetch, pages):
+                    htmls[u] = h
+        else:
+            for u in pages:
+                if u not in htmls:
+                    _, h = fetch(u)
+                    htmls[u] = h
 
-        # 4) Extract + score
+        # 4) Udpak kandidater fra alle sider
         all_cands: list[ContactCandidate] = []
-        for u, html in htmls.items():
-            all_cands.extend(self._extract_all(u, html))
+        for u, h in htmls.items():
+            if not h or _looks_404(h):
+                continue
+            cands = self._extract_all(u, h)
+            all_cands.extend(cands)
+
+        # 5) Merge + dedup + score
         merged = self._merge_dedup(all_cands)
         scored = self._score_sort(merged)
 
-        # kandidater der består gate (score > -900)
-        passing = [sc for sc in scored if sc.score > -900]
-
-        # Fallback hvis ingen består gate
-        if not passing:
-            generic = _extract_generic_org_contacts(url, list(htmls.items()))
-            if generic:
-                log.debug("Generic org contact fallback used: %s", generic)
-                return generic
-
-        dt = (time.time() - t0) * 1000
-        log.debug(
-            "ContactFinder.find_all: %d pages, %d cands -> %d scored in %.0fms",
-            len(htmls), len(all_cands), len(scored), dt
-        )
-
-        # returnér kun dem der består gate
-        return [
+        # 6) Returnér som dicts inkl. reasons
+        out = [
             {
                 "name": sc.candidate.name,
                 "title": sc.candidate.title,
                 "emails": sc.candidate.emails,
                 "phones": sc.candidate.phones,
+                "url": sc.candidate.url,
                 "score": sc.score,
                 "reasons": sc.reasons,
-                "source": sc.candidate.source,
-                "url": sc.candidate.url,
-                "dom_distance": sc.candidate.dom_distance,
-                "hints": sc.candidate.hints,
             }
-            for sc in passing
+            for sc in scored
         ]
-
+        log.debug("ContactFinder.find_all(%s) -> %d candidates in %.3fs", url, len(out), time.time() - t0)
+        return out
 
     def find(self, url: str, limit_pages: int = 4) -> Optional[dict]:
-        """Top-1 kandidat som dict – eller None."""
-        try:
-            scored = self.find_all(url, limit_pages=limit_pages)
-            if not scored:
-                log.info("No valid contacts found for %s", url)
-                return None
-            top = scored[0]
-            log.info("Selected contact: %s (score=%.1f reasons=%s)",
-                     top.get("name"), top.get("score"), top.get("reasons"))
-            return top
-        except Exception as e:
-            log.error("Error finding contact for %s: %s", url, e, exc_info=True)
-            return None
+        """Returnér bedste kandidat som dict – eller None."""
+        all_ = self.find_all(url, limit_pages=limit_pages)
+        return all_[0] if all_ else None
 
-    # --------------------------- Async API ------------------------------------
 
-    async def find_all_async(self, url: str, limit_pages: int = 4) -> list[dict]:
-        """Asynkron version – bruger httpx.AsyncClient hvis tilgængelig."""
-        if httpx is None:
-            loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(None, self.find_all, url, limit_pages)
+# ------------------------------ Offentligt API --------------------------------
 
-        t0 = time.time()
-        pages = self._pages_to_try(url, limit_pages=limit_pages)
-        headers = {
-            "User-Agent": "VextoContactFinder/1.0 (+https://vexto.io)",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Encoding": _accept_encoding(),
-        }
+def find_best_contact(url: str, limit_pages: int = 4) -> Optional[dict]:
+    return ContactFinder().find(url, limit_pages=limit_pages)
 
-        htmls: dict[str, str] = {}
-        async with httpx.AsyncClient(http2=True, timeout=self.timeout, headers=headers, follow_redirects=True) as cli:
-            async def fetch_one(u: str):
-                with contextlib.suppress(Exception):
-                    r = await cli.get(u)
-                    r.raise_for_status()
-                    htmls[u] = r.text
-            sem = asyncio.Semaphore(self.parallel)
-            async def guarded(u: str):
-                async with sem:
-                    await fetch_one(u)
-            await asyncio.gather(*[guarded(u) for u in pages])
-
-        all_cands: list[ContactCandidate] = []
-        for u, html in htmls.items():
-            all_cands.extend(self._extract_all(u, html))
-        merged = self._merge_dedup(all_cands)
-        scored = self._score_sort(merged)
-
-        dt = (time.time() - t0) * 1000
-        log.debug("ContactFinder.find_all_async: %d pages, %d cands -> %d scored in %.0fms",
-                  len(htmls), len(all_cands), len(scored), dt)
-
-        return [
-            {
-                "name": sc.candidate.name,
-                "title": sc.candidate.title,
-                "emails": sc.candidate.emails,
-                "phones": sc.candidate.phones,
-                "score": sc.score,
-                "reasons": sc.reasons,
-                "source": sc.candidate.source,
-                "url": sc.candidate.url,
-                "dom_distance": sc.candidate.dom_distance,
-                "hints": sc.candidate.hints,
-            }
-            for sc in scored if sc.score > -900
-        ]
-
-    async def find_async(self, url: str, limit_pages: int = 4) -> Optional[dict]:
-        scored = await self.find_all_async(url, limit_pages=limit_pages)
-        return scored[0] if scored else None
-
-# ------------------------------- Public API -----------------------------------
-
-def find_best_contact(url: str) -> Optional[dict]:
-    """Synkron convenience – find top-1 kontakt for et givent website-URL."""
-    return ContactFinder().find(url)
-
-# --- Kompatibilitets-aliasser (til gamle kald i koden) ---
-
+# Kompat-aliaser (gamle kald i projektet)
 def find_contacts(url: str, limit_pages: int = 4) -> list[dict]:
     return ContactFinder().find_all(url, limit_pages=limit_pages)
 
@@ -1851,6 +1828,7 @@ def extract_best_contact(url: str, limit_pages: int = 4) -> Optional[dict]:
 
 def find_top_contact(url: str, limit_pages: int = 4) -> Optional[dict]:
     return ContactFinder().find(url, limit_pages=limit_pages)
+
 
 # ------------------------------- CLI / test -----------------------------------
 
