@@ -70,7 +70,12 @@ try:
 except Exception:
     AsyncHtmlClient = None  # type: ignore
 
-_SHARED_PW_CLIENT = None  # type: ignore
+_SHARED_PW_CLIENT = None
+
+# --- Playwright circuit-breaker ---
+_PW_FAILS = 0
+_PW_FAILS_MAX = 3  # efter 3 fejl i træk stopper vi midlertidigt PW-eskalering
+_PW_DISABLED = False
 
 def _norm_url_for_fetch(u: str) -> str:
     """Normalisér URL for dedup: fjern trailing slash (undtagen '/'), drop fragment."""
@@ -93,19 +98,53 @@ def _is_contact_like(u: str) -> bool:
     ))
 
 def _fetch_with_playwright_sync(url: str) -> str:
-    """Renderer side med delt Playwright-klient (singleton)."""
+    """Renderer side med delt Playwright-klient (singleton).
+    Indeholder circuit-breaker, timeout og JS-detektionsfilter.
+    """
     if AsyncHtmlClient is None:
         return ""
+
     import asyncio
+
     async def _go(u: str) -> str:
-        global _SHARED_PW_CLIENT
+        global _SHARED_PW_CLIENT, _PW_FAILS, _PW_DISABLED
+
+        # billigt GET-tjek før vi starter Playwright
+        status, pre_html = _safe_get(u)
+        if status != 200:
+            log.debug(f"Springer Playwright over (status {status}) for {u}")
+            return pre_html
+
+        if not _needs_js(pre_html):
+            log.debug(f"Playwright ikke nødvendig (statisk HTML) for {u}")
+            return pre_html
+
+        if _PW_DISABLED:
+            log.debug("Playwright er midlertidigt deaktiveret (circuit-breaker).")
+            return pre_html
+
         if _SHARED_PW_CLIENT is None:
             _SHARED_PW_CLIENT = AsyncHtmlClient(stealth=True)
             await _SHARED_PW_CLIENT.startup()
-        res = await _SHARED_PW_CLIENT.get_raw_html(u, force_playwright=True)
-        if isinstance(res, dict):
-            return (res.get("html") or "")
-        return res or ""
+
+        try:
+            # Hård timeout for at undgå at PW “går kold”
+            html = await asyncio.wait_for(
+                _SHARED_PW_CLIENT.get_raw_html(u, force_playwright=True),
+                timeout=12.0,
+            )
+            if isinstance(html, dict):
+                html = html.get("html") or ""
+            _PW_FAILS = 0  # nulstil ved succes
+            return html or pre_html
+        except Exception as e:
+            _PW_FAILS += 1
+            log.debug(f"Playwright fejl ({_PW_FAILS}/{_PW_FAILS_MAX}) for {u}: {e!r}")
+            if _PW_FAILS >= _PW_FAILS_MAX:
+                _PW_DISABLED = True
+                log.warning("Deaktiverer midlertidigt Playwright-eskalering (for mange fejl).")
+            return pre_html
+
     try:
         loop = asyncio.get_event_loop()
     except RuntimeError:
@@ -137,8 +176,10 @@ if httpx is None:
     except Exception:
         requests = None  # type: ignore
 
-
-log = logging.getLogger(__name__)
+# Brug den allerede konfigurerede modul-logger; ingen overskrivning her!
+# Sikr ingen dobbelt-propagation op til root.
+log.propagate = False
+log.debug("ContactFinder module bootet og log-handler er aktiv.")
 
 # ------------------------------- Konstanter -----------------------------------
 
@@ -254,6 +295,105 @@ DISCOVERY_KEYWORDS = {
 }
 
 DEFAULT_TIMEOUT = 12.0  # sekunder
+
+def _safe_get(url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[int, str]:
+    """Billig GET m. httpx; returnér (status, text)."""
+    try:
+        import httpx
+        with httpx.Client(follow_redirects=True, timeout=timeout, headers={"User-Agent": "VextoContactFinder/1.0", "Accept-Encoding": _accept_encoding}) as c:
+            r = c.get(url)
+            return r.status_code, r.text or ""
+    except Exception as e:
+        log.debug(f"_safe_get fejl for {url}: {e!r}")
+        return 0, ""
+
+async def _get_html_via_playwright(u: str, fallback_html: str = "", timeout: float = 12.0) -> str:
+    """Indkapsler PW-kald med timeout + circuit breaker."""
+    global _PW_FAILS, _PW_DISABLED
+
+    if _PW_DISABLED:
+        log.debug("Playwright er midlertidigt deaktiveret (circuit-breaker). Bruger fallback_html.")
+        return fallback_html
+
+    if _SHARED_PW_CLIENT is None:
+        log.debug("Playwright-klient er ikke initialiseret. Bruger fallback_html.")
+        return fallback_html
+
+    try:
+        # Hård timeout om PW-kaldet for at undgå 'går kold'
+        import asyncio
+        html = await asyncio.wait_for(
+            _SHARED_PW_CLIENT.get_raw_html(u, force_playwright=True),
+            timeout=timeout
+        )
+        _PW_FAILS = 0  # nulstil ved succes
+        return html or fallback_html
+    except Exception as e:
+        _PW_FAILS += 1
+        log.debug(f"Playwright fejl ({_PW_FAILS}/{_PW_FAILS_MAX}) for {u}: {e!r}")
+        if _PW_FAILS >= _PW_FAILS_MAX:
+            _PW_DISABLED = True
+            log.warning("Deaktiverer midlertidigt Playwright-eskalering (for mange fejl i træk).")
+        return fallback_html
+
+
+
+def _candidate_score(u: str) -> int:
+    """Højere score til kontakt/team/om; brug til prioritering."""
+    p = (urlsplit(u).path or "").lower()
+    score = 0
+    score += 100 if _is_contactish_url(u) else 0
+    score += 20 if any(k in p for k in ("about", "om")) else 0
+    score += 10 if any(k in p for k in ("team", "medarbejder", "people", "staff")) else 0
+    return score
+
+def _plan_candidates(base_url: str, limit_pages: int = 8) -> list[str]:
+    """Lav en prioriteret, HEAD-valideret liste over interne kandidatsider."""
+    status, html = _safe_get(base_url)
+    if status == 0:
+        return [base_url]  # som minimum
+
+    # Start med base_url
+    cands: list[str] = [base_url]
+
+    # Udtræk interne links via simple heuristikker (anker-tekst/URL-indhold)
+    try:
+        # hurtig regex-baseret discovery; evt. suppler med eksisterende util hvis tilgængelig
+        for m in re.finditer(r'href=["\']([^"\']+)["\']', html, flags=re.I):
+            href = _abs_url(base_url, m.group(1))
+            if not href or not _same_host(base_url, href): 
+                continue
+            t = m.group(0).lower()
+            if any(k in t for k in DISCOVERY_KEYWORDS) or _is_contactish_url(href):
+                cands.append(href)
+    except Exception as e:
+        log.debug(f"Discovery fejl: {e!r}")
+
+    # Tilføj kendte fallback paths (kun hvis samme host)
+    for fp in FALLBACK_PATHS:
+        u = urljoin(base_url, fp)
+        if _same_host(base_url, u):
+            cands.append(u)
+
+    # Dedup
+    seen, uniq = set(), []
+    for u in cands:
+        n = _norm_url_for_fetch(u)
+        if n not in seen:
+            uniq.append(n); seen.add(n)
+
+    # HEAD-filter: behold kun eksisterende/redirectede sider
+    filtered: list[str] = []
+    for u in uniq:
+        code = _http_head_status(u) or 0
+        if code in (200, 301, 302, 307, 308):
+            filtered.append(u)
+
+    # Prioritér efter mønstre (kontakt > about > team …)
+    filtered.sort(key=_candidate_score, reverse=True)
+
+    # Begræns mængden
+    return filtered[: max(1, limit_pages)]
 
 __all__ = [
     "ContactFinder",
@@ -1753,9 +1893,26 @@ class ContactFinder:
                 pages_unique.append(u)
                 seen_norm.add(k)
 
+        # HEAD-filter: drop oplagte 4xx før vi henter/rendrer (spilder ellers Playwright)
+        pages_filtered: list[str] = []
+        for u in pages_unique:
+            with contextlib.suppress(Exception):
+                status = _http_head_status(u, timeout=self.timeout)
+                if status and 400 <= status < 500:
+                    log.debug("HEAD drop (%s): %s", status, u)
+                    continue
+            pages_filtered.append(u)
+
+        # Prioritér kontakt/om/team først; dernæst korteste sti (heuristik for sandsynlighed)
+        pages_sorted = sorted(
+            pages_filtered,
+            key=lambda x: (0 if _is_contactish_url(x) else 1, len((urlsplit(x).path or "")))
+        )
+
         # Skær ned til limit_pages
-        pages = pages_unique[:max(1, limit_pages)]
+        pages = pages_sorted[:max(1, limit_pages)]
         log.debug("Pages planned (%d): %s", len(pages), pages)
+
 
         # 3) Hent resten parallelt (root er evt. allerede hentet)
         def fetch(u: str) -> tuple[str, str]:
