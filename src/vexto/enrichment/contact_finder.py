@@ -99,7 +99,7 @@ def _is_contact_like(u: str) -> bool:
 
 def _fetch_with_playwright_sync(url: str) -> str:
     """Renderer side med delt Playwright-klient (singleton).
-    Indeholder circuit-breaker, timeout og JS-detektionsfilter.
+    Indeholder status/_needs_js logging, timeout og circuit-breaker.
     """
     if AsyncHtmlClient is None:
         return ""
@@ -107,35 +107,46 @@ def _fetch_with_playwright_sync(url: str) -> str:
     import asyncio
 
     async def _go(u: str) -> str:
-        global _SHARED_PW_CLIENT, _PW_FAILS, _PW_DISABLED
+        global _SHARED_PW_CLIENT, _PW_FAILS, _PW_FAILS_MAX, _PW_DISABLED
 
-        # billigt GET-tjek før vi starter Playwright
+        # Billig GET før PW: find status + pre_html til beslutning
         status, pre_html = _safe_get(u)
+        needs = False
+        try:
+            needs = _needs_js(pre_html)
+        except Exception:  # defensivt
+            needs = False
+
+        log.debug(f"PW gate for {u} -> status={status}, needs_js={needs}, pw_disabled={_PW_DISABLED}")
+
+        # 1) Drop PW på ≠200
         if status != 200:
             log.debug(f"Springer Playwright over (status {status}) for {u}")
             return pre_html
 
-        if not _needs_js(pre_html):
+        # 2) Drop PW når siden ikke kræver JS
+        if not needs:
             log.debug(f"Playwright ikke nødvendig (statisk HTML) for {u}")
             return pre_html
 
+        # 3) Circuit-breaker
         if _PW_DISABLED:
-            log.debug("Playwright er midlertidigt deaktiveret (circuit-breaker).")
+            log.debug("Playwright er midlertidigt deaktiveret (circuit-breaker). Bruger pre_html.")
             return pre_html
 
+        # 4) Kør PW med hård timeout
         if _SHARED_PW_CLIENT is None:
             _SHARED_PW_CLIENT = AsyncHtmlClient(stealth=True)
             await _SHARED_PW_CLIENT.startup()
 
         try:
-            # Hård timeout for at undgå at PW “går kold”
             html = await asyncio.wait_for(
                 _SHARED_PW_CLIENT.get_raw_html(u, force_playwright=True),
-                timeout=12.0,
+                timeout=12.0
             )
             if isinstance(html, dict):
                 html = html.get("html") or ""
-            _PW_FAILS = 0  # nulstil ved succes
+            _PW_FAILS = 0
             return html or pre_html
         except Exception as e:
             _PW_FAILS += 1
@@ -151,6 +162,7 @@ def _fetch_with_playwright_sync(url: str) -> str:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
     return loop.run_until_complete(_go(url))
+
 
 
 # -------------------------- Valgfri eksterne libs -----------------------------
@@ -467,6 +479,18 @@ def _sanitize_title(title: str | None) -> str | None:
     t2 = re.sub(pat, "", t)
     t2 = re.sub(r"\s{2,}", " ", t2).strip(",;:-— ").strip()
     return t2 or None
+
+def _resolve_redirect(u: str, timeout: float = DEFAULT_TIMEOUT) -> str:
+    """Returnér endelig URL efter redirects (HEAD med follow_redirects).
+    Fallback: returnér u uændret.
+    """
+    try:
+        import httpx
+        with httpx.Client(follow_redirects=True, timeout=timeout, headers={"User-Agent": "VextoContactFinder/1.0"}) as c:
+            r = c.head(u)
+            return str(r.url) if r is not None and r.url is not None else u
+    except Exception:
+        return u
 
 def _role_strength(title: str | None) -> int:
     if not title:
@@ -1896,12 +1920,15 @@ class ContactFinder:
         # HEAD-filter: drop oplagte 4xx før vi henter/rendrer (spilder ellers Playwright)
         pages_filtered: list[str] = []
         for u in pages_unique:
+            resolved = u
             with contextlib.suppress(Exception):
-                status = _http_head_status(u, timeout=self.timeout)
+                # Resolve endelig URL (så /kontakt → /kontakt/ i plan og resultater)
+                resolved = _resolve_redirect(u, timeout=self.timeout)
+                status = _http_head_status(resolved, timeout=self.timeout)
                 if status and 400 <= status < 500:
-                    log.debug("HEAD drop (%s): %s", status, u)
+                    log.debug("HEAD drop (%s): %s", status, resolved)
                     continue
-            pages_filtered.append(u)
+            pages_filtered.append(resolved)
 
         # Prioritér kontakt/om/team først; dernæst korteste sti (heuristik for sandsynlighed)
         pages_sorted = sorted(
