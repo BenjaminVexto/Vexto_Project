@@ -215,7 +215,7 @@ def _fetch_with_playwright_sync(url: str, pre_html: Optional[str] = None, pre_st
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-    return loop.run_until_complete(_go(url))
+    return loop.run_until_complete(_go(url, pre_html, pre_status))
 
 
 
@@ -350,7 +350,7 @@ GENERIC_EMAIL_USERS = {
 }
 
 # Simpel navnetoken (kapitaliseret, med danske bogstaver)
-NAME_TOKEN = r"[A-ZÆØÅ][a-zA-ZÀ-ÖØ-öø-ÿ'’-]{1,30}"
+NAME_TOKEN = r"[A-ZÆØÅ][a-zA-ZÀ-ÖØ-öø-ÿ'’\.-]{1,30}"
 
 # Sider vi prøver udover root
 FALLBACK_PATHS = (
@@ -932,11 +932,14 @@ def _fetch_text(url: str, timeout: float = DEFAULT_TIMEOUT, cache_dir: Optional[
     if cached:
         return cached
 
+    ae = _accept_encoding() if callable(_accept_encoding) else _accept_encoding  # kan være str/callable
+    if not isinstance(ae, (str, bytes)) or (isinstance(ae, str) and not ae.strip()):
+        ae = "gzip, deflate, br"
     headers = {
         "User-Agent": "VextoContactFinder/1.0 (+https://vexto.io)",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Encoding": _accept_encoding(),   # ⬅️ samme anker
-    }
+        "Accept-Encoding": ae,
+}
     if httpx is not None:
         with httpx.Client(http2=True, timeout=timeout, headers=headers, follow_redirects=True) as cli:
             r = cli.get(url)
@@ -1246,10 +1249,17 @@ def _harvest_identity_from_container(node, max_depth: int = 7) -> tuple[Optional
                     name = raw
                     break
                 if not name:
+                    # lowercase → Title Case (eksisterende)
                     promo = _maybe_promote_name_case(raw)
                     if promo and _is_plausible_name(promo):
                         name = promo
                         break
+                    # NYT: ALL CAPS → Title Case, så "HENRIK L. CHRISTIANSEN" bliver plausibelt
+                    if raw and raw.isupper():
+                        cap = " ".join(w[:1].upper() + w[1:].lower() for w in raw.split())
+                        if _is_plausible_name(cap):
+                            name = cap
+                            break
         elif hasattr(container, "select"):
             for el in container.select(selectors):
                 raw = _collapse_ws(el.get_text(" ", strip=True))
@@ -1261,6 +1271,12 @@ def _harvest_identity_from_container(node, max_depth: int = 7) -> tuple[Optional
                     if promo and _is_plausible_name(promo):
                         name = promo
                         break
+                    # NYT: ALL CAPS fallback
+                    if raw and raw.isupper():
+                        cap = " ".join(w[:1].upper() + w[1:].lower() for w in raw.split())
+                        if _is_plausible_name(cap):
+                            name = cap
+                            break
     except Exception:
         pass
 
@@ -1927,16 +1943,24 @@ def _extract_lines_from_block_txt(txt: str) -> tuple[Optional[str], Optional[str
     if not lines:
         return None, None
 
-    # Find første plausible navnelinje
+    # Find første plausible navnelinje (med ALL CAPS → Title Case fallback)
     name_idx = None
+    name = None
     for i, l in enumerate(lines):
         if _is_plausible_name(l):
             name_idx = i
+            name = l
             break
+        if l.isupper():
+            cap = " ".join(w[:1].upper() + w[1:].lower() for w in l.split())
+            if _is_plausible_name(cap):
+                name_idx = i
+                name = cap
+                break
     if name_idx is None:
         return None, None
-
-    name = lines[name_idx]
+    if not name:
+        name = lines[name_idx]
 
     # Fjern typisk UI-støj i titellinjer
     UI_NOISE = {"kontakt", "kontakt os", "contact", "contact us", "læs mere", "find medarbejder"}
@@ -2459,10 +2483,11 @@ class ContactFinder:
         # 2) Vurdér om vi bør render’e (politik: use_browser = "never" | "auto" | "always")
         should_render = False
         if self.use_browser == "always":
-            should_render = _is_contact_like(url)
+            should_render = True
         elif self.use_browser == "auto":
             lh = (html.lower() if html else "")
-            should_render = _is_contact_like(url) or (not html) or ("elementor" in lh)
+            # NYT: brug _is_contactish_url + _needs_js (fanger fx "JavaScript er nødvendig...")
+            should_render = _is_contactish_url(url) or (not html) or ("elementor" in lh) or _needs_js(html or "")
         # "never" -> False
 
         # 2b) Render aldrig hvis URL svarer 404 (billig HEAD for tom HTML)
@@ -2820,6 +2845,7 @@ class ContactFinder:
                 "url": sc.candidate.url,
                 "score": sc.score,
                 "reasons": sc.reasons,
+                "source": getattr(sc.candidate, "source", ""),  # ← eksponér kilde
             }
             for sc in scored
         ]
@@ -2830,12 +2856,18 @@ class ContactFinder:
         for r in out:
             if r.get("score", 0) < 0:
                 continue
+
             reasons = set(r.get("reasons") or [])
-            if "GATE_FAIL" in reasons:
+            is_generic = "GENERIC_ORG_CONTACT" in reasons  # ← org bucket marker
+
+            # Gate-fails droppes stadig – men bevar GENERIC_ORG_CONTACT
+            if "GATE_FAIL" in reasons and not is_generic:
                 continue
-            # Default-filter: drop svage poster uden navn (behold i --all-kørsler via CLI, men API renser altid)
-            if r.get("score", 0) < 2.0 and not (r.get("name") or None):
+
+            # Drop "svage uden navn" – men IKKE for GENERIC_ORG_CONTACT
+            if (r.get("score", 0) < 2.0 and not (r.get("name") or None)) and not is_generic:
                 continue
+
             emails = r.get("emails") or []
             url_out = r.get("url") or ""
 
@@ -2852,6 +2884,7 @@ class ContactFinder:
             for k in keys:
                 seen_keys.add(k)
             cleaned.append(r)
+
 
         # Metrics
         names_found = sum(1 for r in cleaned if r.get("name"))
