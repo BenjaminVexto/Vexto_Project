@@ -40,7 +40,7 @@ from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 from typing import Any, Iterable, Optional
-from vexto.scoring.http_client import _accept_encoding
+from vexto.scoring.http_client import _accept_encoding, should_check_link_status as _http_should_check_link_status
 
 # Setup log directory
 log_dir = Path(__file__).resolve().parents[2] / "logs"
@@ -216,6 +216,10 @@ def _is_contactish_url(u: str) -> bool:
     p = (urlsplit(u).path or "").strip("/").lower()
     return any(p.endswith(sl) or f"/{sl}/" in f"/{p}/" for sl in CONTACTISH_SLUGS)
 
+def _is_initials_like(local: str) -> bool:
+    letters = re.sub(r"[^a-zæøå]", "", local.lower())
+    return 2 <= len(letters) <= 4
+
 def _needs_js(html: str) -> bool:
     """Grov indikator for JS-renderet indhold."""
     if not html:
@@ -375,102 +379,6 @@ def _safe_get(url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[int, str]:
     except Exception as e:
         log.debug(f"_safe_get fejl for {url}: {e!r}")
         return 0, ""
-
-async def _get_html_via_playwright(u: str, fallback_html: str = "", timeout: float = 12.0) -> str:
-    """Indkapsler PW-kald med timeout + circuit breaker."""
-    global _PW_FAILS, _PW_DISABLED
-
-    if _PW_DISABLED:
-        log.debug("Playwright er midlertidigt deaktiveret (circuit-breaker). Bruger fallback_html.")
-        return fallback_html
-
-    if _SHARED_PW_CLIENT is None:
-        log.debug("Playwright-klient er ikke initialiseret. Bruger fallback_html.")
-        return fallback_html
-
-    try:
-        # Hård timeout om PW-kaldet for at undgå 'går kold'
-        import asyncio
-        html = await asyncio.wait_for(
-            _SHARED_PW_CLIENT.get_raw_html(u, force_playwright=True),
-            timeout=timeout
-        )
-        _PW_FAILS = 0  # nulstil ved succes
-        return html or fallback_html
-    except Exception as e:
-        _PW_FAILS += 1
-        log.debug(f"Playwright fejl ({_PW_FAILS}/{_PW_FAILS_MAX}) for {u}: {e!r}")
-        if _PW_FAILS >= _PW_FAILS_MAX:
-            _PW_DISABLED = True
-            log.warning("Deaktiverer midlertidigt Playwright-eskalering (for mange fejl i træk).")
-        return fallback_html
-
-
-
-def _candidate_score(u: str) -> int:
-    """Højere score til kontakt/team/om; brug til prioritering."""
-    p = (urlsplit(u).path or "").lower()
-    score = 0
-    score += 100 if _is_contactish_url(u) else 0
-    score += 20 if any(k in p for k in ("about", "om")) else 0
-    score += 10 if any(k in p for k in ("team", "medarbejder", "people", "staff")) else 0
-    return score
-
-def _plan_candidates(base_url: str, limit_pages: int = 8) -> list[str]:
-    """Lav en prioriteret, HEAD-valideret liste over interne kandidatsider – uden dubletter."""
-    base_url = _norm(base_url)
-    status, home_html = _safe_get(base_url)
-    if status == 0:
-        return [base_url]
-
-    # 1) Start-set: base_url
-    cands: list[str] = [base_url]
-    seen: set[str] = {base_url}
-
-    # 2) Træk interne links ud fra forsiden (hurtig regex på href + DISCOVERY_KEYWORDS)
-    try:
-        html = home_html or ""
-        for m in re.finditer(r'href=["\']([^"\']+)["\']', html, flags=re.I):
-            href = m.group(1)
-            if not href or href.startswith("#"):
-                continue
-            full = urljoin(base_url, href)
-            if not _same_host(base_url, full):
-                continue
-            path_low = (urlsplit(full).path or "").lower()
-            if not any(k in path_low for k in DISCOVERY_KEYWORDS):
-                continue
-            n = _norm(full)
-            if n not in seen:
-                seen.add(n); cands.append(n)
-    except Exception:
-        pass
-
-    # 3) Lokaliserede fallback-stier (kun hvis ikke allerede fundet i (2))
-    for p in _localized_fallback_paths(base_url, home_html):
-        full = urljoin(base_url, p)
-        n = _norm(full)
-        if n not in seen:
-            seen.add(n); cands.append(n)
-
-    # 4) HEAD-validering med cache – behold kun sandsynlige 200/2xx og 3xx (som ender i 200 pga follow_redirects)
-    validated: list[str] = []
-    for u in cands:
-        code = _cheap_head_status(u)
-        if code == 200:
-            validated.append(u)
-
-    # 5) Prioritér kontaktish og kort sti; cap til limit_pages
-    validated.sort(key=lambda x: (0 if _is_contactish_url(x) else 1, len((urlsplit(x).path or ""))))
-    if limit_pages and limit_pages > 0:
-        validated = validated[:limit_pages]
-
-    # Garantér at base_url altid er inkluderet som sidste fallback
-    if base_url not in validated:
-        validated.append(base_url)
-
-    return validated
-
 
 __all__ = [
     "ContactFinder",
@@ -658,20 +566,6 @@ def _http_head_status(url: str, timeout: float = 10.0) -> Optional[int]:
             return r.status_code
     except Exception:
         return None
-
-def _head_and_resolve(url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[str, Optional[int]]:
-    """
-    Én HEAD der både følger redirects og returnerer (endelig_url, status).
-    """
-    try:
-        if httpx is None:
-            return url, None
-        with httpx.Client(follow_redirects=True, timeout=timeout) as c:
-            r = c.head(url, headers={"User-Agent": "VextoContactFinder/1.0"})
-            final_url = str(r.url) if getattr(r, "url", None) else url
-            return final_url, r.status_code
-    except Exception:
-        return url, None
 
 def _resolve_redirect(u: str, timeout: float = DEFAULT_TIMEOUT) -> str:
     """Returnér endelig URL efter redirects (HEAD). Fallback: u uændret."""
@@ -862,21 +756,21 @@ def _passes_identity_gate(
             if not _is_generic_local(local) and _email_domain_matches_site(em, url):
                 return True
 
-    # D (lempelse på kontakt-/om-/team-sider uden navn/titel)
+    # D (lempelse på kontakt-/om-/team-sider):
     if url and _is_contactish_url(url) and dom_distance is not None and dom_distance <= 1:
         for em in (emails or []):
             try:
                 local = em.split("@", 1)[0]
             except Exception:
                 continue
-            if _email_domain_matches_site(em, url):
-                # ikke-generisk local accepteres direkte
-                if not _is_generic_local(local):
-                    return True
-                # initials-agtige locals (2–4 bogstaver) accepteres også på kontakt/om/team
-                letters = re.sub(r"[^a-zæøå]", "", local.lower())
-                if 2 <= len(letters) <= 4:
-                    return True
+            if not _email_domain_matches_site(em, url):
+                continue
+            # NYT: kræv mindst EN af disse på kontakt/om/team:
+            #  - ikke-generisk local med >=3 bogstaver (ikke bare 2-4 initialer), ELLER
+            #  - der findes en titel der ligner en rolle
+            letters = re.sub(r"[^a-zæøå]", "", local.lower())
+            if (len(letters) >= 3 and not _is_generic_local(local)) or _looks_like_role(title):
+                return True
 
     return False
 
@@ -1827,10 +1721,21 @@ def _score_candidate(c: ContactCandidate) -> ScoredContact:
             s += 0.3
             why.append("DOM_OK")
 
-    # Identity-gate
-    if not _passes_identity_gate(c.name, emails, t, c.url, c.dom_distance):
-        s = -999.0
-        why.append("GATE_FAIL")
+    # "Identity-gate"
+    gate_bypass = (
+        c.source == "page-generic"
+        or (isinstance(c.hints, dict) and c.hints.get("identity_gate_bypassed"))
+    )
+    if gate_bypass:
+        # lille positiv bundscore så den overlever rensningen men lander nederst
+        s = max(s, 0.2)
+        if "GENERIC_ORG_CONTACT" not in why:
+            why.append("GENERIC_ORG_CONTACT")
+    else:
+        # normal gate
+        if not _passes_identity_gate(c.name, c.emails, _sanitize_title(c.title), c.url, c.dom_distance):
+            s = -999.0
+            why.append("GATE_FAIL")
 
     return ScoredContact(candidate=c, score=s, reasons=why)
 
@@ -2071,60 +1976,98 @@ class ContactFinder:
         # - discovery fra forsiden (kontakt/om/team mv.) -> PRIORITET
         # - + statiske fallback-stier
         discovered = _discover_internal_links(url, root_html, max_links=20) if root_html else []
-        static_pages = [self._abs(url, p) for p in FALLBACK_PATHS]
+        static_pages = [self._abs(url, p) for p in _localized_fallback_paths(url, root_html or "")]
 
         # ANKER: sikr at /kontakt og /om prøves tidligt, uanset discovery og limit
         priority_pages = [self._abs(url, p) for p in ("/kontakt", "/kontakt/", "/om", "/om/")]
 
         # Ny rækkefølge: root, PRIORITY, discovery, statics
-        # 0) Robots + sitemap discovery (kun samme host)
+        # 0) Robots + sitemap discovery (kun samme host) — én robots GET
         try:
-            sm_urls = _sitemap_discover_urls(url, timeout=self.timeout)
-        except Exception as e:
-            log.debug(f"Sitemap discovery fejl: {e!r}")
-            sm_urls = []
-        try:
-            _, disallows = _fetch_robots_txt(url, timeout=self.timeout)
+            sitemaps, disallows = _fetch_robots_txt(url, timeout=self.timeout)
         except Exception:
-            disallows = []
+            sitemaps, disallows = [], []
+        sm_urls = []
+        if sitemaps:
+            try:
+                for sm in sitemaps:
+                    sm_urls.extend(_fetch_sitemap_urls(sm, timeout=self.timeout) or [])
+                # behold kun samme host
+                sm_urls = [u for u in sm_urls if _same_host(url, u)]
+            except Exception as e:
+                log.debug(f"Sitemap discovery fejl: {e!r}")
+                sm_urls = []
 
         # 1) Byg rækkefølge med sitemap først (hvis fundet)
-        pages_ordered = [url] + sm_urls + priority_pages + discovered + static_pages
+        pages_ordered = [u for u in pages_ordered if _http_should_check_link_status(u)]
 
-        # 2) Deduplikér med orden bevaret
-        seen_norm: set[str] = set()
-        pages_unique: list[str] = []
-        for u in pages_ordered:
-            k = _norm_url_for_fetch(u)
-            if k not in seen_norm:
-                pages_unique.append(u)
-                seen_norm.add(k)
-
-        # 3) HEAD-cache + redirect-resolve + robots Disallow
+        # 2) Resolve redirects + få status i ÉT kald (spar en HEAD-runde)
         _head_cache: dict[str, int] = {}
+        resolved_unique: list[str] = []
+        seen_resolved: set[str] = set()
+        _head_and_resolve_fn = globals().get("_head_and_resolve", None)
+
+        # HÅRD CAP mod HEAD-storm
+        MAX_HEADS = 25
+        heads_done = 0
+
+        for u in pages_ordered:
+            if heads_done >= MAX_HEADS:
+                # ingen flere HEAD; stadig resolve redirects billigt
+                ru = _resolve_redirect(u, timeout=self.timeout) or u
+                st = None
+            else:
+                if callable(_head_and_resolve_fn):
+                    ru, st = _head_and_resolve_fn(u, timeout=self.timeout)  # type: ignore[misc]
+                else:
+                    # Fallback i to trin
+                    ru = _resolve_redirect(u, timeout=self.timeout) or u
+                    st = _http_head_status(ru, timeout=self.timeout)
+                heads_done += 1
+
+            k = _norm_url_for_fetch(ru)
+            if k not in seen_resolved:
+                resolved_unique.append(ru)
+                seen_resolved.add(k)
+            if st is not None:
+                _head_cache[ru] = st
+
+        # 3) Sprogfilter FØR HEAD (undgå HEAD på stier, som alligevel fjernes)
+        site_lang = _detect_site_lang(url, timeout=self.timeout)
+        def _is_en_path(p: str) -> bool:
+            pl = (urlsplit(p).path or "").lower()
+            return any(x in pl for x in ("/contact", "/contact-us", "/about", "/about-us", "/people", "/staff", "/management", "/board"))
+        def _is_da_path(p: str) -> bool:
+            pl = (urlsplit(p).path or "").lower()
+            return any(x in pl for x in ("/kontakt", "/kontakt-os", "/om", "/om-os", "/medarbejder", "/medarbejdere", "/ansatte", "/ledelse"))
+
+        lang_pruned: list[str]
+        if site_lang == "da":
+            lang_pruned = [p for p in resolved_unique if not _is_en_path(p)]
+        elif site_lang == "en":
+            lang_pruned = [p for p in resolved_unique if not _is_da_path(p)]
+        else:
+            lang_pruned = resolved_unique
+
+        # 4a) Robots Disallow + HEAD-cache på den prunede mængde
         def _head_status_cached(u: str) -> int | None:
             if u in _head_cache:
-                v = _head_cache[u]
-                return v if v != -1 else None
+                v = _head_cache[u]; return v if v != -1 else None
             s = _http_head_status(u, timeout=self.timeout)
             _head_cache[u] = s if s is not None else -1
             return s
 
         pages_filtered: list[str] = []
-        for u in pages_unique:
-            resolved = _resolve_redirect(u, timeout=self.timeout)
-            path = (urlsplit(resolved).path or "")
+        for u in lang_pruned:
+            path = (urlsplit(u).path or "")
             if _is_disallowed(path, disallows):
-                log.debug("Robots Disallow skip: %s", resolved)
-                continue
-            status = _head_status_cached(resolved)
+                log.debug("Robots Disallow skip: %s", u); continue
+            status = _head_status_cached(u)
             if status and 400 <= status < 500:
-                log.debug("HEAD drop (%s): %s", status, resolved)
-                continue
-            pages_filtered.append(resolved)
+                log.debug("HEAD drop (%s): %s", status, u); continue
+            pages_filtered.append(u)
 
-        # 4) Sprogfilter: drop engelske fallback-stier på 'da' sites (og omvendt)
-        site_lang = _detect_site_lang(url, timeout=self.timeout)
+        # 4b) Sprogfilter: drop engelske fallback-stier på 'da' sites (og omvendt)
         if site_lang == "da":
             def _is_en(p: str) -> bool:
                 pl = (urlsplit(p).path or "").lower()
@@ -2138,12 +2081,18 @@ class ContactFinder:
 
         # 5) Prioritér kontaktish + kort sti, og cap til limit
         pages_sorted = sorted(
-            pages_filtered,  # <-- fix: brug den rigtige liste
+            pages_filtered,
             key=lambda x: (0 if _is_contactish_url(x) else 1, len((urlsplit(x).path or "")))
-)
-
-        # Skær ned til limit_pages
-        pages = pages_sorted[:max(1, limit_pages)]
+        )
+        # Final dedup + cap
+        _seen = set()
+        pages_dedup: list[str] = []
+        for u in pages_sorted:
+            k = _norm_url_for_fetch(u)
+            if k not in _seen:
+                pages_dedup.append(u)
+                _seen.add(k)
+        pages = pages_dedup[:max(1, limit_pages)]
         log.debug("Pages planned (%d): %s", len(pages), pages)
 
 
@@ -2167,6 +2116,36 @@ class ContactFinder:
                 if u not in htmls:
                     _, h = fetch(u)
                     htmls[u] = h
+
+        # Saml navnløse initialer@domæne.dk fra kontakt/om/team til én organisationspost
+        org_bucket_emails = []
+        pruned = []
+        for c in all_cands:
+            if c.name or c.title:
+                pruned.append(c); continue
+            if _is_contactish_url(c.url) and c.emails:
+                kept = []
+                for em in c.emails:
+                    local = em.split("@",1)[0]
+                    if _email_domain_matches_site(em, c.url) and (_is_initials_like(local) or _is_generic_local(local)):
+                        org_bucket_emails.append(em)
+                    else:
+                        kept.append(em)
+                if kept:
+                    c.emails = kept
+                    pruned.append(c)
+            else:
+                pruned.append(c)
+
+        if org_bucket_emails:
+            pruned.append(ContactCandidate(
+                name=None, title=None,
+                emails=sorted(set(org_bucket_emails))[:5],
+                phones=[], source="page-generic", url=url,
+                dom_distance=0, hints={"bucketed": True}
+            ))
+
+        all_cands = pruned
 
         # 4) Udpak kandidater fra alle sider
         all_cands: list[ContactCandidate] = []
