@@ -90,9 +90,9 @@ except Exception:
 _SHARED_PW_CLIENT = None
 
 # --- Playwright circuit-breaker ---
-_PW_FAILS = 0
-_PW_FAILS_MAX = 3  # efter 3 fejl i træk stopper vi midlertidigt PW-eskalering
-_PW_DISABLED = False
+_PW_FAILS_BY_HOST: dict[str, int] = {}
+_PW_FAILS_MAX = 3  # efter 3 fejl i træk for en host stopper vi midlertidigt PW for DEN host
+_PW_DISABLED_HOSTS: set[str] = set()
 
 def _norm_url_for_fetch(u: str) -> str:
     """Normalisér URL for dedup: fjern trailing slash (undtagen '/'), drop fragment."""
@@ -124,7 +124,7 @@ def _fetch_with_playwright_sync(url: str) -> str:
     import asyncio
 
     async def _go(u: str) -> str:
-        global _SHARED_PW_CLIENT, _PW_FAILS, _PW_FAILS_MAX, _PW_DISABLED
+        global _SHARED_PW_CLIENT, _PW_FAILS_BY_HOST, _PW_FAILS_MAX, _PW_DISABLED_HOSTS
 
         # Billig GET før PW: find status + pre_html til beslutning
         status, pre_html = _safe_get(u)
@@ -134,7 +134,10 @@ def _fetch_with_playwright_sync(url: str) -> str:
         except Exception:  # defensivt
             needs = False
 
-        log.debug(f"PW gate for {u} -> status={status}, needs_js={needs}, pw_disabled={_PW_DISABLED}")
+        from urllib.parse import urlsplit as _us
+        _host = _us(u).netloc.lower()
+
+        log.debug(f"PW gate for {u} -> status={status}, needs_js={needs}, pw_disabled_host={_host in _PW_DISABLED_HOSTS}")
 
         # 1) Drop PW på ≠200
         if status != 200:
@@ -146,9 +149,9 @@ def _fetch_with_playwright_sync(url: str) -> str:
             log.debug(f"Playwright ikke nødvendig (statisk HTML) for {u}")
             return pre_html
 
-        # 3) Circuit-breaker
-        if _PW_DISABLED:
-            log.debug("Playwright er midlertidigt deaktiveret (circuit-breaker). Bruger pre_html.")
+        # 3) Circuit-breaker (per host)
+        if _host in _PW_DISABLED_HOSTS:
+            log.debug(f"Playwright er midlertidigt deaktiveret for host={_host} (circuit-breaker). Bruger pre_html.")
             return pre_html
 
         # 4) Kør PW med hård timeout
@@ -157,21 +160,43 @@ def _fetch_with_playwright_sync(url: str) -> str:
             await _SHARED_PW_CLIENT.startup()
 
         try:
-            html = await asyncio.wait_for(
-                _SHARED_PW_CLIENT.get_raw_html(u, force_playwright=True),
-                timeout=12.0
-            )
+            # Forsøg med målrettede selector-waits for kontakt/teamsider
+            _wait_selectors = [
+                "a[href^='mailto:']",
+                "a[href^='tel:']",
+                ".__cf_email__",
+                "[data-cfemail]",
+                ".team", ".staff", ".employee", ".elementor-team-member"
+            ]
+            try:
+                html = await asyncio.wait_for(
+                    _SHARED_PW_CLIENT.get_raw_html(
+                        u,
+                        force_playwright=True,
+                        wait_for_selectors=_wait_selectors  # nogle klienter understøtter dette
+                    ),
+                    timeout=12.0
+                )
+            except TypeError:
+                # Fallback hvis klienten ikke kender argumentet
+                html = await asyncio.wait_for(
+                    _SHARED_PW_CLIENT.get_raw_html(u, force_playwright=True),
+                    timeout=12.0
+                )
+
             if isinstance(html, dict):
                 html = html.get("html") or ""
-            _PW_FAILS = 0
+            # reset kun for denne host
+            _PW_FAILS_BY_HOST[_host] = 0
             return html or pre_html
         except Exception as e:
-            _PW_FAILS += 1
-            log.debug(f"Playwright fejl ({_PW_FAILS}/{_PW_FAILS_MAX}) for {u}: {e!r}")
-            if _PW_FAILS >= _PW_FAILS_MAX:
-                _PW_DISABLED = True
-                log.warning("Deaktiverer midlertidigt Playwright-eskalering (for mange fejl).")
+            _PW_FAILS_BY_HOST[_host] = _PW_FAILS_BY_HOST.get(_host, 0) + 1
+            log.debug(f"Playwright fejl ({_PW_FAILS_BY_HOST[_host]}/{_PW_FAILS_MAX}) for host={_host}, url={u}: {e!r}")
+            if _PW_FAILS_BY_HOST[_host] >= _PW_FAILS_MAX:
+                _PW_DISABLED_HOSTS.add(_host)
+                log.warning(f"Deaktiverer midlertidigt Playwright-eskalering for host={_host} (for mange fejl).")
             return pre_html
+
 
     try:
         loop = asyncio.get_event_loop()
@@ -238,14 +263,25 @@ def _is_initials_like(local: str) -> bool:
     return 2 <= len(letters) <= 4
 
 def _needs_js(html: str) -> bool:
-    """Grov indikator for JS-renderet indhold."""
+    """Mere præcis indikator: kræv JS når vi ser stærke JS-tegn OG mangler kontaktindikatorer.
+    Skip JS hvis statisk DOM allerede ligner en kontakt/teamside (person/sektion-strukturer).
+    """
     if not html:
         return False
-    # typisk Elementor placeholder + ingen kontaktlinks
-    if "JavaScript er nødvendig" in html or "elementor" in html:
+    lower = html.lower()
+
+    # Hvis statisk DOM allerede har person/sektion-strukturer → ingen JS nødvendig
+    if re.search(r'class=["\'][^"\']*(team|staff|employee|person|medarbejder|medarbejdere)[^"\']*["\']', lower):
+        return False
+    if re.search(r'<h[12][^>]*>\s*(kontakt|team|medarbejdere|personale|ansatte|about|om os)\s*</h[12]>', lower):
+        return False
+
+    # Typiske JS-krav: Elementor og ingen kontaktlinks i DOM
+    if "javascript er nødvendig" in lower or "elementor" in lower:
         return True
     if not re.search(r'href=["\']mailto:|href=["\']tel:', html, flags=re.I):
         return True
+
     return False
 
 _PROFILE_PATTERNS = [
@@ -374,6 +410,22 @@ DISCOVERY_KEYWORDS = {
     "ledelse", "management", "board",
     "organisation", "company"
 }
+
+# --- default link-status filter (assets/utm shim) ---
+def _default_should_check_link_status(u: str) -> bool:
+    """Drop åbenlyse assets og trackede links; bevar 'contactish' selv med UTM."""
+    try:
+        p = (urlsplit(u).path or "").lower()
+        if re.search(r"\.(?:css|js|map|png|jpe?g|gif|svg|webp|ico|pdf|docx?|xlsx?|pptx?|zip|rar|7z|mp4|avi|mov|mpe?g)$", p):
+            return False
+        q = (urlsplit(u).query or "").lower()
+        if ("utm_" in q or "gclid=" in q or "fbclid=" in q) and not _is_contactish_url(u):
+            return False
+    except Exception:
+        # vær konservativ ved fejl
+        return True
+    return True
+
 
 DEFAULT_TIMEOUT = 12.0  # sekunder
 
@@ -1046,22 +1098,30 @@ def _maybe_name_from_text(txt: str | None) -> Optional[str]:
 
 def _find_heading_name(node) -> Optional[str]:
     """
-    Gå op til 3 forældre og kig efter nærliggende navn i <h1-6>, <strong>, <b>, aria-label, alt eller sibling-tekst.
+    Gå op til 5 forældre og kig efter nærliggende navn i <h1-6>, <strong>, <b>,
+    elementer med [itemprop=name], [role=heading], aria-label samt søskende-tekst.
     Virker for både selectolax og BS4.
     """
     try:
         # selectolax
         if HTMLParser is not None and isinstance(node, HTMLParser.Node):  # type: ignore[attr-defined]
             cur = node
-            for _ in range(3):
+            for _ in range(5):
                 parent = getattr(cur, "parent", None)
                 if not parent: break
-                # direkte headings/strong i parent
-                for sel in ["h1","h2","h3","h4","h5","h6","strong","b"]:
+                # direkte headings/strong + semantiske navneindikatorer
+                for sel in ["h1","h2","h3","h4","h5","h6","strong","b","[itemprop='name']","[role='heading']"]:
                     for h in parent.css(sel):
                         nm = _maybe_name_from_text(h.text())
                         if nm: return nm
-                # søg lidt i søskende (før/efter)
+                # aria-label
+                try:
+                    al = parent.attributes.get("aria-label")  # type: ignore[attr-defined]
+                    nm = _maybe_name_from_text(al)
+                    if nm: return nm
+                except Exception:
+                    pass
+                # søskende
                 sibs = list(parent.iter())
                 for sib in sibs[:8]:
                     with contextlib.suppress(Exception):
@@ -1071,12 +1131,22 @@ def _find_heading_name(node) -> Optional[str]:
         # bs4
         elif BeautifulSoup is not None and hasattr(node, "find_parent"):
             cur = node
-            for _ in range(3):
+            for _ in range(5):
                 parent = cur.parent
                 if not parent: break
-                for tag in parent.find_all(["h1","h2","h3","h4","h5","h6","strong","b"], limit=6, recursive=True):
+                for tag in parent.find_all(["h1","h2","h3","h4","h5","h6","strong","b"], limit=8, recursive=True):
                     nm = _maybe_name_from_text(tag.get_text(" ", strip=True))
                     if nm: return nm
+                # semantiske
+                for tag in parent.find_all(attrs={"itemprop": "name"}, limit=4):
+                    nm = _maybe_name_from_text(tag.get_text(" ", strip=True))
+                    if nm: return nm
+                for tag in parent.find_all(attrs={"role": "heading"}, limit=4):
+                    nm = _maybe_name_from_text(tag.get_text(" ", strip=True))
+                    if nm: return nm
+                al = parent.attrs.get("aria-label")
+                nm = _maybe_name_from_text(al)
+                if nm: return nm
                 # søskende
                 for sib in parent.find_all(recursive=False):
                     txt = sib.get_text(" ", strip=True)
@@ -1086,6 +1156,7 @@ def _find_heading_name(node) -> Optional[str]:
     except Exception:
         return None
     return None
+
 
 def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
     out: list[ContactCandidate] = []
@@ -1355,7 +1426,7 @@ def _extract_from_text_emails(url: str, html: str) -> list[ContactCandidate]:
     for m in re.finditer(re_obf, plain, flags=re.I):
         emails.add(f"{m.group(1)}@{m.group(2)}")
 
-    # For hver email, prøv at finde et navn/titel i et vindue på ±200 tegn
+    # For hver email, prøv at finde et navn/titel i et vindue på ±200 tegn og evt. telefonnumre i samme vindue
     for em in emails:
         em_idx = plain.lower().find(em.lower())
         if em_idx < 0:
@@ -1374,9 +1445,22 @@ def _extract_from_text_emails(url: str, html: str) -> list[ContactCandidate]:
         if m_title:
             title = _sanitize_title(m_title.group(1))
 
+        # Telefoner i nærvindue (DK-first + kompakt), anti-CVR i ±15 tegn
+        phones_here: list[str] = []
+        for m_p in re.finditer(r'(?:\+45\s*)?(?:\d{2}\s*\d{2}\s*\d{2}\s*\d{2})|(?:\+45)?[2-9]\d{7}', near):
+            sidx, eidx = m_p.start(), m_p.end()
+            ctx = near[max(0, sidx-15):min(len(near), eidx+15)].lower()
+            if "cvr" in ctx:
+                continue
+            pn = _normalize_phone(m_p.group(0))
+            if pn and pn not in phones_here:
+                phones_here.append(pn)
+
         out.append(ContactCandidate(
-            name=name, title=title, emails=[_normalize_email(em)] if _normalize_email(em) else [],
-            phones=[], source="text-email", url=url, dom_distance=None,
+            name=name, title=title,
+            emails=[_normalize_email(em)] if _normalize_email(em) else [],
+            phones=phones_here,
+            source="text-email", url=url, dom_distance=None,
             hints={"near": near[:180]}
         ))
 
@@ -1431,8 +1515,12 @@ def _extract_generic_org_contacts(base_url: str, pages_html: list[tuple[str, str
                 seen_emails.add(em)
                 emails_on_domain.append(em)
 
-        # Telefonnumre i synlig tekst
+        # Telefonnumre i synlig tekst (anti-CVR i nærkontekst)
         for m in re.finditer(r"(?:\+?\d[\s\-\(\)\.]{0,3}){8,}", plain):
+            sidx, eidx = m.start(), m.end()
+            ctx = plain[max(0, sidx-15):min(len(plain), eidx+15)].lower()
+            if "cvr" in ctx:
+                continue
             pn = _normalize_phone(m.group(0))
             if pn and pn not in seen_phones:
                 seen_phones.add(pn)
@@ -1679,8 +1767,7 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
             seen.add(key)
 
             rs = _role_strength(title)
-            base = 40 + rs * 15  # “kort” uden email giver en høj baselinescore
-
+            # fjernet ubrugt 'base'-variabel; gem rolle-styrke i hints i stedet
             out.append(ContactCandidate(
                 name=name,
                 title=title,
@@ -1689,7 +1776,7 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
                 source="dom-staff-grid",
                 url=url,
                 dom_distance=None,
-                hints={"card": raw[:160]}
+                hints={"card": raw[:160], "role_strength": rs}
             ))
     return out
 
@@ -1849,6 +1936,40 @@ def _score_candidate(c: ContactCandidate) -> ScoredContact:
             s = -999.0
             why.append("GATE_FAIL")
 
+    # URL-kontekst: kontakt/om/team/medarbejder-sider
+    try:
+        pth = (urlsplit(c.url).path or "").lower()
+    except Exception:
+        pth = ""
+    if any(sl in pth for sl in ("/kontakt", "/contact", "/team", "/medarbejder", "/medarbejdere", "/people", "/staff", "/om", "/about")):
+        s += 1.0
+        why.append("SECTION_MATCH")
+
+    # Initialer-penalty hvis ingen navn og 2-4 bogstaver i local
+    if c.emails and not _is_plausible_name(c.name):
+        try:
+            local = c.emails[0].split("@", 1)[0]
+            letters = re.sub(r"[^a-zæøå]", "", local.lower())
+            if 2 <= len(letters) <= 4:
+                s -= 1.5
+                why.append("INITIALS_DOWNWEIGHT")
+        except Exception:
+            pass
+
+    # Phone-bonus (hæves til 0.8 når der er telefon i samme kandidat)
+    if any(_normalize_phone(p) for p in (c.phones or [])):
+        # Fjern tidligere +0.5 hvis tilføjet: vi normaliserer til samlet +0.8
+        if "PHONE" in why:
+            # erstat indikationen, men s indeholder allerede +0.5; justér differencen
+            s += 0.3
+        else:
+            s += 0.8
+            why.append("PHONE")
+
+    # Root-only penalty (forside)
+    if pth.strip("/") == "":
+        s -= 1.0
+
     return ScoredContact(candidate=c, score=s, reasons=why)
 
 def _build_candidate_pages(base_url: str, root_html: str) -> list[str]:
@@ -1864,10 +1985,10 @@ def _build_candidate_pages(base_url: str, root_html: str) -> list[str]:
     # tidlig dedup på normaliseret form
     seen, out = set(), []
     for u in ordered:
-        k = _norm_url_for_fetch(u)
-        if k not in seen:
-            seen.add(k)
-            out.append(u)
+            k = _norm(u)
+            if k not in seen:
+                seen.add(k)
+                out.append(u)
     return out
 
 def _head_and_resolve(u: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[str, int | None]:
@@ -1932,6 +2053,7 @@ class ContactFinder:
         parallel: int = 4,
         cache_dir: Optional[Path] = ".http_diskcache/html",
         use_browser: str = "auto",  # {"auto","always","never"}
+        gdpr_minimize: bool = False,
     ):
         self.timeout = timeout
         self.parallel = max(1, int(parallel))
@@ -1941,6 +2063,9 @@ class ContactFinder:
         self.use_browser = (use_browser or "auto").strip().lower()
         if self.use_browser not in {"auto", "always", "never"}:
             self.use_browser = "auto"
+
+        # GDPR/output-minimering
+        self.gdpr_minimize = bool(gdpr_minimize)
 
         # Per-kørsel HTML-cache (kun for denne instans)
         self._html_cache_local: dict[str, str] = {}
@@ -2019,7 +2144,7 @@ class ContactFinder:
         Billig HTTP først; render én gang for kontakt/om/team-sider
         eller hvis HTML er tom/tynd/JS-afhængig.
         """
-        key = _norm_url_for_fetch(url)
+        key = _norm(url)
 
         # Lokal per-run cache
         cached = self._html_cache_local.get(key)
@@ -2169,6 +2294,14 @@ class ContactFinder:
                 log.debug(f"Sitemap discovery fejl: {e!r}")
                 sm_urls = []
 
+        # Fallback: prøv hurtig sitemap-discovery via helper hvis intet fundet
+        if not sm_urls:
+            try:
+                sm_urls = _sitemap_discover_urls(url, timeout=self.timeout) or []
+            except Exception as e:
+                log.debug(f"_sitemap_discover_urls fejl: {e!r}")
+                sm_urls = []
+
         # 3) Byg kandidat-liste i fast rækkefølge og tidlig dedup
         pages_ordered = _build_candidate_pages(url, root_html)
         if sm_urls:
@@ -2177,9 +2310,13 @@ class ContactFinder:
 
         # 4) Valgfrit filter fra http_client (fx drop assets/utm mm.) – ANKER
         try:
-            pages_ordered = [u for u in pages_ordered if _http_should_check_link_status(u)]
+            if callable(_hc_should_check):
+                pages_ordered = [u for u in pages_ordered if _hc_should_check(u)]  # bruger http_client, hvis tilgængelig
+            else:
+                pages_ordered = [u for u in pages_ordered if _default_should_check_link_status(u)]  # fallback-filter
         except Exception:
-            pass
+            # defensiv fallback på vores eget filter
+            pages_ordered = [u for u in pages_ordered if _default_should_check_link_status(u)]
 
         # 5) Sprogdetektion for at prune tydeligt forkerte fallback-stier FØR HEAD
         site_lang = _detect_site_lang(url, timeout=self.timeout)
@@ -2203,15 +2340,18 @@ class ContactFinder:
 
         for u in pages_ordered:
             if heads_done >= MAX_HEADS:
-                # Kun billig redirect-resolve hvis vi er løbet tør for HEAD-budget
+                # Billig redirect-resolve + billig HEAD-status når budget er opbrugt
                 ru = _resolve_redirect(u, timeout=self.timeout) or u
-                st = None
+                try:
+                    st = _cheap_head_status(ru, timeout=self.timeout)
+                except Exception:
+                    st = None
             else:
                 # Brug samlet head+resolve (follow_redirects) – logger 301+200 som ét kald
                 ru, st = _head_and_resolve(u, timeout=self.timeout)
                 heads_done += 1
 
-            k = _norm_url_for_fetch(ru)
+            k = _norm(ru)
             if k not in seen_resolved:
                 seen_resolved.add(k)
                 resolved_unique.append(ru)
@@ -2270,6 +2410,51 @@ class ContactFinder:
                     _, h = fetch(u)
                     htmls[u] = h
 
+        # --- profil-crawl (dybde 1, cap) fra kontakt/teamsider ---
+        profile_cap = 10
+        profile_urls: list[str] = []
+        seen_prof: set[str] = set()
+
+        for u in pages:
+            if not _is_contactish_url(u):
+                continue
+            h = htmls.get(u) or ""
+            if not h:
+                continue
+            try:
+                found = _discover_profile_links(u, h, max_links=profile_cap)
+            except Exception:
+                found = []
+            for pu in found:
+                k = _norm(pu)
+                if k not in seen_prof and k not in htmls:
+                    seen_prof.add(k)
+                    profile_urls.append(pu)
+                if len(profile_urls) >= profile_cap:
+                    break
+            if len(profile_urls) >= profile_cap:
+                break
+
+        if profile_urls:
+            def fetch_profile(u: str) -> tuple[str, str]:
+                try:
+                    h = self._fetch_text_smart(u)
+                    return (u, h)
+                except Exception:
+                    return (u, "")
+
+            if self.parallel > 1 and len(profile_urls) > 1:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=self.parallel) as ex:
+                    for u, h in ex.map(fetch_profile, profile_urls):
+                        htmls[u] = h
+            else:
+                for u in profile_urls:
+                    _, h = fetch_profile(u)
+                    htmls[u] = h
+
+        # Supplerende “org bucket” fra tværs af sider (kun hvis vi ikke allerede laver en page-generic senere)
+        pages_html_items = list(htmls.items())
+        generic_bucket = _extract_generic_org_contacts(url, pages_html_items) if pages_html_items else []
         # 10) Udpak kandidater
         all_cands: list[ContactCandidate] = []
         for u, h in htmls.items():
@@ -2309,6 +2494,21 @@ class ContactFinder:
             ))
         all_cands = pruned
 
+        # Undgå dobbelt 'page-generic': tilføj kun hvis ingen eksisterer
+        if generic_bucket and not any((getattr(c, "source", "") == "page-generic") for c in all_cands):
+            # generic_bucket er en liste af dicts; konverter skånsomt til ContactCandidate
+            for gb in generic_bucket:
+                all_cands.append(ContactCandidate(
+                    name=gb.get("name"),
+                    title=gb.get("title"),
+                    emails=gb.get("emails") or [],
+                    phones=gb.get("phones") or [],
+                    source="page-generic",
+                    url=gb.get("url") or url,
+                    dom_distance=None,
+                    hints=gb.get("hints") or {"identity_gate_bypassed": True},
+                ))
+
         all_cands = _match_emails_to_names(all_cands)
 
         # 11) Merge + score
@@ -2338,8 +2538,19 @@ class ContactFinder:
             reasons = set(r.get("reasons") or [])
             if "GATE_FAIL" in reasons:
                 continue
+            # Default-filter: drop svage poster uden navn (behold i --all-kørsler via CLI, men API renser altid)
+            if r.get("score", 0) < 2.0 and not (r.get("name") or None):
+                continue
             emails = r.get("emails") or []
             url_out = r.get("url") or ""
+
+            # GDPR-minimering: drop phones og behold kun domæne-matchede arbejdsmails
+            if getattr(self, "gdpr_minimize", False):
+                r["phones"] = []
+                if emails:
+                    emails = [e for e in emails if _email_domain_matches_site(e, url_out)]
+                    r["emails"] = emails
+
             keys = [(e.lower(), url_out) for e in emails] if emails else [("", url_out)]
             if any(k in seen_keys for k in keys):
                 continue
@@ -2347,9 +2558,18 @@ class ContactFinder:
                 seen_keys.add(k)
             cleaned.append(r)
 
+        # Metrics
+        names_found = sum(1 for r in cleaned if r.get("name"))
+        titles_found = sum(1 for r in cleaned if r.get("title"))
+        phones_found = sum(1 for r in cleaned if r.get("phones"))
+        initials_downweighted = sum(1 for r in cleaned if "INITIALS_DOWNWEIGHT" in (r.get("reasons") or []))
+        section_bonus_hits = sum(1 for r in cleaned if "SECTION_MATCH" in (r.get("reasons") or []))
+
         log.debug(
-            "ContactFinder.find_all(%s) -> %d raw, %d cleaned in %.3fs",
-            url, len(out), len(cleaned), time.time() - t0
+            ("ContactFinder.find_all(%s) -> %d raw, %d cleaned in %.3fs | "
+             "names=%d, titles=%d, phones=%d, initials_downweighted=%d, section_hits=%d"),
+            url, len(out), len(cleaned), time.time() - t0,
+            names_found, titles_found, phones_found, initials_downweighted, section_bonus_hits
         )
         return cleaned
 
@@ -2395,12 +2615,14 @@ if __name__ == "__main__":
     ap.add_argument("--all", action="store_true", help="Udskriv alle kandidater (scored)")
     ap.add_argument("--limit-pages", type=int, default=10, help="Max antal sider at prøve")
     ap.add_argument("--debug", action="store_true", help="Verbose log")
+    ap.add_argument("--gdpr-minimize", action="store_true", help="Minimér persondata i output (drop phones, kun arbejdsmails)")
+
     args = ap.parse_args()
 
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    cf = ContactFinder()
+    cf = ContactFinder(gdpr_minimize=bool(args.gdpr_minimize))
     if args.all:
         results = cf.find_all(args.url, limit_pages=args.limit_pages)
         print(json.dumps(results, ensure_ascii=False, indent=2))
