@@ -1034,35 +1034,98 @@ def _NAME_WINDOW_REGEX() -> str:
     # Vindue af 2–4 kapitaliserede tokens – bruges i nærtekst
     return rf"{NAME_TOKEN}(?:\s+{NAME_TOKEN}){{1,3}}"
 
+def _maybe_name_from_text(txt: str | None) -> Optional[str]:
+    if not txt:
+        return None
+    # find 2–4 kapitaliserede tokens (tæt på dit eksisterende NAME_TOKEN)
+    m = re.search(rf"\b({NAME_TOKEN}(?:\s+{NAME_TOKEN}){{1,3}})\b", txt)
+    if not m:
+        return None
+    cand = _collapse_ws(m.group(1))
+    return cand if _is_plausible_name(cand) else None
+
+def _find_heading_name(node) -> Optional[str]:
+    """
+    Gå op til 3 forældre og kig efter nærliggende navn i <h1-6>, <strong>, <b>, aria-label, alt eller sibling-tekst.
+    Virker for både selectolax og BS4.
+    """
+    try:
+        # selectolax
+        if HTMLParser is not None and isinstance(node, HTMLParser.Node):  # type: ignore[attr-defined]
+            cur = node
+            for _ in range(3):
+                parent = getattr(cur, "parent", None)
+                if not parent: break
+                # direkte headings/strong i parent
+                for sel in ["h1","h2","h3","h4","h5","h6","strong","b"]:
+                    for h in parent.css(sel):
+                        nm = _maybe_name_from_text(h.text())
+                        if nm: return nm
+                # søg lidt i søskende (før/efter)
+                sibs = list(parent.iter())
+                for sib in sibs[:8]:
+                    with contextlib.suppress(Exception):
+                        nm = _maybe_name_from_text(" ".join(t.strip() for t in sib.itertext()))
+                        if nm: return nm
+                cur = parent
+        # bs4
+        elif BeautifulSoup is not None and hasattr(node, "find_parent"):
+            cur = node
+            for _ in range(3):
+                parent = cur.parent
+                if not parent: break
+                for tag in parent.find_all(["h1","h2","h3","h4","h5","h6","strong","b"], limit=6, recursive=True):
+                    nm = _maybe_name_from_text(tag.get_text(" ", strip=True))
+                    if nm: return nm
+                # søskende
+                for sib in parent.find_all(recursive=False):
+                    txt = sib.get_text(" ", strip=True)
+                    nm = _maybe_name_from_text(txt)
+                    if nm: return nm
+                cur = parent
+    except Exception:
+        return None
+    return None
+
 def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
     out: list[ContactCandidate] = []
-    # selectolax
+
+    # ---------------- selectolax ----------------
     if HTMLParser is not None and isinstance(html_or_tree, HTMLParser):
+        # mailto:
         for a in html_or_tree.css("a[href^='mailto:']"):
             href = a.attributes.get("href", "")
             em = _normalize_email(href)
             if not em:
                 continue
             near = _near_text(a, 260)
+
+            # navn fra nærtekst + fallback i headings/strong
             name = None
             m_name = re.search(rf"({_NAME_WINDOW_REGEX()})", near)
             if m_name:
                 name = _collapse_ws(m_name.group(1))
+            if not _is_plausible_name(name):
+                name = _find_heading_name(a) or name
+
+            # titel
             title = None
             m_title = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", near)
             if m_title:
                 title = _sanitize_title(m_title.group(1))
-            dist = 0
+
+            # dom-afstand (kortere hvis navn fundet)
             try:
                 dist = _dom_distance(a, a.parent or a) or (0 if name else 1)
             except Exception:
                 dist = 0 if name else 1
+
             out.append(ContactCandidate(
                 name=name, title=title, emails=[em], phones=[],
                 source="mailto", url=url, dom_distance=dist,
                 hints={"near": near[:180]}
             ))
-        
+
         # Cloudflare-obfuskerede e-mails
         for cf in html_or_tree.css(".__cf_email__"):
             em = _normalize_email(_cf_decode(cf.attributes.get("data-cfemail")))
@@ -1070,24 +1133,29 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
                 continue
             container = cf.parent or cf
             text_blob = _near_text(container, 260)
+
             name = None
             m = re.search(rf"({_NAME_WINDOW_REGEX()})", text_blob)
             if m:
                 name = _collapse_ws(m.group(1))
+            if not _is_plausible_name(name):
+                name = _find_heading_name(cf) or name
+
             title = None
             m2 = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", text_blob)
             if m2:
                 title = _sanitize_title(m2.group(1))
+
             dist = _dom_distance(cf, container) or (0 if name else 1)
             out.append(ContactCandidate(
                 name=name, title=title, emails=[em], phones=[],
-                source="dom", url=url, dom_distance=dist, hints={"near": text_blob[:180], "cfemail": True}
+                source="dom", url=url, dom_distance=dist,
+                hints={"near": text_blob[:180], "cfemail": True}
             ))
         return out
-    
-    # bs4
+
+    # ---------------- BeautifulSoup ----------------
     if BeautifulSoup is not None and hasattr(html_or_tree, "select"):
-        
         # mailto:
         for a in html_or_tree.select("a[href^='mailto:']"):
             href = a.get("href", "")
@@ -1095,46 +1163,57 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
             if not em:
                 continue
             near = " ".join(list(a.parent.stripped_strings))[:260] if a.parent else ""
+
             name = None
             m_name = re.search(rf"({_NAME_WINDOW_REGEX()})", near)
             if m_name:
                 name = _collapse_ws(m_name.group(1))
+            if not _is_plausible_name(name):
+                name = _find_heading_name(a) or name
+
             title = None
             m_title = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", near)
             if m_title:
                 title = _sanitize_title(m_title.group(1))
-            dist = 0
+
             try:
                 dist = _dom_distance(a, a.parent or a) or (0 if name else 1)
             except Exception:
                 dist = 0 if name else 1
+
             out.append(ContactCandidate(
                 name=name, title=title, emails=[em], phones=[],
                 source="mailto", url=url, dom_distance=dist,
                 hints={"near": near[:180]}
             ))
-        
-        # Cloudflare __cf_email__ (BS4)
+
+        # Cloudflare __cf_email__
         for cf in html_or_tree.select(".__cf_email__"):
             em = _normalize_email(_cf_decode(cf.get("data-cfemail")))
             if not em:
                 continue
             container = cf.parent or cf
             near = " ".join(list(container.stripped_strings))[:260] if container else ""
+
             name = None
             m_name = re.search(rf"({_NAME_WINDOW_REGEX()})", near)
             if m_name:
                 name = _collapse_ws(m_name.group(1))
+            if not _is_plausible_name(name):
+                name = _find_heading_name(cf) or name
+
             title = None
             m_title = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", near)
             if m_title:
                 title = _sanitize_title(m_title.group(1))
+
             out.append(ContactCandidate(
                 name=name, title=title, emails=[em], phones=[],
-                source="dom", url=url, dom_distance=0, hints={"near": near[:180], "cfemail": True}
+                source="dom", url=url, dom_distance=0,
+                hints={"near": near[:180], "cfemail": True}
             ))
-        
-        # tel: links med nær-navn/titel (BS4 fallback)
+
+        # tel: links (BS4)
         for t in html_or_tree.select("a[href^='tel:']"):
             href = t.get("href", "")
             pn = _normalize_phone(href)
@@ -1142,22 +1221,27 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
                 continue
             container = t.parent or t
             near = " ".join(list(container.stripped_strings))[:260] if container else ""
+
             name = None
             m_name = re.search(rf"({_NAME_WINDOW_REGEX()})", near)
             if m_name:
                 name = _collapse_ws(m_name.group(1))
+            if not _is_plausible_name(name):
+                name = _find_heading_name(t) or name
+
             title = None
             m_title = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", near)
             if m_title:
                 title = _sanitize_title(m_title.group(1))
+
             out.append(ContactCandidate(
                 name=name, title=title, emails=[], phones=[pn],
-                source="dom", url=url, dom_distance=0, hints={"near": near[:180], "tel": True}
+                source="dom", url=url, dom_distance=0,
+                hints={"near": near[:180], "tel": True}
             ))
-
         return out
 
-    # ren regex fallback
+    # ---------------- ren regex fallback ----------------
     for m in re.finditer(r'href=["\']mailto:([^"\']+)["\']', str(html_or_tree), flags=re.I):
         em = _normalize_email(m.group(1))
         if em:
@@ -1201,34 +1285,45 @@ def _extract_from_dom(url: str, html_or_tree) -> list[ContactCandidate]:
             continue
         container = a.parent or a
         text_blob = _near_text(container, 260)
+
         name = None
         m = re.search(rf"({_NAME_WINDOW_REGEX()})", text_blob)
         if m:
             name = _collapse_ws(m.group(1))
+        if not _is_plausible_name(name):
+            name = _find_heading_name(a) or name
+
         title = None
         m2 = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", text_blob)
         if m2:
             title = _sanitize_title(m2.group(1))
+
         dist = _dom_distance(a, container) or (0 if name else 1)
         out.append(ContactCandidate(
             name=name, title=title, emails=[em], phones=[],
             source="dom", url=url, dom_distance=dist, hints={"near": text_blob[:180]}
         ))
-    
+
+    # tel:
     for t in html_or_tree.css("a[href^='tel:']"):
         pn = _normalize_phone(t.attributes.get("href", ""))
         if not pn:
             continue
         container = t.parent or t
         text_blob = _near_text(container, 260)
+
         name = None
         m = re.search(rf"({_NAME_WINDOW_REGEX()})", text_blob)
         if m:
             name = _collapse_ws(m.group(1))
+        if not _is_plausible_name(name):
+            name = _find_heading_name(t) or name
+
         title = None
         m2 = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", text_blob)
         if m2:
             title = _sanitize_title(m2.group(1))
+
         dist = _dom_distance(t, container) or (0 if name else 1)
         out.append(ContactCandidate(
             name=name, title=title, emails=[], phones=[pn],
@@ -2213,6 +2308,8 @@ class ContactFinder:
                 dom_distance=0, hints={"bucketed": True, "identity_gate_bypassed": True}
             ))
         all_cands = pruned
+
+        all_cands = _match_emails_to_names(all_cands)
 
         # 11) Merge + score
         merged = self._merge_dedup(all_cands)
