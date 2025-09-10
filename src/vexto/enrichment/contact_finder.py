@@ -69,17 +69,22 @@ log_file = log_dir / "contact_finder.log"
 handler = logging.handlers.RotatingFileHandler(
     log_file, maxBytes=5_000_000, backupCount=5, encoding="utf-8"
 )
+handler.set_name("cf_rotating")
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 
 log = logging.getLogger("vexto.contact_finder")
 log.setLevel(logging.DEBUG)
-log.addHandler(handler)
+if not any(getattr(h, "name", "") == "cf_rotating" for h in log.handlers):
+    log.addHandler(handler)
+
 # valgfrit: behold konsol kun på WARNING+
 console = logging.StreamHandler()
+console.set_name("cf_console")
 console.setLevel(logging.WARNING)
 console.setFormatter(formatter)
-log.addHandler(console)
+if not any(getattr(h, "name", "") == "cf_console" for h in log.handlers):
+    log.addHandler(console)
 
 try:
     # Kræver at AsyncHtmlClient findes i jeres http_client
@@ -114,26 +119,33 @@ def _is_contact_like(u: str) -> bool:
         "/team", "/medarbejder", "/people", "/staff"
     ))
 
-def _fetch_with_playwright_sync(url: str) -> str:
+def _fetch_with_playwright_sync(url: str, pre_html: Optional[str] = None, pre_status: Optional[int] = None) -> str:
     """Renderer side med delt Playwright-klient (singleton).
     Indeholder status/_needs_js logging, timeout og circuit-breaker.
+    Accepterer evt. pre_html/pre_status for at undgå ekstra GET.
     """
     if AsyncHtmlClient is None:
         return ""
 
     import asyncio
 
-    async def _go(u: str) -> str:
+    async def _go(u: str, given_html: Optional[str], given_status: Optional[int]) -> str:
         global _SHARED_PW_CLIENT, _PW_FAILS_BY_HOST, _PW_FAILS_MAX, _PW_DISABLED_HOSTS
 
-        # Billig GET før PW: find status + pre_html til beslutning
-        status, pre_html = _safe_get(u)
-        needs = False
-        try:
-            needs = _needs_js(pre_html)
-        except Exception:  # defensivt
-            needs = False
+        # Brug pre_html/pre_status hvis givet; ellers billig GET
+        status = given_status
+        pre_html = given_html
+        if status is None or pre_html is None:
+            s2, h2 = _safe_get(u)
+            if status is None:
+                status = s2
+            if pre_html is None:
+                pre_html = h2
 
+        try:
+            needs = _needs_js(pre_html or "")
+        except Exception:
+            needs = False
         from urllib.parse import urlsplit as _us
         _host = _us(u).netloc.lower()
 
@@ -142,7 +154,7 @@ def _fetch_with_playwright_sync(url: str) -> str:
         # 1) Drop PW på ≠200
         if status != 200:
             log.debug(f"Springer Playwright over (status {status}) for {u}")
-            return pre_html
+            return pre_html or ""
 
         # 2) Drop PW når siden ikke kræver JS
         if not needs:
@@ -188,7 +200,7 @@ def _fetch_with_playwright_sync(url: str) -> str:
                 html = html.get("html") or ""
             # reset kun for denne host
             _PW_FAILS_BY_HOST[_host] = 0
-            return html or pre_html
+            return html or (pre_html or "")
         except Exception as e:
             _PW_FAILS_BY_HOST[_host] = _PW_FAILS_BY_HOST.get(_host, 0) + 1
             log.debug(f"Playwright fejl ({_PW_FAILS_BY_HOST[_host]}/{_PW_FAILS_MAX}) for host={_host}, url={u}: {e!r}")
@@ -502,16 +514,32 @@ def _is_plausible_name(s: str | None) -> bool:
         return False
     return all(re.fullmatch(NAME_TOKEN, p) for p in parts)
 
+def _maybe_promote_name_case(s: str | None) -> Optional[str]:
+    """
+    Hvis s er helt lowercase men ligner 2–4 navnetokens, returnér kapitaliseret udgave.
+    Fx 'brian pedersen' -> 'Brian Pedersen'.
+    """
+    if not s:
+        return None
+    t = _collapse_ws(s) or ""
+    if not t:
+        return None
+    # 2-4 ord, kun bogstaver, min. længde 2
+    if re.fullmatch(r"[a-zæøå]{2,}(?:\s+[a-zæøå]{2,}){1,3}", t, flags=re.I):
+        parts = t.split()
+        cap = " ".join(p[:1].upper() + p[1:] for p in parts)
+        return cap
+    return None
+
 def _sanitize_title(title: str | None) -> str | None:
     if not title:
         return None
+    # Bevar original case i output
     t = _collapse_ws(title) or ""
-    t = t.strip(",;:-—").lower()
-    if t in UI_TITLE_BLACKLIST:
-        return None
-    # fjern UI-ord hvis de blot er støj
+    t = t.strip(",;:-—")
+    # Fjern UI-ord (case-insensitive)
     pat = r"\b(" + "|".join(map(re.escape, UI_TITLE_BLACKLIST)) + r")\b"
-    t2 = re.sub(pat, "", t)
+    t2 = re.sub(pat, "", t, flags=re.I)
     t2 = re.sub(r"\s{2,}", " ", t2).strip(",;:-— ").strip()
     return t2 or None
 
@@ -951,30 +979,31 @@ def _iter_jsonld(html: str) -> Iterable[dict]:
                         yield item
 
 def _near_text(node, max_chars: int = 200) -> str:
-    """Saml tekst i node + nærområde (fungerer for selectolax og BS4)."""
+    """Saml tekst i node + nærområde (duck typing: virker for selectolax og BS4)."""
     try:
-        # selectolax
-        if HTMLParser is not None and isinstance(node, HTMLParser.Node):  # type: ignore[attr-defined]
+        # selectolax-lignende node
+        if hasattr(node, "itertext") and hasattr(node, "parent"):
             texts = []
             texts.extend(t.strip() for t in node.itertext() if t and t.strip())
-            parent = node.parent
-            if parent:
+            parent = getattr(node, "parent", None)
+            if parent and hasattr(parent, "iter"):
                 sibs = list(parent.iter())
                 for sib in sibs[:8]:
                     if sib is node:
                         continue
                     with contextlib.suppress(Exception):
-                        txt = " ".join(t.strip() for t in sib.itertext() if t and t.strip())
-                        if txt:
-                            texts.append(txt)
+                        if hasattr(sib, "itertext"):
+                            txt = " ".join(t.strip() for t in sib.itertext() if t and t.strip())
+                            if txt:
+                                texts.append(txt)
             out = " ".join(texts)
             return (out[:max_chars] + "…") if len(out) > max_chars else out
 
-        # bs4
-        if BeautifulSoup is not None and hasattr(node, "stripped_strings"):
-            parent = node.parent
+        # bs4-lignende node
+        if hasattr(node, "stripped_strings"):
+            parent = getattr(node, "parent", None)
             texts = []
-            if parent:
+            if parent and hasattr(parent, "find_all"):
                 for sib in parent.find_all(recursive=False)[:8]:
                     with contextlib.suppress(Exception):
                         txt = " ".join(list(sib.stripped_strings))
@@ -1083,86 +1112,99 @@ def _find_heading_name(node) -> Optional[str]:
     """
     Gå op til 5 forældre og kig efter nærliggende navn i <h1-6>, <strong>, <b>,
     elementer med [itemprop=name], [role=heading], aria-label samt søskende-tekst.
-    Virker for både selectolax og BS4.
+    Virker for både selectolax og BS4 (duck typing).
     """
     try:
-        # selectolax
-        if HTMLParser is not None and isinstance(node, HTMLParser.Node):  # type: ignore[attr-defined]
+        # selectolax-lignende node
+        if hasattr(node, "parent") and hasattr(node, "iter"):
             cur = node
             for _ in range(5):
                 parent = getattr(cur, "parent", None)
-                if not parent: break
+                if not parent:
+                    break
                 # direkte headings/strong + semantiske navneindikatorer
-                for sel in ["h1","h2","h3","h4","h5","h6","strong","b","[itemprop='name']","[role='heading']"]:
-                    for h in parent.css(sel):
-                        nm = _maybe_name_from_text(h.text())
-                        if nm: return nm
-                # aria-label
-                try:
-                    al = parent.attributes.get("aria-label")  # type: ignore[attr-defined]
-                    nm = _maybe_name_from_text(al)
-                    if nm: return nm
-                except Exception:
-                    pass
-                # søskende
-                sibs = list(parent.iter())
-                for sib in sibs[:8]:
-                    with contextlib.suppress(Exception):
-                        nm = _maybe_name_from_text(" ".join(t.strip() for t in sib.itertext()))
-                        if nm: return nm
+                if hasattr(parent, "css"):
+                    for sel in ["h1","h2","h3","h4","h5","h6","strong","b","[itemprop='name']","[role='heading']"]:
+                        for h in parent.css(sel):
+                            nm = _maybe_name_from_text(h.text())
+                            if nm:
+                                return nm
+                    # aria-label
+                    try:
+                        al = parent.attributes.get("aria-label")
+                        nm = _maybe_name_from_text(al)
+                        if nm:
+                            return nm
+                    except Exception:
+                        pass
+                    # søskende
+                    sibs = list(parent.iter())
+                    for sib in sibs[:8]:
+                        with contextlib.suppress(Exception):
+                            if hasattr(sib, "itertext"):
+                                nm = _maybe_name_from_text(" ".join(t.strip() for t in sib.itertext()))
+                                if nm:
+                                    return nm
                 cur = parent
-        # bs4
-        elif BeautifulSoup is not None and hasattr(node, "find_parent"):
+
+        # bs4-lignende node
+        if hasattr(node, "find_parent"):
             cur = node
             for _ in range(5):
-                parent = cur.parent
-                if not parent: break
-                for tag in parent.find_all(["h1","h2","h3","h4","h5","h6","strong","b"], limit=8, recursive=True):
-                    nm = _maybe_name_from_text(tag.get_text(" ", strip=True))
-                    if nm: return nm
-                # semantiske
-                for tag in parent.find_all(attrs={"itemprop": "name"}, limit=4):
-                    nm = _maybe_name_from_text(tag.get_text(" ", strip=True))
-                    if nm: return nm
-                for tag in parent.find_all(attrs={"role": "heading"}, limit=4):
-                    nm = _maybe_name_from_text(tag.get_text(" ", strip=True))
-                    if nm: return nm
-                al = parent.attrs.get("aria-label")
-                nm = _maybe_name_from_text(al)
-                if nm: return nm
-                # søskende
-                for sib in parent.find_all(recursive=False):
-                    txt = sib.get_text(" ", strip=True)
-                    nm = _maybe_name_from_text(txt)
-                    if nm: return nm
+                parent = getattr(cur, "parent", None)
+                if not parent:
+                    break
+                if hasattr(parent, "find_all"):
+                    for tag in parent.find_all(["h1","h2","h3","h4","h5","h6","strong","b"], limit=8, recursive=True):
+                        nm = _maybe_name_from_text(tag.get_text(" ", strip=True))
+                        if nm:
+                            return nm
+                    # semantiske
+                    for tag in parent.find_all(attrs={"itemprop": "name"}, limit=4):
+                        nm = _maybe_name_from_text(tag.get_text(" ", strip=True))
+                        if nm:
+                            return nm
+                    for tag in parent.find_all(attrs={"role": "heading"}, limit=4):
+                        nm = _maybe_name_from_text(tag.get_text(" ", strip=True))
+                        if nm:
+                            return nm
+                    al = parent.attrs.get("aria-label")
+                    nm = _maybe_name_from_text(al)
+                    if nm:
+                        return nm
+                    # søskende
+                    for sib in parent.find_all(recursive=False):
+                        txt = sib.get_text(" ", strip=True)
+                        nm = _maybe_name_from_text(txt)
+                        if nm:
+                            return nm
                 cur = parent
     except Exception:
         return None
     return None
 
+
 def _harvest_identity_from_container(node, max_depth: int = 7) -> tuple[Optional[str], Optional[str], list[str]]:
     """
-    Gå op til max_depth for at finde et 'kort/sektion'-container omkring node.
-    Ekstrahér navn (h1–h4/.name/itemprop=name/role=heading), titel (itemprop=jobTitle/p/span),
-    og telefoner (tel:-links + tekstnumre) i container. Anti-CVR i nærkontekst.
-    Returnér (name, title, phones).
+    Find nærmeste 'kort/sektion' omkring node, og ekstrahér (name, title, phones).
+    - Navn findes før titel (så navne ikke ender som titler).
+    - Understøtter Elementor-kort/overskrifter.
+    - Case-promotion for helt lowercase navne i kort.
     """
     if not node:
         return None, None, []
 
-    # find container (class/id match)
     def _is_container(n) -> bool:
         try:
-            # selectolax
             if hasattr(n, "attributes"):
                 cls = (n.attributes.get("class", "") + " " + n.attributes.get("id", "")).lower()
-            # bs4
             elif hasattr(n, "get"):
                 cls = (" ".join(n.get("class", []) or []) + " " + (n.get("id") or "")).lower()
             else:
                 return False
             keys = ("team","staff","employee","person","card","profile","grid","column","section",
-                    "administration","tilbud","entreprise","elementor-team-member","elementor-widget","elementor-column")
+                    "administration","tilbud","entreprise",
+                    "elementor-team-member","elementor-widget","elementor-column","elementor-section","elementor-container")
             return any(k in cls for k in keys)
         except Exception:
             return False
@@ -1181,68 +1223,118 @@ def _harvest_identity_from_container(node, max_depth: int = 7) -> tuple[Optional
     title = None
     phones: list[str] = []
 
-    # Helpers til tekst
     def _node_text(n) -> str:
         try:
-            # selectolax
             if hasattr(n, "itertext"):
                 return " ".join(t.strip() for t in n.itertext() if t and t.strip())
         except Exception:
             pass
         try:
-            # bs4
             if hasattr(n, "stripped_strings"):
                 return " ".join(list(n.stripped_strings))
         except Exception:
             pass
         return ""
 
-    # 1) NAVN
+    # 1) NAVN (headings + semantiske + Elementor)
     try:
+        selectors = ("h1,h2,h3,h4,.name,[itemprop='name'],[role='heading'],.elementor-heading-title,.elementor-widget-heading")
         if hasattr(container, "css"):
-            for sel in ("h1,h2,h3,h4,.name,[itemprop='name'],[role='heading']"):
-                for el in container.css(sel):
-                    nm = _collapse_ws(el.text())
-                    if _is_plausible_name(nm):
-                        name = nm; break
-                if name: break
+            for el in container.css(selectors):
+                raw = _collapse_ws(el.text())
+                if _is_plausible_name(raw):
+                    name = raw
+                    break
+                if not name:
+                    promo = _maybe_promote_name_case(raw)
+                    if promo and _is_plausible_name(promo):
+                        name = promo
+                        break
         elif hasattr(container, "select"):
-            for el in container.select("h1,h2,h3,h4,.name,[itemprop='name'],[role='heading']"):
-                nm = _collapse_ws(el.get_text(" ", strip=True))
-                if _is_plausible_name(nm):
-                    name = nm; break
+            for el in container.select(selectors):
+                raw = _collapse_ws(el.get_text(" ", strip=True))
+                if _is_plausible_name(raw):
+                    name = raw
+                    break
+                if not name:
+                    promo = _maybe_promote_name_case(raw)
+                    if promo and _is_plausible_name(promo):
+                        name = promo
+                        break
     except Exception:
         pass
 
-    # 2) TITEL
+    # 2) TITEL (først stærke selectorer; undgå at tage navne som titler)
     try:
         if hasattr(container, "css"):
-            # stærke signaler først
             for el in container.css("[itemprop='jobTitle'], .job-title, .title, .role"):
-                tt = _sanitize_title(el.text())
-                if tt:
-                    title = tt; break
+                tt_raw = _collapse_ws(el.text())
+                if _is_plausible_name(tt_raw):
+                    if not name:
+                        name = tt_raw
+                    continue
+                if not name:
+                    promo = _maybe_promote_name_case(tt_raw)
+                    if promo and _is_plausible_name(promo):
+                        name = promo
+                        continue
+                tt = _sanitize_title(tt_raw)
+                if tt and not _is_plausible_name(tt):
+                    title = tt
+                    break
             if not title:
                 for el in container.css("p,span"):
-                    tt = _sanitize_title(el.text())
+                    txt_raw = _collapse_ws(el.text())
+                    if _is_plausible_name(txt_raw):
+                        if not name:
+                            name = txt_raw
+                        continue
+                    if not name:
+                        promo = _maybe_promote_name_case(txt_raw)
+                        if promo and _is_plausible_name(promo):
+                            name = promo
+                            continue
+                    tt = _sanitize_title(txt_raw)
                     if tt and not _is_plausible_name(tt):
-                        title = tt; break
+                        title = tt
+                        break
         elif hasattr(container, "select"):
             for el in container.select("[itemprop='jobTitle'], .job-title, .title, .role"):
-                tt = _sanitize_title(el.get_text(" ", strip=True))
-                if tt:
-                    title = tt; break
+                tt_raw = _collapse_ws(el.get_text(" ", strip=True))
+                if _is_plausible_name(tt_raw):
+                    if not name:
+                        name = tt_raw
+                    continue
+                if not name:
+                    promo = _maybe_promote_name_case(tt_raw)
+                    if promo and _is_plausible_name(promo):
+                        name = promo
+                        continue
+                tt = _sanitize_title(tt_raw)
+                if tt and not _is_plausible_name(tt):
+                    title = tt
+                    break
             if not title:
                 for el in container.select("p,span"):
-                    tt = _sanitize_title(el.get_text(" ", strip=True))
+                    txt_raw = _collapse_ws(el.get_text(" ", strip=True))
+                    if _is_plausible_name(txt_raw):
+                        if not name:
+                            name = txt_raw
+                        continue
+                    if not name:
+                        promo = _maybe_promote_name_case(txt_raw)
+                        if promo and _is_plausible_name(promo):
+                            name = promo
+                            continue
+                    tt = _sanitize_title(txt_raw)
                     if tt and not _is_plausible_name(tt):
-                        title = tt; break
+                        title = tt
+                        break
     except Exception:
         pass
 
-    # 3) PHONES (tel-links + tekstnumre m. anti-CVR)
+    # 3) PHONES (tel: + tekstnumre m. anti-CVR)
     try:
-        # tel:
         if hasattr(container, "css"):
             for t in container.css("a[href^='tel:']"):
                 pn = _normalize_phone(t.attributes.get("href",""))
@@ -1254,11 +1346,10 @@ def _harvest_identity_from_container(node, max_depth: int = 7) -> tuple[Optional
     except Exception:
         pass
 
-    # tekstnumre
     blob = _node_text(container)
     for m in re.finditer(r"(?:\+?\d[\s\-\(\)\.]{0,3}){8,}", blob):
         sidx,eidx = m.start(), m.end()
-        ctx = blob[max(0, sidx-15):min(len(blob), eidx+15)].lower()
+        ctx = blob[max(0, sidx-20):min(len(blob), eidx+20)].lower()
         if "cvr" in ctx:
             continue
         pn = _normalize_phone(m.group(0))
@@ -1267,6 +1358,7 @@ def _harvest_identity_from_container(node, max_depth: int = 7) -> tuple[Optional
 
     phones = sorted(set(p for p in phones if p))
     return name, title, phones
+
 
 
 
@@ -1338,35 +1430,37 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
 
     # ---------------- BeautifulSoup ----------------
     if BeautifulSoup is not None and hasattr(html_or_tree, "select"):
-        # mailto:
         for a in html_or_tree.select("a[href^='mailto:']"):
             href = a.get("href", "")
             em = _normalize_email(href)
             if not em:
                 continue
 
-            # NYT: harvest
             name_h, title_h, phones_h = _harvest_identity_from_container(a)
             near = " ".join(list(a.parent.stripped_strings))[:260] if a.parent else ""
 
             if not _is_plausible_name(name_h):
                 m_name = re.search(rf"({_NAME_WINDOW_REGEX()})", near)
                 if m_name:
-                    name_h = _collapse_ws(m_name.group(1))
+                    nm = _collapse_ws(m_name.group(1))
+                    promo = _maybe_promote_name_case(nm) or nm
+                    if _is_plausible_name(promo):
+                        name_h = promo
+
             if not _sanitize_title(title_h):
                 m_title = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", near)
                 if m_title:
                     title_h = _sanitize_title(m_title.group(1))
 
             try:
-                dist = _dom_distance(a, a.parent or a) or (0 if name else 1)
+                dist = _dom_distance(a, a.parent or a) or (0 if name_h else 1)
             except Exception:
-                dist = 0 if name else 1
+                dist = 0 if name_h else 1
 
             out.append(ContactCandidate(
-                name=name, title=title, emails=[em], phones=[],
+                name=name_h, title=title_h, emails=[em], phones=phones_h or [],
                 source="mailto", url=url, dom_distance=dist,
-                hints={"near": near[:180]}
+                hints={"near": near[:180], "harvested": True}
             ))
 
         # Cloudflare __cf_email__
@@ -1438,7 +1532,20 @@ def _extract_from_dom(url: str, html_or_tree) -> list[ContactCandidate]:
     if HTMLParser is None or not isinstance(html_or_tree, HTMLParser):
         return out
 
-    # Microdata Person
+    # Lokal helper: promover helt-lowercase navne til "Title Case"
+    def _promote_lower_name(s: Optional[str]) -> Optional[str]:
+        if not s:
+            return None
+        t = _collapse_ws(s) or ""
+        if not t:
+            return None
+        # 2–4 ord, kun bogstaver (DK inkl.), min. længde 2
+        if re.fullmatch(r"[a-zæøå]{2,}(?:\s+[a-zæøå]{2,}){1,3}", t, flags=re.I):
+            parts = t.split()
+            return " ".join(p[:1].upper() + p[1:] for p in parts)
+        return None
+
+    # --- Microdata Person ---
     for el in html_or_tree.css('[itemtype*="Person" i], [itemscope][itemtype*="Person" i]'):
         name = None; title = None; email = None; tel = None
         for sub in el.css('[itemprop]'):
@@ -1454,13 +1561,25 @@ def _extract_from_dom(url: str, html_or_tree) -> list[ContactCandidate]:
                 email = _normalize_email(sub.text() or "")
             elif prop in {"telephone","phone"}:
                 tel = _normalize_phone(sub.text() or "")
+
+        # promotér evt. helt-lowercase navn
+        if name and not _is_plausible_name(name):
+            promo = _promote_lower_name(name)
+            if promo and _is_plausible_name(promo):
+                name = promo
+
         out.append(ContactCandidate(
-            name=name, title=title,
-            emails=[e for e in [email] if e], phones=[p for p in [tel] if p],
-            source="dom", url=url, dom_distance=0, hints={"selector": "Person microdata"}
+            name=name,
+            title=_sanitize_title(title),
+            emails=[e for e in [email] if e],
+            phones=[p for p in [tel] if p],
+            source="microdata",
+            url=url,
+            dom_distance=0,
+            hints={"selector": "Person microdata"},
         ))
 
-    # Cards: anchor mailto med nær-navn/titel
+    # --- Cards: anchor mailto med nær-navn/titel ---
     for a in html_or_tree.css("a[href^='mailto:']"):
         em = _normalize_email(a.attributes.get("href", ""))
         if not em:
@@ -1469,21 +1588,35 @@ def _extract_from_dom(url: str, html_or_tree) -> list[ContactCandidate]:
         text_blob = _near_text(container, 260)
 
         name_h, title_h, phones_h = _harvest_identity_from_container(a)
+
+        # Fallback: nærtekst → navn (med case-promotion)
         if not _is_plausible_name(name_h):
             m = re.search(rf"({_NAME_WINDOW_REGEX()})", text_blob)
-            if m: name_h = _collapse_ws(m.group(1))
+            if m:
+                nm = _collapse_ws(m.group(1))
+                promo = _promote_lower_name(nm) or nm
+                if _is_plausible_name(promo):
+                    name_h = promo
+
+        # Fallback: nærtekst → titel
         if not _sanitize_title(title_h):
             m2 = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", text_blob)
-            if m2: title_h = _sanitize_title(m2.group(1))
+            if m2:
+                title_h = _sanitize_title(m2.group(1))
 
         dist = _dom_distance(a, container) or (0 if name_h else 1)
         out.append(ContactCandidate(
-            name=name_h, title=title_h, emails=[em], phones=phones_h,
-            source="dom", url=url, dom_distance=dist, hints={"near": text_blob[:180], "harvested": True}
+            name=name_h,
+            title=title_h,
+            emails=[em],
+            phones=phones_h,
+            source="mailto",
+            url=url,
+            dom_distance=dist,
+            hints={"near": text_blob[:180], "harvested": True},
         ))
 
-        
-    # tel:
+    # --- tel: ---
     for t in html_or_tree.css("a[href^='tel:']"):
         pn = _normalize_phone(t.attributes.get("href", ""))
         if not pn:
@@ -1492,21 +1625,36 @@ def _extract_from_dom(url: str, html_or_tree) -> list[ContactCandidate]:
         text_blob = _near_text(container, 260)
 
         name_h, title_h, phones_h = _harvest_identity_from_container(t)
-        if pn not in phones_h:
+        if pn and pn not in phones_h:
             phones_h.append(pn)
 
+        # Fallback: nærtekst → navn (med case-promotion)
         if not _is_plausible_name(name_h):
             m = re.search(rf"({_NAME_WINDOW_REGEX()})", text_blob)
-            if m: name_h = _collapse_ws(m.group(1))
+            if m:
+                nm = _collapse_ws(m.group(1))
+                promo = _promote_lower_name(nm) or nm
+                if _is_plausible_name(promo):
+                    name_h = promo
+
+        # Fallback: nærtekst → titel
         if not _sanitize_title(title_h):
             m2 = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", text_blob)
-            if m2: title_h = _sanitize_title(m2.group(1))
+            if m2:
+                title_h = _sanitize_title(m2.group(1))
 
         dist = _dom_distance(t, container) or (0 if name_h else 1)
         out.append(ContactCandidate(
-            name=name_h, title=title_h, emails=[], phones=sorted(set(phones_h)),
-            source="dom", url=url, dom_distance=dist, hints={"near": text_blob[:180], "harvested": True, "tel": True}
+            name=name_h,
+            title=title_h,
+            emails=[],
+            phones=sorted(set(phones_h)),
+            source="dom",
+            url=url,
+            dom_distance=dist,
+            hints={"near": text_blob[:180], "harvested": True, "tel": True},
         ))
+
     return out
 
 def _extract_from_text_emails(url: str, html: str) -> list[ContactCandidate]:
@@ -2112,21 +2260,47 @@ def _build_candidate_pages(base_url: str, root_html: str) -> list[str]:
     return out
 
 def _head_and_resolve(u: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[str, int | None]:
-    """
-    HEAD med follow_redirects og returnér (final_url, status).
-    Bruger httpx's follow_redirects for at undgå separat HEAD på både 301 og destination.
-    """
+    # 0) Deleger til http_client-override, hvis tilgængelig (eliminerer Pylance-warning)
     try:
-        import httpx
-        with httpx.Client(follow_redirects=True, timeout=timeout,
-                          headers={"User-Agent": "VextoContactFinder/1.0"}) as c:
-            r = c.head(u)
-            final_url = str(r.url) if getattr(r, "url", None) else u
-            return final_url, r.status_code
+        if callable(_hc_head_and_resolve):
+            return _hc_head_and_resolve(u, timeout=timeout)  # type: ignore[misc]
     except Exception:
-        # fallback: resolve → separat HEAD
-        ru = _resolve_redirect(u, timeout=timeout) or u
-        return ru, _http_head_status(ru, timeout=timeout)
+        # Ignorér og fald tilbage til lokal implementering
+        pass
+
+    # 1) Prøv aiohttp async HEAD hvis tilgængelig
+    try:
+        import asyncio, aiohttp  # type: ignore
+
+        async def _go(url: str, tout: float):
+            async with aiohttp.ClientSession(headers={"User-Agent": "VextoContactFinder/1.0"}) as sess:
+                try:
+                    async with sess.head(url, allow_redirects=True, timeout=tout) as r:
+                        return str(r.url), r.status
+                except Exception:
+                    # Fallback: resolve via billig HEAD med httpx
+                    ru = _resolve_redirect(url, timeout=tout) or url
+                    return ru, None
+
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        return loop.run_until_complete(_go(u, timeout))
+    except Exception:
+        # 2) Fallback: synkron httpx
+        try:
+            import httpx
+            with httpx.Client(follow_redirects=True, timeout=timeout,
+                              headers={"User-Agent": "VextoContactFinder/1.0"}) as c:
+                r = c.head(u)
+                final_url = str(r.url) if getattr(r, "url", None) else u
+                return final_url, r.status_code
+        except Exception:
+            # 3) Sidste fallback: billig redirect-resolve + simpel HEAD-status
+            ru = _resolve_redirect(u, timeout=timeout) or u
+            return ru, _http_head_status(ru, timeout=timeout)
 
 # Cache til (final_url->status) pr. kørsel
 class _HeadCache:
@@ -2307,7 +2481,8 @@ class ContactFinder:
             self._pw_attempted.add(key)
             self._pw_budget -= 1
 
-            rendered = _fetch_with_playwright_sync(url)
+            pre_status = 200 if html and not _looks_404(html) else None
+            rendered = _fetch_with_playwright_sync(url, pre_html=html or None, pre_status=pre_status)
             if rendered:
                 html = rendered
             self._rendered_once.add(key)
@@ -2572,6 +2747,8 @@ class ContactFinder:
                     _, h = fetch_profile(u)
                     htmls[u] = h
 
+        log.debug("Profile links found (%d): %s", len(profile_urls), profile_urls)
+
         # Supplerende “org bucket” fra tværs af sider (kun hvis vi ikke allerede laver en page-generic senere)
         pages_html_items = list(htmls.items())
         generic_bucket = _extract_generic_org_contacts(url, pages_html_items) if pages_html_items else []
@@ -2629,8 +2806,6 @@ class ContactFinder:
                     hints=gb.get("hints") or {"identity_gate_bypassed": True},
                 ))
 
-        all_cands = _match_emails_to_names(all_cands)
-
         # 11) Merge + score
         merged = self._merge_dedup(all_cands)
         scored = self._score_sort(merged)
@@ -2685,11 +2860,21 @@ class ContactFinder:
         initials_downweighted = sum(1 for r in cleaned if "INITIALS_DOWNWEIGHT" in (r.get("reasons") or []))
         section_bonus_hits = sum(1 for r in cleaned if "SECTION_MATCH" in (r.get("reasons") or []))
 
+        containers_detected = sum(1 for _, h in htmls.items()
+                        if h and any(k in h.lower() for k in ('team','staff','section','administration','tilbud','entreprise','elementor-team-member')))
+        # Tæl cf-email kandidater på kandidatniveau (før dict-konvertering)
+        cf_emails_decoded = sum(
+            1 for c in merged
+            if isinstance(getattr(c, "hints", {}), dict) and c.hints.get("cfemail")
+        )
+
         log.debug(
             ("ContactFinder.find_all(%s) -> %d raw, %d cleaned in %.3fs | "
-             "names=%d, titles=%d, phones=%d, initials_downweighted=%d, section_hits=%d"),
+            "names=%d, titles=%d, phones=%d, initials_downweighted=%d, section_hits=%d, "
+            "containers_detected=%d, cf_emails_decoded=%d"),
             url, len(out), len(cleaned), time.time() - t0,
-            names_found, titles_found, phones_found, initials_downweighted, section_bonus_hits
+            names_found, titles_found, phones_found, initials_downweighted, section_bonus_hits,
+            containers_detected, cf_emails_decoded
         )
         return cleaned
 
