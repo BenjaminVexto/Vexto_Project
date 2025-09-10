@@ -295,6 +295,54 @@ FALLBACK_PATHS = (
     "/ledelse", "/management", "/board", "/organisation"
 )
 
+# --- Fast HEAD status cache + URL-normalisering ---
+from functools import lru_cache
+
+def _same_host(a: str, b: str) -> bool:
+    try:
+        sa, sb = urlsplit(a), urlsplit(b)
+        return sa.scheme == sb.scheme and sa.netloc == sb.netloc
+    except Exception:
+        return False
+
+@lru_cache(maxsize=256)
+def _cheap_head_status(u: str, timeout: float = 8.0) -> int:
+    """HEAD med follow_redirects og kort timeout. Cached pr. normaliseret URL."""
+    try:
+        import httpx
+        ae = _accept_encoding() if callable(_accept_encoding) else _accept_encoding  # type: ignore[misc]
+        if not isinstance(ae, (str, bytes)) or (isinstance(ae, str) and not ae.strip()):
+            ae = "gzip, deflate, br"
+        with httpx.Client(follow_redirects=True, timeout=timeout,
+                          headers={"User-Agent": "VextoContactFinder/1.0", "Accept-Encoding": ae}) as c:
+            r = c.head(u)
+            return r.status_code
+    except Exception:
+        return 0
+
+def _norm(u: str) -> str:
+    return _norm_url_for_fetch(u)
+
+def _looks_danish(html: str) -> bool:
+    return bool(re.search(r"\b(kontakt|om os|åbningstider|find os|vi hjælper)\b", (html or "").lower()))
+
+def _localized_fallback_paths(base_url: str, home_html: str) -> tuple[str, ...]:
+    """Returnér sprog-tilpassede fallback-stier for kandidatplanen."""
+    host = urlsplit(base_url).netloc.lower()
+    dk_like = host.endswith(".dk")
+    da = dk_like or _looks_danish(home_html)
+    if da:
+        return (
+            "/kontakt", "/kontakt/", "/kontakt-os", "/om", "/om/", "/om-os", "/om-os/",
+            "/team", "/team/", "/teams", "/medarbejder", "/medarbejder/", "/medarbejdere",
+            "/medarbejdere/", "/ansatte", "/personale", "/ledelse"
+        )
+    else:
+        return (
+            "/contact", "/contact/", "/contact-us", "/about", "/about/", "/about-us",
+            "/team", "/team/", "/people", "/staff", "/management"
+        )
+
 # Link-discovery (ankertekst/URL indeholder disse)
 DISCOVERY_KEYWORDS = {
     "kontakt", "contact", "kontakt os", "contact us",
@@ -369,52 +417,60 @@ def _candidate_score(u: str) -> int:
     return score
 
 def _plan_candidates(base_url: str, limit_pages: int = 8) -> list[str]:
-    """Lav en prioriteret, HEAD-valideret liste over interne kandidatsider."""
-    status, html = _safe_get(base_url)
+    """Lav en prioriteret, HEAD-valideret liste over interne kandidatsider – uden dubletter."""
+    base_url = _norm(base_url)
+    status, home_html = _safe_get(base_url)
     if status == 0:
-        return [base_url]  # som minimum
+        return [base_url]
 
-    # Start med base_url
+    # 1) Start-set: base_url
     cands: list[str] = [base_url]
+    seen: set[str] = {base_url}
 
-    # Udtræk interne links via simple heuristikker (anker-tekst/URL-indhold)
+    # 2) Træk interne links ud fra forsiden (hurtig regex på href + DISCOVERY_KEYWORDS)
     try:
-        # hurtig regex-baseret discovery; evt. suppler med eksisterende util hvis tilgængelig
+        html = home_html or ""
         for m in re.finditer(r'href=["\']([^"\']+)["\']', html, flags=re.I):
-            href = _abs_url(base_url, m.group(1))
-            if not href or not _same_host(base_url, href): 
+            href = m.group(1)
+            if not href or href.startswith("#"):
                 continue
-            t = m.group(0).lower()
-            if any(k in t for k in DISCOVERY_KEYWORDS) or _is_contactish_url(href):
-                cands.append(href)
-    except Exception as e:
-        log.debug(f"Discovery fejl: {e!r}")
+            full = urljoin(base_url, href)
+            if not _same_host(base_url, full):
+                continue
+            path_low = (urlsplit(full).path or "").lower()
+            if not any(k in path_low for k in DISCOVERY_KEYWORDS):
+                continue
+            n = _norm(full)
+            if n not in seen:
+                seen.add(n); cands.append(n)
+    except Exception:
+        pass
 
-    # Tilføj kendte fallback paths (kun hvis samme host)
-    for fp in FALLBACK_PATHS:
-        u = urljoin(base_url, fp)
-        if _same_host(base_url, u):
-            cands.append(u)
-
-    # Dedup
-    seen, uniq = set(), []
-    for u in cands:
-        n = _norm_url_for_fetch(u)
+    # 3) Lokaliserede fallback-stier (kun hvis ikke allerede fundet i (2))
+    for p in _localized_fallback_paths(base_url, home_html):
+        full = urljoin(base_url, p)
+        n = _norm(full)
         if n not in seen:
-            uniq.append(n); seen.add(n)
+            seen.add(n); cands.append(n)
 
-    # HEAD-filter: behold kun eksisterende/redirectede sider
-    filtered: list[str] = []
-    for u in uniq:
-        code = _http_head_status(u) or 0
-        if code in (200, 301, 302, 307, 308):
-            filtered.append(u)
+    # 4) HEAD-validering med cache – behold kun sandsynlige 200/2xx og 3xx (som ender i 200 pga follow_redirects)
+    validated: list[str] = []
+    for u in cands:
+        code = _cheap_head_status(u)
+        if code == 200:
+            validated.append(u)
 
-    # Prioritér efter mønstre (kontakt > about > team …)
-    filtered.sort(key=_candidate_score, reverse=True)
+    # 5) Prioritér kontaktish og kort sti; cap til limit_pages
+    validated.sort(key=lambda x: (0 if _is_contactish_url(x) else 1, len((urlsplit(x).path or ""))))
+    if limit_pages and limit_pages > 0:
+        validated = validated[:limit_pages]
 
-    # Begræns mængden
-    return filtered[: max(1, limit_pages)]
+    # Garantér at base_url altid er inkluderet som sidste fallback
+    if base_url not in validated:
+        validated.append(base_url)
+
+    return validated
+
 
 __all__ = [
     "ContactFinder",
@@ -2082,9 +2138,9 @@ class ContactFinder:
 
         # 5) Prioritér kontaktish + kort sti, og cap til limit
         pages_sorted = sorted(
-            pages_filtered_dedup,
+            pages_filtered,  # <-- fix: brug den rigtige liste
             key=lambda x: (0 if _is_contactish_url(x) else 1, len((urlsplit(x).path or "")))
-        )
+)
 
         # Skær ned til limit_pages
         pages = pages_sorted[:max(1, limit_pages)]
