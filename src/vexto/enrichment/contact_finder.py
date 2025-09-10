@@ -312,9 +312,18 @@ def _safe_get(url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[int, str]:
     """Billig GET m. httpx; returnér (status, text)."""
     try:
         import httpx
-        with httpx.Client(follow_redirects=True, timeout=timeout, headers={"User-Agent": "VextoContactFinder/1.0", "Accept-Encoding": _accept_encoding}) as c:
+        # Accept-Encoding kan være str eller callable; sikre en streng
+        ae = _accept_encoding() if callable(_accept_encoding) else _accept_encoding  # type: ignore[misc]
+        if not isinstance(ae, (str, bytes)) or (isinstance(ae, str) and not ae.strip()):
+            ae = "gzip, deflate, br"
+
+        with httpx.Client(
+            follow_redirects=True,
+            timeout=timeout,
+            headers={"User-Agent": "VextoContactFinder/1.0", "Accept-Encoding": ae},
+        ) as c:
             r = c.get(url)
-            return r.status_code, r.text or ""
+            return r.status_code, (r.text or "")
     except Exception as e:
         log.debug(f"_safe_get fejl for {url}: {e!r}")
         return 0, ""
@@ -593,6 +602,20 @@ def _http_head_status(url: str, timeout: float = 10.0) -> Optional[int]:
             return r.status_code
     except Exception:
         return None
+
+def _head_and_resolve(url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[str, Optional[int]]:
+    """
+    Én HEAD der både følger redirects og returnerer (endelig_url, status).
+    """
+    try:
+        if httpx is None:
+            return url, None
+        with httpx.Client(follow_redirects=True, timeout=timeout) as c:
+            r = c.head(url, headers={"User-Agent": "VextoContactFinder/1.0"})
+            final_url = str(r.url) if getattr(r, "url", None) else url
+            return final_url, r.status_code
+    except Exception:
+        return url, None
 
 def _resolve_redirect(u: str, timeout: float = DEFAULT_TIMEOUT) -> str:
     """Returnér endelig URL efter redirects (HEAD). Fallback: u uændret."""
@@ -2059,7 +2082,7 @@ class ContactFinder:
 
         # 5) Prioritér kontaktish + kort sti, og cap til limit
         pages_sorted = sorted(
-            pages_filtered,
+            pages_filtered_dedup,
             key=lambda x: (0 if _is_contactish_url(x) else 1, len((urlsplit(x).path or "")))
         )
 
