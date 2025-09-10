@@ -355,13 +355,6 @@ FALLBACK_PATHS = (
 # --- Fast HEAD status cache + URL-normalisering ---
 from functools import lru_cache
 
-def _same_host(a: str, b: str) -> bool:
-    try:
-        sa, sb = urlsplit(a), urlsplit(b)
-        return sa.scheme == sb.scheme and sa.netloc == sb.netloc
-    except Exception:
-        return False
-
 @lru_cache(maxsize=256)
 def _cheap_head_status(u: str, timeout: float = 8.0) -> int:
     """HEAD med follow_redirects og kort timeout. Cached pr. normaliseret URL."""
@@ -635,16 +628,6 @@ def _http_head_status(url: str, timeout: float = 10.0) -> Optional[int]:
             return r.status_code
     except Exception:
         return None
-
-def _resolve_redirect(u: str, timeout: float = DEFAULT_TIMEOUT) -> str:
-    """Returnér endelig URL efter redirects (HEAD). Fallback: u uændret."""
-    try:
-        import httpx
-        with httpx.Client(follow_redirects=True, timeout=timeout) as c:
-            r = c.head(u, headers={"User-Agent": "VextoContactFinder/1.0"})
-            return str(r.url) if getattr(r, "url", None) else u
-    except Exception:
-        return u
 
 def _detect_site_lang(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> str:
     """Returnér 'da'/'en'/'' baseret på <html lang> eller simple ord-heuristikker."""
@@ -1157,6 +1140,135 @@ def _find_heading_name(node) -> Optional[str]:
         return None
     return None
 
+def _harvest_identity_from_container(node, max_depth: int = 7) -> tuple[Optional[str], Optional[str], list[str]]:
+    """
+    Gå op til max_depth for at finde et 'kort/sektion'-container omkring node.
+    Ekstrahér navn (h1–h4/.name/itemprop=name/role=heading), titel (itemprop=jobTitle/p/span),
+    og telefoner (tel:-links + tekstnumre) i container. Anti-CVR i nærkontekst.
+    Returnér (name, title, phones).
+    """
+    if not node:
+        return None, None, []
+
+    # find container (class/id match)
+    def _is_container(n) -> bool:
+        try:
+            # selectolax
+            if hasattr(n, "attributes"):
+                cls = (n.attributes.get("class", "") + " " + n.attributes.get("id", "")).lower()
+            # bs4
+            elif hasattr(n, "get"):
+                cls = (" ".join(n.get("class", []) or []) + " " + (n.get("id") or "")).lower()
+            else:
+                return False
+            keys = ("team","staff","employee","person","card","profile","grid","column","section",
+                    "administration","tilbud","entreprise","elementor-team-member","elementor-widget","elementor-column")
+            return any(k in cls for k in keys)
+        except Exception:
+            return False
+
+    container = node
+    depth = 0
+    while depth < max_depth and getattr(container, "parent", None):
+        if _is_container(container):
+            break
+        container = getattr(container, "parent", None)
+        depth += 1
+    if not container:
+        container = getattr(node, "parent", None) or node
+
+    name = None
+    title = None
+    phones: list[str] = []
+
+    # Helpers til tekst
+    def _node_text(n) -> str:
+        try:
+            # selectolax
+            if hasattr(n, "itertext"):
+                return " ".join(t.strip() for t in n.itertext() if t and t.strip())
+        except Exception:
+            pass
+        try:
+            # bs4
+            if hasattr(n, "stripped_strings"):
+                return " ".join(list(n.stripped_strings))
+        except Exception:
+            pass
+        return ""
+
+    # 1) NAVN
+    try:
+        if hasattr(container, "css"):
+            for sel in ("h1,h2,h3,h4,.name,[itemprop='name'],[role='heading']"):
+                for el in container.css(sel):
+                    nm = _collapse_ws(el.text())
+                    if _is_plausible_name(nm):
+                        name = nm; break
+                if name: break
+        elif hasattr(container, "select"):
+            for el in container.select("h1,h2,h3,h4,.name,[itemprop='name'],[role='heading']"):
+                nm = _collapse_ws(el.get_text(" ", strip=True))
+                if _is_plausible_name(nm):
+                    name = nm; break
+    except Exception:
+        pass
+
+    # 2) TITEL
+    try:
+        if hasattr(container, "css"):
+            # stærke signaler først
+            for el in container.css("[itemprop='jobTitle'], .job-title, .title, .role"):
+                tt = _sanitize_title(el.text())
+                if tt:
+                    title = tt; break
+            if not title:
+                for el in container.css("p,span"):
+                    tt = _sanitize_title(el.text())
+                    if tt and not _is_plausible_name(tt):
+                        title = tt; break
+        elif hasattr(container, "select"):
+            for el in container.select("[itemprop='jobTitle'], .job-title, .title, .role"):
+                tt = _sanitize_title(el.get_text(" ", strip=True))
+                if tt:
+                    title = tt; break
+            if not title:
+                for el in container.select("p,span"):
+                    tt = _sanitize_title(el.get_text(" ", strip=True))
+                    if tt and not _is_plausible_name(tt):
+                        title = tt; break
+    except Exception:
+        pass
+
+    # 3) PHONES (tel-links + tekstnumre m. anti-CVR)
+    try:
+        # tel:
+        if hasattr(container, "css"):
+            for t in container.css("a[href^='tel:']"):
+                pn = _normalize_phone(t.attributes.get("href",""))
+                if pn: phones.append(pn)
+        elif hasattr(container, "select"):
+            for t in container.select("a[href^='tel:']"):
+                pn = _normalize_phone(t.get("href",""))
+                if pn: phones.append(pn)
+    except Exception:
+        pass
+
+    # tekstnumre
+    blob = _node_text(container)
+    for m in re.finditer(r"(?:\+?\d[\s\-\(\)\.]{0,3}){8,}", blob):
+        sidx,eidx = m.start(), m.end()
+        ctx = blob[max(0, sidx-15):min(len(blob), eidx+15)].lower()
+        if "cvr" in ctx:
+            continue
+        pn = _normalize_phone(m.group(0))
+        if pn:
+            phones.append(pn)
+
+    phones = sorted(set(p for p in phones if p))
+    return name, title, phones
+
+
 
 def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
     out: list[ContactCandidate] = []
@@ -1169,33 +1281,32 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
             em = _normalize_email(href)
             if not em:
                 continue
+
+            # NYT: Høst navn/titel/phones fra nærmeste container
+            name_h, title_h, phones_h = _harvest_identity_from_container(a)
+
             near = _near_text(a, 260)
+            # fallback hvis harvest ikke gav navn/titel
+            if not _is_plausible_name(name_h):
+                m_name = re.search(rf"({_NAME_WINDOW_REGEX()})", near)
+                if m_name:
+                    name_h = _collapse_ws(m_name.group(1))
+            if not _sanitize_title(title_h):
+                m_title = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", near)
+                if m_title:
+                    title_h = _sanitize_title(m_title.group(1))
 
-            # navn fra nærtekst + fallback i headings/strong
-            name = None
-            m_name = re.search(rf"({_NAME_WINDOW_REGEX()})", near)
-            if m_name:
-                name = _collapse_ws(m_name.group(1))
-            if not _is_plausible_name(name):
-                name = _find_heading_name(a) or name
-
-            # titel
-            title = None
-            m_title = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", near)
-            if m_title:
-                title = _sanitize_title(m_title.group(1))
-
-            # dom-afstand (kortere hvis navn fundet)
             try:
-                dist = _dom_distance(a, a.parent or a) or (0 if name else 1)
+                dist = _dom_distance(a, a.parent or a) or (0 if name_h else 1)
             except Exception:
-                dist = 0 if name else 1
+                dist = 0 if name_h else 1
 
             out.append(ContactCandidate(
-                name=name, title=title, emails=[em], phones=[],
+                name=name_h, title=title_h, emails=[em], phones=phones_h,
                 source="mailto", url=url, dom_distance=dist,
-                hints={"near": near[:180]}
+                hints={"near": near[:180], "harvested": True}
             ))
+
 
         # Cloudflare-obfuskerede e-mails
         for cf in html_or_tree.css(".__cf_email__"):
@@ -1233,19 +1344,19 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
             em = _normalize_email(href)
             if not em:
                 continue
+
+            # NYT: harvest
+            name_h, title_h, phones_h = _harvest_identity_from_container(a)
             near = " ".join(list(a.parent.stripped_strings))[:260] if a.parent else ""
 
-            name = None
-            m_name = re.search(rf"({_NAME_WINDOW_REGEX()})", near)
-            if m_name:
-                name = _collapse_ws(m_name.group(1))
-            if not _is_plausible_name(name):
-                name = _find_heading_name(a) or name
-
-            title = None
-            m_title = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", near)
-            if m_title:
-                title = _sanitize_title(m_title.group(1))
+            if not _is_plausible_name(name_h):
+                m_name = re.search(rf"({_NAME_WINDOW_REGEX()})", near)
+                if m_name:
+                    name_h = _collapse_ws(m_name.group(1))
+            if not _sanitize_title(title_h):
+                m_title = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", near)
+                if m_title:
+                    title_h = _sanitize_title(m_title.group(1))
 
             try:
                 dist = _dom_distance(a, a.parent or a) or (0 if name else 1)
@@ -1357,24 +1468,21 @@ def _extract_from_dom(url: str, html_or_tree) -> list[ContactCandidate]:
         container = a.parent or a
         text_blob = _near_text(container, 260)
 
-        name = None
-        m = re.search(rf"({_NAME_WINDOW_REGEX()})", text_blob)
-        if m:
-            name = _collapse_ws(m.group(1))
-        if not _is_plausible_name(name):
-            name = _find_heading_name(a) or name
+        name_h, title_h, phones_h = _harvest_identity_from_container(a)
+        if not _is_plausible_name(name_h):
+            m = re.search(rf"({_NAME_WINDOW_REGEX()})", text_blob)
+            if m: name_h = _collapse_ws(m.group(1))
+        if not _sanitize_title(title_h):
+            m2 = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", text_blob)
+            if m2: title_h = _sanitize_title(m2.group(1))
 
-        title = None
-        m2 = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", text_blob)
-        if m2:
-            title = _sanitize_title(m2.group(1))
-
-        dist = _dom_distance(a, container) or (0 if name else 1)
+        dist = _dom_distance(a, container) or (0 if name_h else 1)
         out.append(ContactCandidate(
-            name=name, title=title, emails=[em], phones=[],
-            source="dom", url=url, dom_distance=dist, hints={"near": text_blob[:180]}
+            name=name_h, title=title_h, emails=[em], phones=phones_h,
+            source="dom", url=url, dom_distance=dist, hints={"near": text_blob[:180], "harvested": True}
         ))
 
+        
     # tel:
     for t in html_or_tree.css("a[href^='tel:']"):
         pn = _normalize_phone(t.attributes.get("href", ""))
@@ -1383,22 +1491,21 @@ def _extract_from_dom(url: str, html_or_tree) -> list[ContactCandidate]:
         container = t.parent or t
         text_blob = _near_text(container, 260)
 
-        name = None
-        m = re.search(rf"({_NAME_WINDOW_REGEX()})", text_blob)
-        if m:
-            name = _collapse_ws(m.group(1))
-        if not _is_plausible_name(name):
-            name = _find_heading_name(t) or name
+        name_h, title_h, phones_h = _harvest_identity_from_container(t)
+        if pn not in phones_h:
+            phones_h.append(pn)
 
-        title = None
-        m2 = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", text_blob)
-        if m2:
-            title = _sanitize_title(m2.group(1))
+        if not _is_plausible_name(name_h):
+            m = re.search(rf"({_NAME_WINDOW_REGEX()})", text_blob)
+            if m: name_h = _collapse_ws(m.group(1))
+        if not _sanitize_title(title_h):
+            m2 = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", text_blob)
+            if m2: title_h = _sanitize_title(m2.group(1))
 
-        dist = _dom_distance(t, container) or (0 if name else 1)
+        dist = _dom_distance(t, container) or (0 if name_h else 1)
         out.append(ContactCandidate(
-            name=name, title=title, emails=[], phones=[pn],
-            source="dom", url=url, dom_distance=dist, hints={"near": text_blob[:180], "tel": True}
+            name=name_h, title=title_h, emails=[], phones=sorted(set(phones_h)),
+            source="dom", url=url, dom_distance=dist, hints={"near": text_blob[:180], "harvested": True, "tel": True}
         ))
     return out
 
@@ -1409,25 +1516,61 @@ def _extract_from_text_emails(url: str, html: str) -> list[ContactCandidate]:
     """
     out: list[ContactCandidate] = []
 
-    # Lav en "flad" tekst uden tags for nærheds-søgning
+    # DOM-forsøg: hvis vi kan finde mailto med samme email, høst containeren
+    tree = _parse_html(html)
+    if tree is not None:
+        # find alle mailto og map til node
+        mailto_map = {}
+        try:
+            if hasattr(tree, "css"):
+                for a in tree.css("a[href^='mailto:']"):
+                    em = _normalize_email(a.attributes.get("href",""))
+                    if em and em not in mailto_map:
+                        mailto_map[em.lower()] = a
+            elif hasattr(tree, "select"):
+                for a in tree.select("a[href^='mailto:']"):
+                    em = _normalize_email(a.get("href",""))
+                    if em and em not in mailto_map:
+                        mailto_map[em.lower()] = a
+        except Exception:
+            pass
+
+    # Flad tekst uden tags
     plain = re.sub(r"<[^>]+>", " ", html)
     plain = re.sub(r"\s+", " ", plain)
 
-    # 1) Normal e-mail
     re_email = r"[A-Z0-9._%+\-]{1,64}@[A-Z0-9.\-]{1,255}\.[A-Z]{2,}"
-    # 2) Obfuskeret 'at'/'snabela'
     re_obf = r"([A-Z0-9._%+\-]{1,64})\s*(?:\(|\[|\{)?\s*(?:@|at|snabela)\s*(?:\)|\]|\})?\s*([A-Z0-9.\-]{1,255}\.[A-Z]{2,})"
 
     emails: set[str] = set()
-
     for m in re.finditer(re_email, plain, flags=re.I):
         emails.add(m.group(0))
-
     for m in re.finditer(re_obf, plain, flags=re.I):
         emails.add(f"{m.group(1)}@{m.group(2)}")
 
-    # For hver email, prøv at finde et navn/titel i et vindue på ±200 tegn og evt. telefonnumre i samme vindue
-    for em in emails:
+    for em_raw in emails:
+        em = _normalize_email(em_raw)
+        if not em:
+            continue
+
+        # DOM-match → harvest container
+        node = None
+        if tree is not None:
+            node = (mailto_map.get(em.lower()) if 'mailto_map' in locals() else None)
+
+        if node is not None:
+            try:
+                name_h, title_h, phones_h = _harvest_identity_from_container(node)
+                out.append(ContactCandidate(
+                    name=name_h, title=title_h, emails=[em], phones=phones_h,
+                    source="text-email", url=url, dom_distance=0,
+                    hints={"harvested": True}
+                ))
+                continue
+            except Exception:
+                pass
+
+        # Fallback: nærtekst-vindue i plain
         em_idx = plain.lower().find(em.lower())
         if em_idx < 0:
             continue
@@ -1445,22 +1588,9 @@ def _extract_from_text_emails(url: str, html: str) -> list[ContactCandidate]:
         if m_title:
             title = _sanitize_title(m_title.group(1))
 
-        # Telefoner i nærvindue (DK-first + kompakt), anti-CVR i ±15 tegn
-        phones_here: list[str] = []
-        for m_p in re.finditer(r'(?:\+45\s*)?(?:\d{2}\s*\d{2}\s*\d{2}\s*\d{2})|(?:\+45)?[2-9]\d{7}', near):
-            sidx, eidx = m_p.start(), m_p.end()
-            ctx = near[max(0, sidx-15):min(len(near), eidx+15)].lower()
-            if "cvr" in ctx:
-                continue
-            pn = _normalize_phone(m_p.group(0))
-            if pn and pn not in phones_here:
-                phones_here.append(pn)
-
         out.append(ContactCandidate(
-            name=name, title=title,
-            emails=[_normalize_email(em)] if _normalize_email(em) else [],
-            phones=phones_here,
-            source="text-email", url=url, dom_distance=None,
+            name=name, title=title, emails=[em],
+            phones=[], source="text-email", url=url, dom_distance=None,
             hints={"near": near[:180]}
         ))
 
@@ -1906,10 +2036,10 @@ def _score_candidate(c: ContactCandidate) -> ScoredContact:
         s += 0.7
         why.append("DOMAIN_MATCH")
 
-    # Telefon?
+    # Telefon? (stærkere signal når phone er fundet i samme container/card)
     if any(_normalize_phone(p) for p in (c.phones or [])):
-        s += 0.5
-        why.append("PHONE")
+        s += 1.0
+        why.append("PHONE_IN_CONTAINER")
 
     # DOM nærhed
     if c.dom_distance is not None:
@@ -1955,16 +2085,6 @@ def _score_candidate(c: ContactCandidate) -> ScoredContact:
                 why.append("INITIALS_DOWNWEIGHT")
         except Exception:
             pass
-
-    # Phone-bonus (hæves til 0.8 når der er telefon i samme kandidat)
-    if any(_normalize_phone(p) for p in (c.phones or [])):
-        # Fjern tidligere +0.5 hvis tilføjet: vi normaliserer til samlet +0.8
-        if "PHONE" in why:
-            # erstat indikationen, men s indeholder allerede +0.5; justér differencen
-            s += 0.3
-        else:
-            s += 0.8
-            why.append("PHONE")
 
     # Root-only penalty (forside)
     if pth.strip("/") == "":
