@@ -1981,7 +1981,7 @@ class ContactFinder:
         """Returnér alle (scored) kandidater som dicts (reasons inkluderet)."""
         t0 = time.time()
 
-        # 1) Hent forsiden først (til discovery)
+        # 1) Hent forsiden først (så vi kan lave discovery)
         htmls: dict[str, str] = {}
         try:
             root_html = self._fetch_text_smart(url)
@@ -1989,17 +1989,19 @@ class ContactFinder:
         except Exception:
             root_html = ""
 
-        # 2) Discovery + statiske stier
+        # 2) Byg liste over sider at prøve
         discovered = _discover_internal_links(url, root_html, max_links=20) if root_html else []
         static_pages = [self._abs(url, p) for p in _localized_fallback_paths(url, root_html or "")]
+        # Sikr at /kontakt og /om bliver prøvet tidligt, hvis de findes
         priority_pages = [self._abs(url, p) for p in ("/kontakt", "/kontakt/", "/om", "/om/")]
 
-        # 3) Robots + sitemap discovery (samme host)
+        # 3) Robots + sitemap discovery
         try:
             sitemaps, disallows = _fetch_robots_txt(url, timeout=self.timeout)
         except Exception:
             sitemaps, disallows = [], []
-        sm_urls: list[str] = []
+
+        sm_urls = []
         if sitemaps:
             try:
                 for sm in sitemaps:
@@ -2009,28 +2011,41 @@ class ContactFinder:
                 log.debug(f"Sitemap discovery fejl: {e!r}")
                 sm_urls = []
 
-        # 4) Byg initial rækkefølge (root, sitemap, priority, discovery, statics)
+        # 4) Initial rækkefølge (root, sitemap, priority, discovery, statics) + TIDLIG DEDUP
         pages_ordered: list[str] = [url] + sm_urls + priority_pages + discovered + static_pages
 
-        # 5) Filtrér med http_client-politik hvis mulig; ellers fallback
+        # filtrér med http_client-politik hvis muligt (undgå assets/irrelevante)
+        try:
+            _hc_should_check = _http_should_check_link_status  # importeret alias
+        except Exception:
+            _hc_should_check = None
+
         if callable(_hc_should_check):
             pages_ordered = [u for u in pages_ordered if _hc_should_check(u)]
         else:
             def _fallback_check(u: str) -> bool:
                 p = (urlsplit(u).path or "").lower()
-                if any(p.endswith(ext) for ext in (
-                    ".pdf",".jpg",".jpeg",".png",".gif",".svg",".webp",".zip",".rar",".7z",
-                    ".doc",".docx",".xls",".xlsx",".ppt",".pptx",".mp4",".mp3",".avi",".mov",".wmv",
-                    ".m4v",".xml",".json",".csv",".txt",".ico",".css",".js",".map",".woff",".woff2",".ttf",".otf"
-                )):
+                if not p or p.endswith(("/", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".pdf", ".css", ".js", ".ico", ".woff", ".woff2", ".ttf")):
                     return False
-                return _same_host(url, u)
+                return True
             pages_ordered = [u for u in pages_ordered if _fallback_check(u)]
 
-        # 6) Resolve redirects + HEAD status (cap for at undgå HEAD-storm)
+        # normaliser + dedupliker tidligt (stopper HEAD på samme URL)
+        _seen_po = set()
+        _uniq_po: list[str] = []
+        for u in pages_ordered:
+            k = _norm_url_for_fetch(u)
+            if k not in _seen_po:
+                _uniq_po.append(u)
+                _seen_po.add(k)
+        pages_ordered = _uniq_po
+
+        # 5) Resolve redirects + HEAD status (med hård cap for at undgå HEAD-storm)
         _head_cache: dict[str, int] = {}
         resolved_unique: list[str] = []
         seen_resolved: set[str] = set()
+
+        _head_and_resolve_fn = globals().get("_head_and_resolve", None)
         MAX_HEADS = 25
         heads_done = 0
 
@@ -2039,8 +2054,12 @@ class ContactFinder:
                 ru = _resolve_redirect(u, timeout=self.timeout) or u
                 st = None
             else:
-                if callable(_hc_head_and_resolve):
-                    ru, st = _hc_head_and_resolve(u, timeout=self.timeout)  # type: ignore
+                if callable(_head_and_resolve_fn):
+                    try:
+                        ru, st = _head_and_resolve_fn(u, timeout=self.timeout)  # type: ignore[misc]
+                    except Exception:
+                        ru = _resolve_redirect(u, timeout=self.timeout) or u
+                        st = _http_head_status(ru, timeout=self.timeout)
                 else:
                     ru = _resolve_redirect(u, timeout=self.timeout) or u
                     st = _http_head_status(ru, timeout=self.timeout)
@@ -2053,7 +2072,7 @@ class ContactFinder:
             if st is not None:
                 _head_cache[ru] = st
 
-        # 7) Sprogfilter (prun FØR yderligere HEAD)
+        # 6) Sprogfilter (trim EN-stier på 'da' sites, og omvendt)
         site_lang = _detect_site_lang(url, timeout=self.timeout)
 
         def _is_en_path(p: str) -> bool:
@@ -2071,7 +2090,7 @@ class ContactFinder:
         else:
             lang_pruned = resolved_unique
 
-        # 8) Robots Disallow + HEAD-cache (kun på de tilbageværende)
+        # 7) Robots Disallow + HEAD-cache
         def _head_status_cached(u: str) -> int | None:
             if u in _head_cache:
                 v = _head_cache[u]
@@ -2092,19 +2111,7 @@ class ContactFinder:
                 continue
             pages_filtered.append(u)
 
-        # 9) Ekstra sprogtrim (fx drop EN-fallbacks på da-sites)
-        if site_lang == "da":
-            def _is_en(p: str) -> bool:
-                pl = (urlsplit(p).path or "").lower()
-                return any(k in pl for k in ("/contact", "/contact-us", "/about", "/about-us", "/team", "/people", "/staff", "/management", "/board"))
-            pages_filtered = [p for p in pages_filtered if not _is_en(p)]
-        elif site_lang == "en":
-            def _is_da(p: str) -> bool:
-                pl = (urlsplit(p).path or "").lower()
-                return any(k in pl for k in ("/kontakt", "/kontakt-os", "/om", "/om-os", "/medarbejder", "/medarbejdere", "/ansatte", "/ledelse"))
-            pages_filtered = [p for p in pages_filtered if not _is_da(p)]
-
-        # 10) Prioritér kontaktish + kort sti, dedup og cap til limit
+        # 8) Prioritér kontaktish + kort sti, cap til limit, final dedup
         pages_sorted = sorted(
             pages_filtered,
             key=lambda x: (0 if _is_contactish_url(x) else 1, len((urlsplit(x).path or "")))
@@ -2119,7 +2126,7 @@ class ContactFinder:
         pages = pages_dedup[:max(1, limit_pages)]
         log.debug("Pages planned (%d): %s", len(pages), pages)
 
-        # 11) Hent resten parallelt (root kan være hentet)
+        # 9) Hent resten parallelt (root er evt. allerede hentet)
         def fetch(u: str) -> tuple[str, str]:
             try:
                 if u in htmls:
@@ -2139,7 +2146,7 @@ class ContactFinder:
                     _, h = fetch(u)
                     htmls[u] = h
 
-        # 12) Udpak kandidater fra alle sider
+        # 10) Udpak kandidater fra alle sider
         all_cands: list[ContactCandidate] = []
         for u, h in htmls.items():
             if not h or _looks_404(h):
@@ -2147,7 +2154,31 @@ class ContactFinder:
             cands = self._extract_all(u, h)
             all_cands.extend(cands)
 
-        # 13) Org bucket: initialer/generiske locals fra kontakt/om/team → én org-post
+        # 11) Lidt “smart” match: navneløse emails <- staff-grid initialer (fx "jb@...")
+        #    (let post-processing, ingen hårde afhængigheder)
+        initials_to_grid: dict[str, ContactCandidate] = {}
+        for c in all_cands:
+            if c.source == "dom-staff-grid" and c.name and not c.emails:
+                parts = [p for p in (c.name or "").split() if p]
+                if len(parts) >= 2:
+                    initials = (parts[0][0] + parts[1][0]).lower()
+                    if re.fullmatch(r"[a-zæøå]{2}", initials):
+                        initials_to_grid.setdefault(initials, c)
+
+        for c in all_cands:
+            if (not c.name) and c.emails:
+                for em in c.emails:
+                    local = em.split("@", 1)[0].lower()
+                    if _is_initials_like(local) and local in initials_to_grid:
+                        g = initials_to_grid[local]
+                        c.name = g.name or c.name
+                        if g.title and not c.title:
+                            c.title = g.title
+                        if isinstance(c.hints, dict):
+                            c.hints["matched_from_grid"] = True
+                        break
+
+        # 12) Saml navnløse initialer@domæne.dk fra kontakt/om/team til én organisationspost
         org_bucket_emails: list[str] = []
         pruned: list[ContactCandidate] = []
         for c in all_cands:
@@ -2173,16 +2204,16 @@ class ContactFinder:
                 name=None, title=None,
                 emails=sorted(set(org_bucket_emails))[:5],
                 phones=[], source="page-generic", url=url,
-                dom_distance=0, hints={"bucketed": True}
+                dom_distance=0, hints={"bucketed": True, "identity_gate_bypassed": True}
             ))
 
         all_cands = pruned
 
-        # 14) Merge + dedup + score
+        # 13) Merge + dedup + score
         merged = self._merge_dedup(all_cands)
         scored = self._score_sort(merged)
 
-        # 15) Rå dicts
+        # 14) Returnér som dicts inkl. reasons (rå liste)
         out = [
             {
                 "name": sc.candidate.name,
@@ -2196,10 +2227,9 @@ class ContactFinder:
             for sc in scored
         ]
 
-        # 16) Clean: drop negative/GATE_FAIL + dedup pr. (email,url) ellers ("" ,url)
+        # 15) Output-clean: drop negative/GATE_FAIL og dedup pr. (email,url) ellers ("" , url)
         cleaned: list[dict] = []
         seen_keys: set[tuple[str, str]] = set()
-
         for r in out:
             if r.get("score", 0) < 0:
                 continue
@@ -2209,11 +2239,13 @@ class ContactFinder:
 
             emails = r.get("emails") or []
             url_out = r.get("url") or ""
+
             keys = [(e.lower(), url_out) for e in emails] if emails else [("", url_out)]
             if any(k in seen_keys for k in keys):
                 continue
             for k in keys:
                 seen_keys.add(k)
+
             cleaned.append(r)
 
         log.debug(
@@ -2221,6 +2253,7 @@ class ContactFinder:
             url, len(out), len(cleaned), time.time() - t0
         )
         return cleaned
+
 
     def find(self, url: str, limit_pages: int = 4) -> Optional[dict]:
         """Returnér bedste kandidat som dict – eller None."""
