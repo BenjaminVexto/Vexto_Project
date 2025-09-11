@@ -462,6 +462,9 @@ __all__ = [
     "extract_contacts",
     "extract_best_contact",
     "find_top_contact",
+    # test/utility shims
+    "run_enrichment_on_dataframe",
+    "check_api_status",
 ]
 
 # ------------------------------- Datamodeller --------------------------------
@@ -2571,6 +2574,7 @@ class ContactFinder:
         return norm
 
     def _merge_dedup(self, cands: Iterable[ContactCandidate]) -> list[ContactCandidate]:
+        # 1) Primær dedup: (navn + stærk email) ellers (navn + url + source)
         bykey: dict[tuple, ContactCandidate] = {}
         for c in cands:
             k = _dedup_key(c)
@@ -2578,7 +2582,45 @@ class ContactFinder:
                 bykey[k] = _merge(bykey[k], c)
             else:
                 bykey[k] = c
-        return list(bykey.values())
+
+        # 2) Sekundær sammenfletning: samme navn + samme apex-domæne på tværs af kilder
+        #    – kun hvis mindst én side mangler emails, for at undgå at flette to forskellige personer med samme navn.
+        from urllib.parse import urlsplit as _us
+
+        def _host_apex(u: str) -> str:
+            try:
+                h = (_us(u).hostname or "").lower()
+            except Exception:
+                h = ""
+            return _apex(h)
+
+        final_by_name_host: dict[tuple[str, str], ContactCandidate] = {}
+        orphans: list[ContactCandidate] = []
+
+        for c in bykey.values():
+            name = (c.name or "").strip().lower()
+            host = _host_apex(c.url or "")
+            if not name or not host:
+                orphans.append(c)
+                continue
+
+            nh = (name, host)
+            if nh not in final_by_name_host:
+                final_by_name_host[nh] = c
+                continue
+
+            existing = final_by_name_host[nh]
+            # Flet kun hvis mindst én af dem mangler emails – eller hvis de deler en email.
+            c_em = set(c.emails or [])
+            e_em = set(existing.emails or [])
+            if (not c_em) or (not e_em) or (c_em & e_em):
+                final_by_name_host[nh] = _merge(existing, c)
+            else:
+                # To forskellige personer med samme navn + forskellige emails → behold som særskilte
+                orphans.append(c)
+
+        return list(final_by_name_host.values()) + orphans
+
 
     def _score_sort(self, cands: Iterable[ContactCandidate]) -> list[ScoredContact]:
         scored = [_score_candidate(c) for c in cands]
@@ -2845,7 +2887,7 @@ class ContactFinder:
                 "url": sc.candidate.url,
                 "score": sc.score,
                 "reasons": sc.reasons,
-                "source": getattr(sc.candidate, "source", ""),  # ← eksponér kilde
+                "source": getattr(sc.candidate, "source", None),
             }
             for sc in scored
         ]
@@ -2938,7 +2980,200 @@ def find_top_contact(url: str, limit_pages: int = 4) -> Optional[dict]:
     return ContactFinder().find(url, limit_pages=limit_pages)
 
 
+# -------------------------- Test/utility shims --------------------------------
+
+def run_enrichment_on_dataframe(
+    df,
+    url_col: str | None = None,
+    *,
+    limit_pages: int = 4,
+    top_n: int = 1,
+    gdpr_minimize: bool = False,
+    use_browser: str = "auto",
+):
+    """
+    DataFrame-helper (robust):
+    - Finder URL-kolonnen case-insensitivt + heuristik (også "Hjemmeside", "Website URL", "WWW" m.fl.)
+    - Normaliserer URL-værdier (tilføjer https:// ved domæner uden schema)
+    - Finder top-1 eller top-N kontakter pr. række
+    - Lægger kolonner: cf_best_* og cf_all (JSON)
+    """
+    import json, re
+    import pandas as _pd
+
+    if not hasattr(df, "assign"):
+        raise TypeError("run_enrichment_on_dataframe forventer en pandas.DataFrame")
+
+    # --- Hjælpere: kolonne-guess + URL-normalisering -------------------
+    def _guess_url_col(_df, explicit: str | None):
+        if explicit and explicit in _df.columns:
+            return explicit
+        cols_lower = {c.lower(): c for c in _df.columns}
+        # primære aliaser
+        aliases = [
+            "url","website","web","domain","hjemmeside","site","company_url",
+            "homepage","home_page","website_url","website address","websiteaddress",
+            "www","company website","firmaside","hjemme side",
+        ]
+        for a in aliases:
+            if a in cols_lower:
+                return cols_lower[a]
+        # fuzzy: vælg en kolonne der "ligner" web/url/domæne
+        candidates = [c for c in _df.columns if any(k in c.lower() for k in ("web","site","url","domain","home","hjem"))]
+        url_like = re.compile(r"^(https?://)?([a-z0-9\-]+\.)+[a-z]{2,}(/.*)?$", re.I)
+        best, best_ratio = None, 0.0
+        for c in candidates or _df.columns:
+            ser = _df[c].astype(str)
+            vals = [s.strip() for s in ser if s and s.strip() and s.strip().lower() != "nan"]
+            if not vals:
+                continue
+            hits = sum(1 for v in vals if url_like.match(v))
+            ratio = hits / max(1, len(vals))
+            if ratio > best_ratio:
+                best_ratio, best = ratio, c
+        # kræv bare nogle få hits for at acceptere (20%)
+        if best and best_ratio >= 0.2:
+            return best
+        return None
+
+    def _norm_url_value(v: str | None) -> str:
+        s = (str(v or "")).strip()
+        if not s or s.lower() == "nan":
+            return ""
+        # hvis der er mellemrum/kommaer – tag første token der ligner en URL/domæne
+        s = re.split(r"[,\s;]+", s)[0]
+        if re.match(r"^https?://", s, flags=re.I):
+            return s
+        # hvis 'www.' i starten → tilføj https://
+        if s.lower().startswith("www."):
+            return f"https://{s}"
+        # hvis det ligner et domæne → tilføj https://
+        if re.match(r"^([a-z0-9\-]+\.)+[a-z]{2,}(/.*)?$", s, flags=re.I):
+            return f"https://{s}"
+        return s  # returnér som er (giver evt. 0-resultat senere)
+
+    # --- Find URL-kolonne (case-insensitiv + heuristik) -----------------
+    real_url_col = _guess_url_col(df, url_col)
+    if not real_url_col:
+        candidates = ["url", "website", "web", "domain", "hjemmeside", "site", "company_url",
+                      "homepage","home_page","website_url","website address","www"]
+        raise ValueError(f"Kunne ikke finde URL-kolonne. Prøv en af (case-insensitivt): {candidates}")
+
+    cf = ContactFinder(gdpr_minimize=gdpr_minimize, use_browser=use_browser)
+
+    best_names, best_titles, best_emails, best_phones, best_scores, best_urls, all_json = \
+        [], [], [], [], [], [], []
+
+    for _, row in df.iterrows():
+        raw = row.get(real_url_col)
+        url = _norm_url_value(raw)
+        if not url:
+            best_names.append(None); best_titles.append(None); best_emails.append([])
+            best_phones.append([]); best_scores.append(None); best_urls.append(None); all_json.append("[]")
+            continue
+
+        if top_n and top_n > 1:
+            results = cf.find_all(url, limit_pages=limit_pages)[:top_n]
+        else:
+            best = cf.find(url, limit_pages=limit_pages)
+            results = [best] if best else []
+
+        if results:
+            b = results[0]
+            best_names.append(b.get("name"))
+            best_titles.append(b.get("title"))
+            best_emails.append(b.get("emails") or [])
+            best_phones.append(b.get("phones") or [])
+            best_scores.append(b.get("score"))
+            best_urls.append(b.get("url") or url)
+            all_json.append(json.dumps(results, ensure_ascii=False))
+        else:
+            best_names.append(None); best_titles.append(None); best_emails.append([])
+            best_phones.append([]); best_scores.append(None); best_urls.append(url); all_json.append("[]")
+
+    out = df.copy()
+    out["cf_best_name"] = best_names
+    out["cf_best_title"] = best_titles
+    out["cf_best_emails"] = best_emails
+    out["cf_best_phones"] = best_phones
+    out["cf_best_score"] = best_scores
+    out["cf_best_url"] = best_urls
+    out["cf_all"] = all_json
+    return out
+
+
 # ------------------------------- CLI / test -----------------------------------
+
+def _print_table(items: list[dict]) -> None:
+    """Print resultater i en kompakt tabel uden eksterne afhængigheder."""
+    if not items:
+        print("(ingen resultater)")
+        return
+
+    def _trunc(s: object | None, w: int) -> str:
+        t = "" if s is None else str(s)
+        return t if len(t) <= w else t[: max(0, w - 1)] + "…"
+
+    # Dynamisk: vis 'Source' hvis feltet findes
+    show_source = any("source" in r for r in items)
+
+    caps = {
+        "idx": max(2, len(str(len(items)))),
+        "name": 26,
+        "title": 36,
+        "emails": 30,
+        "phones": 18,
+        "score": 5,
+        "url": 40,
+        "source": 10,
+    }
+
+    headers = ["#", "Name", "Title", "Emails", "Phones", "Score", "URL"]
+    if show_source:
+        headers.insert(6, "Source")
+
+    # Header
+    line_fmt = (
+        f"{{idx:>{caps['idx']}}}  "
+        f"{{name:<{caps['name']}}}  "
+        f"{{title:<{caps['title']}}}  "
+        f"{{emails:<{caps['emails']}}}  "
+        f"{{phones:<{caps['phones']}}}  "
+        f"{{score:>{caps['score']}}}  "
+    )
+    if show_source:
+        line_fmt += f"{{source:<{caps['source']}}}  "
+    line_fmt += f"{{url:<{caps['url']}}}"
+
+    sep = (
+        "-" * (caps["idx"] + caps["name"] + caps["title"] + caps["emails"]
+               + caps["phones"] + caps["score"] + caps["url"] + (caps["source"] if show_source else 0) + 14)
+    )
+
+    print("  ".join(headers))
+    print(sep)
+
+    for i, r in enumerate(items, start=1):
+        name = _trunc(r.get("name"), caps["name"])
+        title = _trunc(r.get("title"), caps["title"])
+        emails = _trunc(", ".join(r.get("emails", []) or []), caps["emails"])
+        phones = _trunc(", ".join(r.get("phones", []) or []), caps["phones"])
+        score_val = r.get("score")
+        score = "" if score_val is None else f"{float(score_val):.1f}"
+        url = _trunc(r.get("url", ""), caps["url"])
+        row = {
+            "idx": i,
+            "name": name,
+            "title": title,
+            "emails": emails,
+            "phones": phones,
+            "score": score,
+            "url": url,
+        }
+        if show_source:
+            row["source"] = _trunc(r.get("source", ""), caps["source"])
+        print(line_fmt.format(**row))
+
 
 if __name__ == "__main__":
     import argparse
@@ -2954,6 +3189,10 @@ if __name__ == "__main__":
     ap.add_argument("--limit-pages", type=int, default=10, help="Max antal sider at prøve")
     ap.add_argument("--debug", action="store_true", help="Verbose log")
     ap.add_argument("--gdpr-minimize", action="store_true", help="Minimér persondata i output (drop phones, kun arbejdsmails)")
+    ap.add_argument(
+        "--format", "-f", choices=("json", "table"), default="json",
+        help="Vælg output-format: 'json' (default) eller 'table' (kolonner)."
+    )
 
     args = ap.parse_args()
 
@@ -2963,7 +3202,14 @@ if __name__ == "__main__":
     cf = ContactFinder(gdpr_minimize=bool(args.gdpr_minimize))
     if args.all:
         results = cf.find_all(args.url, limit_pages=args.limit_pages)
-        print(json.dumps(results, ensure_ascii=False, indent=2))
+        if args.format == "table":
+            _print_table(results)
+        else:
+            print(json.dumps(results, ensure_ascii=False, indent=2))
     else:
         best = cf.find(args.url, limit_pages=args.limit_pages)
-        print(json.dumps(best, ensure_ascii=False, indent=2))
+        if args.format == "table":
+            _print_table([best] if best else [])
+        else:
+            print(json.dumps(best, ensure_ascii=False, indent=2))
+

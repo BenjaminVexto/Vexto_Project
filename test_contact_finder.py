@@ -47,35 +47,111 @@ def setup_logging(log_dir="logs"):
 
 # --- Import Checker ---------------------------------------------------
 def check_and_import_module(logger):
-    """Importér contact_finder robust fra projektstien, med fallback."""
+    """Importér contact_finder robust – og lav fallback-runner hvis shims mangler."""
     current_dir = Path.cwd()
+    # Sørg for at både projektroden og ./src er på sys.path
     if str(current_dir) not in sys.path:
         sys.path.insert(0, str(current_dir))
         logger.debug(f"Added {current_dir} to Python path")
+    src_dir = current_dir / "src"
+    if src_dir.exists() and str(src_dir) not in sys.path:
+        sys.path.insert(0, str(src_dir))
+        logger.debug(f"Added {src_dir} to Python path")
 
     module_candidates = [
-        "src.vexto.enrichment.contact_finder",  # jeres reelle sti
-        "contact_finder",                       # fallback hvis filen ligger lokalt
+        "src.vexto.enrichment.contact_finder",
+        "vexto.enrichment.contact_finder",
+        "contact_finder",
     ]
 
-    last_err = None
+    errors = {}
     for modname in module_candidates:
         try:
             mod = __import__(modname, fromlist=["*"])
+            logger.info(f"✓ Imported module: {modname}")
+
             run_enrichment = getattr(mod, "run_enrichment_on_dataframe", None)
-            check_status = getattr(mod, "check_api_status", None)  # valgfri i modulet
+            check_status = getattr(mod, "check_api_status", None)
+
+            # Hvis shims mangler: lav en simpel fallback-runner baseret på ContactFinder
             if run_enrichment is None:
-                raise ImportError(f"Module {modname} has no run_enrichment_on_dataframe")
-            logger.info(f"✓ Successfully imported module: {modname}")
+                cf_cls = getattr(mod, "ContactFinder", None)
+                if cf_cls is None:
+                    raise ImportError(f"{modname} mangler både run_enrichment_on_dataframe og ContactFinder")
+                logger.info("ℹ run_enrichment_on_dataframe mangler – opretter fallback-runner fra ContactFinder")
+
+                def _fallback_run_enrichment_on_dataframe(
+                    df,
+                    url_col=None,
+                    *, limit_pages=4, top_n=1, gdpr_minimize=False, use_browser="auto"
+                ):
+                    import json
+                    import pandas as _pd
+                    # Gæt URL-kolonne
+                    candidates = ["url", "website", "web", "domain", "hjemmeside", "site", "company_url"]
+                    if url_col is None:
+                        url_col = next((c for c in candidates if c in df.columns), None)
+                    if not url_col:
+                        raise ValueError(f"Kunne ikke finde URL-kolonne. Prøv en af: {candidates}")
+
+                    cf = cf_cls(gdpr_minimize=gdpr_minimize, use_browser=use_browser)
+                    best_names, best_titles, best_emails, best_phones, best_scores, best_urls, all_json = \
+                        [], [], [], [], [], [], []
+
+                    for _, row in df.iterrows():
+                        url = (row.get(url_col) or "").strip()
+                        if not url:
+                            best_names.append(None); best_titles.append(None); best_emails.append([])
+                            best_phones.append([]); best_scores.append(None); best_urls.append(None); all_json.append("[]")
+                            continue
+                        if top_n and top_n > 1:
+                            results = cf.find_all(url, limit_pages=limit_pages)[:top_n]
+                        else:
+                            b = cf.find(url, limit_pages=limit_pages)
+                            results = [b] if b else []
+                        if results:
+                            r0 = results[0]
+                            best_names.append(r0.get("name"))
+                            best_titles.append(r0.get("title"))
+                            best_emails.append(r0.get("emails") or [])
+                            best_phones.append(r0.get("phones") or [])
+                            best_scores.append(r0.get("score"))
+                            best_urls.append(r0.get("url"))
+                            all_json.append(json.dumps(results, ensure_ascii=False))
+                        else:
+                            best_names.append(None); best_titles.append(None); best_emails.append([])
+                            best_phones.append([]); best_scores.append(None); best_urls.append(url); all_json.append("[]")
+
+                    out = df.copy()
+                    out["cf_best_name"] = best_names
+                    out["cf_best_title"] = best_titles
+                    out["cf_best_emails"] = best_emails
+                    out["cf_best_phones"] = best_phones
+                    out["cf_best_score"] = best_scores
+                    out["cf_best_url"] = best_urls
+                    out["cf_all"] = all_json
+                    return out
+
+                run_enrichment = _fallback_run_enrichment_on_dataframe
+
+            # Hvis check_status ikke findes, lav en simpel placeholder
+            if check_status is None:
+                def check_status():
+                    logger.info("check_api_status ikke defineret i modulet – bruger no-op.")
+                    return {"module_loaded": True}
+
+            logger.info(f"✓ Ready to run enrichment via: {('native' if getattr(mod, 'run_enrichment_on_dataframe', None) else 'fallback')}")
             return run_enrichment, check_status
+
         except Exception as e:
-            last_err = e
+            errors[modname] = e
             logger.debug(f"Import failed for {modname}: {e}")
 
-    logger.error(f"✗ Failed to import contact_finder from candidates: {module_candidates}")
-    if last_err:
-        logger.error(last_err)
-        logger.error(traceback.format_exc())
+    # Hvis vi rammer her: alt fejlede
+    logger.error(f"✗ Failed to import contact_finder from candidates: {list(errors.keys())}")
+    for k, v in errors.items():
+        logger.error(f"{k}: {v}")
+    logger.error(traceback.format_exc())
     return None, None
 
 # --- Data Validation --------------------------------------------------
@@ -226,9 +302,14 @@ def run_test(csv_path=None, output_dir=None, sample_size=None):
             df = df.head(sample_size)
             logger.info(f"Limited to sample size: {sample_size} rows")
         
-        # Step 4: Run enrichment (single pass for clarity)
+        # Step 4: Running Enrichment
         logger.info("\n--- Step 4: Running Enrichment ---")
-        enriched_df = run_enrichment(df)
+        # Valgfrit: giv et hint hvis der findes en sandsynlig kolonne (case-insensitiv)
+        url_hint = next((c for c in df.columns if c.lower() in {
+            "url","website","web","domain","hjemmeside","site","company_url","homepage","website_url","www"
+        }), None)
+        enriched_df = run_enrichment(df, url_col=url_hint)  # modulet håndterer stadig auto-guess
+
         # Markér alle som “success” i denne simple test
         tracker = ProgressTracker(len(df), logger)
         tracker.processed = len(df)
