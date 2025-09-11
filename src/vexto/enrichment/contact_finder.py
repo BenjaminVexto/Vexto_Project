@@ -34,11 +34,13 @@ import sys
 import time
 import threading
 import logging.handlers
+import random  # ANKER: RATE_LIMIT_BACKOFF
+from collections import defaultdict  # ANKER: RATE_LIMIT_BACKOFF
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
-from urllib.parse import urljoin, urlsplit,  urlunsplit
+from urllib.parse import urljoin, urlsplit
 from typing import Any, Iterable, Optional
 from vexto.scoring.http_client import _accept_encoding
 
@@ -101,8 +103,12 @@ _PW_DISABLED_HOSTS: set[str] = set()
 
 # In-memory (billigt) pr. run; suppler gerne med diskcache hvis ønsket
 _ROBOTS_CACHE: dict[str, tuple[int, str]] = {}
-_SITEMAP_CACHE: dict[str, tuple[int, str]] = {}
 _GET_CACHE: dict[str, tuple[int, str]] = {}  # URL→(status, html), kortlevet
+
+# --- ANKER: RATE_LIMIT_BACKOFF ---
+# Per-host backoff hvis vi møder 429 (rate limiting)
+_RATE_LIMIT_HOSTS: dict[str, float] = {}  # host -> earliest_epoch_ok
+_RL_429_COUNTS: defaultdict[str, int] = defaultdict(int)  # host -> count pr. run
 
 def _host_of(u: str) -> str:
     try:
@@ -138,14 +144,6 @@ def _norm_url_for_fetch(u: str) -> str:
         return base + (f"?{s.query}" if s.query else "")
     except Exception:
         return u
-
-def _is_contact_like(u: str) -> bool:
-    p = (u or "").lower()
-    return any(k in p for k in (
-        "/kontakt", "/contact", "/kontakt-os", "/contact-us",
-        "/om", "/about", "/om-os", "/about-us",
-        "/team", "/medarbejder", "/people", "/staff"
-    ))
 
 def _fetch_with_playwright_sync(url: str, pre_html: Optional[str] = None, pre_status: Optional[int] = None) -> str:
     """Renderer side med delt Playwright-klient (singleton).
@@ -296,9 +294,13 @@ UI_TITLE_BLACKLIST = {
 }
 
 CONTACTISH_SLUGS = (
+    # DA/EN
     "kontakt", "contact", "kontakt-os", "contact-us",
     "team", "teams", "medarbejder", "medarbejdere",
-    "people", "staff", "ledelse", "about", "om", "om-os"
+    "people", "staff", "ledelse", "about", "om", "om-os",
+    # SV/NO/DE
+    "kontakt-oss", "kontakta", "om-oss", "om-oss/", "om-oss",
+    "medarbetare", "personal", "mitarbeiter", "ueber-uns", "uber-uns"
 )
 
 # === ANKER: PRECOMPILED REGEX (NEEDS_JS) ===
@@ -481,8 +483,11 @@ FALLBACK_PATHS = (
     "/om", "/om/", "/om-os", "/om-os/", "/om-os.aspx",
     "/team", "/team/", "/teams", "/vores-team", "/team.aspx",
     "/medarbejder", "/medarbejder/", "/medarbejdere", "/medarbejdere/",
-    "/ansatte", "/personale",
-    "/ledelse", "/board", "/organisation"
+    "/ansatte", "/personale", "/ledelse", "/board", "/organisation",
+    # SV/NO/DE
+    "/kontakt-oss", "/kontakta-oss", "/kontakta",
+    "/om-oss", "/om-oss/", "/medarbetare", "/personal",
+    "/mitarbeiter", "/ueber-uns", "/uber-uns", "/unternehmen"
 )
 
 # --- Fast HEAD status cache + URL-normalisering ---
@@ -559,10 +564,19 @@ def _default_should_check_link_status(u: str) -> bool:
 DEFAULT_TIMEOUT = 12.0  # sekunder
 
 def _safe_get(url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[int, str]:
-    """Billig GET m. per-URL cache (kun for dette run) og korte timeouts."""
     if url in _GET_CACHE:
         return _GET_CACHE[url]
     status, html = 0, ""
+    host = _host_of(url)
+    # ANKER: RATE_LIMIT_BACKOFF — respekter backoff pr. host
+    try:
+        until = _RATE_LIMIT_HOSTS.get(host, 0.0)
+        now = time.time()
+        if until and now < until:
+            time.sleep(min(10.0, until - now) + random.uniform(0, 0.5))
+    except Exception:
+        pass
+
     try:
         if httpx:
             ae = _accept_encoding() if callable(_accept_encoding) else _accept_encoding
@@ -576,34 +590,16 @@ def _safe_get(url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[int, str]:
                 status = r.status_code
                 html = r.text or ""
         elif requests:
-            r = requests.get(url, allow_redirects=True, timeout=timeout)
+            r = requests.get(url, allow_redirects=True, timeout=timeout)  # type: ignore
             status, html = r.status_code, r.text or ""
+        # 429 → backoff for host
+        if status == 429:
+            _RL_429_COUNTS[host] += 1
+            _RATE_LIMIT_HOSTS[host] = time.time() + 60.0 + random.uniform(0, 5.0)
     except Exception:
         status, html = 0, ""
     _GET_CACHE[url] = (status, html)
     return status, html
-
-def _fetch_robots_cached(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[int, str]:
-    host = _host_of(base_url)
-    if host in _ROBOTS_CACHE:
-        return _ROBOTS_CACHE[host]
-    robots_url = urljoin(f"https://{host}", "/robots.txt")
-    res = _safe_get(robots_url, timeout)
-    _ROBOTS_CACHE[host] = res
-    return res
-
-def _fetch_sitemap_cached(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[int, str]:
-    host = _host_of(base_url)
-    if host in _SITEMAP_CACHE:
-        return _SITEMAP_CACHE[host]
-    # Prøv typiske sitemap-stier
-    for path in ("/sitemap.xml", "/sitemap_index.xml", "/wp-sitemap.xml", "/page-sitemap.xml"):
-        status, html = _safe_get(urljoin(f"https://{host}", path), timeout)
-        if status == 200 and html:
-            _SITEMAP_CACHE[host] = (status, html)
-            return status, html
-    _SITEMAP_CACHE[host] = (0, "")
-    return 0, ""
 
 def _sticky_host_urls(base_url: str, home_html: str, urls: list[str]) -> list[str]:
     """P1: Ensret alle kandidat-URLs til canonical host efter første GET."""
@@ -680,18 +676,30 @@ def _collapse_ws(s: str | None) -> str | None:
     return re.sub(r"\s+", " ", str(s)).strip()
 
 def _is_plausible_name(s: str | None) -> bool:
-    """2–4 tokens, kapitaliserede, ingen tal/@/breadcrumb-tegn, ikke ALL CAPS."""
+    """1–4 tokens, kapitaliserede, ingen tal/@/breadcrumb-tegn, ikke ALL CAPS.
+    Afviser CTA/sektionstitler (kontakt, om os, osv.).
+    # ANKER: NAME_VALIDATION_RELAXED
+    """
     if not s:
         return False
     s = _collapse_ws(s) or ""
     if not s:
+        return False
+    low = s.lower()
+    # CTA/sektion-blacklist for at undgå falske navne
+    _NAME_BLACKLIST = {
+        "kontakt","kontakt os","contact","contact us","om","om os","about","about us",
+        "ring til os","skriv til os","book","bestil","vores team","team","har du spørgsmål",
+        "find medarbejder","læs mere","kundeservice","personale","medarbejdere"
+    }
+    if low in _NAME_BLACKLIST:
         return False
     if re.search(r"[,/|>@]|\d", s):
         return False
     if s.upper() == s:
         return False
     parts = s.split(" ")
-    if not (2 <= len(parts) <= 4):
+    if not (1 <= len(parts) <= 4):
         return False
     return all(re.fullmatch(NAME_TOKEN, p) for p in parts)
 
@@ -2333,71 +2341,94 @@ def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optiona
     out: list[ContactCandidate] = []
 
     # 1) Find API-URL’er i HTML (ikke kun i headers)
+    # === ANKER: WP_JSON_BUILD_URLS BEGIN ===
     api_urls: list[str] = []
+    # direkte page-API URL’er fra HTML
     for m in re.finditer(r'href=["\']([^"\']+/wp-json/wp/v2/pages/\d+[^"\']*)["\']', html, flags=re.I):
         api_urls.append(m.group(1))
 
-    # 2) Alternativt: shortlink ?p=<id> → byg API-URL
+    # origin + www-variant
     origin = None
     with contextlib.suppress(Exception):
         from urllib.parse import urlsplit
         s = urlsplit(page_url)
         origin = f"{s.scheme}://{s.netloc}"
-    if not api_urls and origin:
-        m = re.search(r'href=["\'][^"\']*\?p=(\d+)["\']', html, flags=re.I)
-        if m:
-            api_urls.append(f"{origin}/wp-json/wp/v2/pages/{m.group(1)}?_embed=1")
 
-    for api in api_urls[:2]:
-        with contextlib.suppress(Exception):
-            jtxt = _fetch_text(api, timeout=timeout, cache_dir=cache_dir, max_age_hours=6)
-            data = json.loads(jtxt)
-            if isinstance(data, dict):
-                rendered = (data.get("content") or {}).get("rendered", "")
-            elif isinstance(data, list) and data:
-                rendered = (data[0].get("content") or {}).get("rendered", "")
-            else:
-                rendered = ""
+    bases: list[str] = []
+    if origin:
+        bases.append(origin)
+        try:
+            host = urlsplit(page_url).netloc
+            if not host.startswith("www."):
+                bases.append(f"{s.scheme}://www.{host}")
+        except Exception:
+            pass
 
-            if not rendered:
-                continue
-
-            t2 = _parse_html(rendered)
-            out.extend(_extract_from_staff_grid(page_url, t2))
-            out.extend(_extract_from_mailtos(page_url, t2 if t2 is not None else rendered))
-            out.extend(_extract_from_microformats(page_url, t2))
-
-    # Slug-baseret fallback: /wp-json/wp/v2/pages?slug=<slug>
-    origin = None
+    # slug (fra URL-sti) → pages/posts
     slug = None
     with contextlib.suppress(Exception):
-        from urllib.parse import urlsplit
-        s = urlsplit(page_url)
-        origin = f"{s.scheme}://{s.netloc}"
-        parts = [p for p in s.path.split("/") if p]
+        parts = [p for p in urlsplit(page_url).path.split("/") if p]
         if parts:
             slug = parts[-1]
-    if origin and slug:
-        api_urls.append(f"{origin}/wp-json/wp/v2/pages?slug={slug}&_embed=1")
-        api_urls.append(f"{origin}/wp-json/wp/v2/posts?slug={slug}&_embed=1")  # bare in case
-        api_urls.append(f"{origin}/wp-json/wp/v2/users?_embed=1")              # ANKER: WP_JSON_USERS
+    if slug:
+        for b in bases:
+            api_urls.extend([
+                f"{b}/wp-json/wp/v2/pages?slug={slug}&_embed=1",
+                f"{b}/wp-json/wp/v2/posts?slug={slug}&_embed=1",
+            ])
+
+    # users + types + search på begge baser
+    for b in bases:
+        api_urls.append(f"{b}/wp-json/wp/v2/users?per_page=100&context=view&_embed=1")
+        api_urls.append(f"{b}/wp-json/wp/v2/types")
+        for q in ["team","medarbejder","personale","ansatte","staff","people","medarbetare","personal"]:
+            api_urls.append(f"{b}/wp-json/wp/v2/search?search={q}&per_page=50&_embed=1")
 
     # dedup
     api_urls = list(dict.fromkeys(api_urls))
+    # === ANKER: WP_JSON_BUILD_URLS END ===
 
-    for api in api_urls[:3]:
+    # === ANKER: WP_JSON_PROCESS_LOOP BEGIN ===
+    idx = 0
+    while idx < min(len(api_urls), 10):  # cap 10 kald pr. side
+        api = api_urls[idx]; idx += 1
         with contextlib.suppress(Exception):
             jtxt = _fetch_text(api, timeout=timeout, cache_dir=cache_dir, max_age_hours=6)
             data = json.loads(jtxt)
 
-            # WP-JSON users: liste af brugere med 'name' og evt. 'description'/'acf'
-            # Forsøg at udtrække navn + e-mail fra description/ACF-felter.
+            # A) WP types → tilføj relevante custom post types
+            if isinstance(data, dict) and "/wp/v2/types" in api:
+                for k, v in data.items():
+                    slug_t = (k or "").lower()
+                    rest_base = (v.get("rest_base") or "").lower() if isinstance(v, dict) else ""
+                    label = (v.get("name") or "").lower() if isinstance(v, dict) else ""
+                    joined = " ".join([slug_t, rest_base, label])
+                    if any(x in joined for x in ("team","staff","people","personale","medarbejder","medarbetare","ansat","employee","member")):
+                        for b in bases:
+                            api_urls.append(f"{b}/wp-json/wp/v2/{rest_base or slug_t}?per_page=100&_embed=1")
+                api_urls = list(dict.fromkeys(api_urls))
+                continue
+
+            # B) WP search → følg 'url'/'link' og parse HTML af de sider
+            if isinstance(data, list) and data and isinstance(data[0], dict) and ("url" in data[0] or "link" in data[0]):
+                for it in data[:20]:
+                    pgurl = it.get("url") or it.get("link")
+                    if not pgurl:
+                        continue
+                    st2, html2 = _safe_get(pgurl, timeout)
+                    if st2 == 200 and html2:
+                        t2 = _parse_html(html2)
+                        out.extend(_extract_from_staff_grid(pgurl, t2))
+                        out.extend(_extract_from_mailtos(pgurl, t2 if t2 is not None else html2))
+                        out.extend(_extract_from_microformats(pgurl, t2))
+                continue
+
+            # C) WP users (din eksisterende users-blok, uændret)
             try:
                 if isinstance(data, list) and data and isinstance(data[0], dict) and "name" in data[0] and "content" not in data[0]:
                     for u in data[:20]:
                         nm = _collapse_ws(u.get("name"))
                         desc = u.get("description") or ""
-                        # prøv ACF/yoast felter for ekstra tekst
                         if not desc:
                             acf = u.get("acf") or {}
                             if isinstance(acf, dict):
@@ -2418,11 +2449,11 @@ def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optiona
                                 dom_distance=0,
                                 hints={"api": "wp-json/users"}
                             ))
-                    # Hop videre – users gav os evt. kandidater
                     continue
             except Exception:
                 pass
 
+            # D) Pages/Posts med content.rendered
             if isinstance(data, list) and data:
                 data = data[0]
             if isinstance(data, dict):
@@ -2437,7 +2468,7 @@ def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optiona
             out.extend(_extract_from_staff_grid(page_url, t2))
             out.extend(_extract_from_mailtos(page_url, t2 if t2 is not None else rendered))
             out.extend(_extract_from_microformats(page_url, t2))
-
+    # === ANKER: WP_JSON_PROCESS_LOOP END ===
     
     return out
 # <<< STAFF GRID + WP-JSON HELPERS END
@@ -2540,9 +2571,12 @@ def _score_candidate(c: ContactCandidate, directors: Optional[list[str]] = None)
             pass
     # === ANKER: INITIALS_PENALTY_TUNED ===
 
-    # Root-only penalty (forside)
+    # Root-only penalty (forside) — men dæmp hvis vi fandt stærke signaler
     if pth.strip("/") == "":
-        s -= 1.0
+        if "DOM_NEAR" in why or "EMAIL_MATCH" in " ".join(why):
+            s -= 0.3
+        else:
+            s -= 1.0
 
     # Direktør-match fra CVR/hook → bonus
     try:
@@ -2585,47 +2619,78 @@ def _build_candidate_pages(base_url: str, root_html: str) -> list[str]:
     return out
 
 def _head_and_resolve(u: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[str, int | None]:
-    # 0) Deleger til http_client-override, hvis tilgængelig (eliminerer Pylance-warning)
+    # 0) Deleger til http_client-override, hvis tilgængelig
     try:
         if callable(_hc_head_and_resolve):
             return _hc_head_and_resolve(u, timeout=timeout)  # type: ignore[misc]
     except Exception:
-        # Ignorér og fald tilbage til lokal implementering
         pass
 
-    # 1) Prøv aiohttp async HEAD hvis tilgængelig
-    try:
-        import asyncio, aiohttp  # type: ignore
+    host = _host_of(u)
+    tries = 0
+    last_final = u
+    last_status: Optional[int] = None
 
-        async def _go(url: str, tout: float):
-            async with aiohttp.ClientSession(headers={"User-Agent": "VextoContactFinder/1.0"}) as sess:
-                try:
-                    async with sess.head(url, allow_redirects=True, timeout=tout) as r:
-                        return str(r.url), r.status
-                except Exception:
-                    # Fallback: resolve via billig HEAD med httpx
-                    ru = _resolve_redirect(url, timeout=tout) or url
-                    return ru, None
+    while tries < 3:
+        tries += 1
+        # Respekter backoff
+        until = _RATE_LIMIT_HOSTS.get(host, 0.0)
+        now = time.time()
+        if until and now < until:
+            time.sleep(min(10.0, until - now) + random.uniform(0, 0.5))
 
+        # 1) async aiohttp HEAD
         try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        return loop.run_until_complete(_go(u, timeout))
-    except Exception:
-        # 2) Fallback: synkron httpx
-        try:
-            import httpx
-            with httpx.Client(follow_redirects=True, timeout=timeout,
-                              headers={"User-Agent": "VextoContactFinder/1.0"}) as c:
-                r = c.head(u)
-                final_url = str(r.url) if getattr(r, "url", None) else u
-                return final_url, r.status_code
+            import asyncio, aiohttp  # type: ignore
+
+            async def _go(url: str, tout: float):
+                async with aiohttp.ClientSession(headers={"User-Agent": "VextoContactFinder/1.0"}) as sess:
+                    try:
+                        async with sess.head(url, allow_redirects=True, timeout=tout) as r:
+                            return str(r.url), r.status
+                    except Exception:
+                        ru = _resolve_redirect(url, timeout=tout) or url
+                        return ru, None
+
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop(); asyncio.set_event_loop(loop)
+            final_url, st = loop.run_until_complete(_go(u, timeout))
         except Exception:
-            # 3) Sidste fallback: billig redirect-resolve + simpel HEAD-status
-            ru = _resolve_redirect(u, timeout=timeout) or u
-            return ru, _http_head_status(ru, timeout=timeout)
+            # 2) sync httpx
+            try:
+                import httpx
+                with httpx.Client(follow_redirects=True, timeout=timeout,
+                                  headers={"User-Agent": "VextoContactFinder/1.0"}) as c:
+                    r = c.head(u)
+                    final_url = str(r.url) if getattr(r, "url", None) else u
+                    st = r.status_code
+            except Exception:
+                final_url = _resolve_redirect(u, timeout=timeout) or u
+                st = _http_head_status(final_url, timeout=timeout)
+
+        last_final, last_status = final_url, st
+
+        # 429 → planlagt backoff og retry
+        if st == 429:
+            _RL_429_COUNTS[host] += 1
+            _RATE_LIMIT_HOSTS[host] = time.time() + 60.0 + random.uniform(0, 5.0)
+            time.sleep(5.0 + random.uniform(0, 3.0))
+            continue
+
+        # HEAD→GET fallback for 403/404/405/429 (hvis vi rammer her uden allerede at have håndteret 429)
+        if st in (403, 404, 405) or st is None:
+            # ANKER: HEAD_TO_GET_FALLBACK
+            s2, h2 = _safe_get(final_url, timeout=timeout)
+            if s2 == 200 and h2:
+                return final_url, 200
+
+        # OK eller anden status → stop retries
+        break
+
+    return last_final, last_status
+
 
 # Cache til (final_url->status) pr. kørsel
 class _HeadCache:
@@ -2674,7 +2739,29 @@ def _match_emails_to_names(cands: list["ContactCandidate"]) -> list["ContactCand
                 else:
                     c.hints = {"matched_from_grid": True}
                 break
+
+    # ANKER: NAME_FROM_EMAIL_FALLBACK
+    # Hvis vi stadig ingen navn har, afled navn fra email-local (pascal@ -> Pascal)
+    for c in cands:
+        if c.name or not c.emails:
+            continue
+        try:
+            local = c.emails[0].split("@", 1)[0]
+        except Exception:
+            continue
+        # split på . _ - og komprimer
+        tokens = [t for t in re.split(r"[._\-]+", local) if re.fullmatch(r"[a-zA-ZæøåÆØÅ]{2,}", t)]
+        if not tokens:
+            continue
+        cand = " ".join(t[:1].upper() + t[1:].lower() for t in tokens[:3])
+        if _is_plausible_name(cand):
+            c.name = cand
+            if isinstance(c.hints, dict):
+                c.hints["name_from_email"] = True
+            else:
+                c.hints = {"name_from_email": True}
     return cands
+
 
 
 # ------------------------------- Orkestrering ---------------------------------
@@ -3143,56 +3230,68 @@ class ContactFinder:
                     continue
                 quick_cands.extend(self._extract_all(u, h))
 
+            # === ANKER: EARLY_EXIT_GENERIC_GUARD BEGIN ===
             if quick_cands:
                 quick_merged = self._merge_dedup(quick_cands)
                 quick_scored = self._score_sort(quick_merged, directors=directors)
                 if quick_scored and quick_scored[0].score >= EARLY_EXIT_THRESHOLD:
-                    # Samme dict/cleaning som senere, men på quick_scored
-                    out_quick = [
-                        {
-                            "name": sc.candidate.name,
-                            "title": sc.candidate.title,
-                            "emails": sc.candidate.emails,
-                            "phones": sc.candidate.phones,
-                            "url": sc.candidate.url,
-                            "score": sc.score,
-                            "reasons": sc.reasons,
-                            "source": getattr(sc.candidate, "source", None),
-                        }
-                        for sc in quick_scored
-                    ]
+                    top = quick_scored[0]
+                    ems = top.candidate.emails or []
+                    all_generic = bool(ems) and all(_is_generic_local(e.split("@", 1)[0]) for e in ems)
+                    has_name = _is_plausible_name(top.candidate.name)
+                    # Kræv ikke-generisk email ELLER et plausibelt navn
+                    if all_generic and not has_name:
+                        log.debug("EARLY_EXIT blocked due to generic-only emails without name (score=%.1f).", top.score)
+                    else:
+                        # Samme dict/cleaning som senere, men på quick_scored
+                        out_quick = [
+                            {
+                                "name": sc.candidate.name,
+                                "title": sc.candidate.title,
+                                "emails": sc.candidate.emails,
+                                "phones": sc.candidate.phones,
+                                "url": sc.candidate.url,
+                                "score": sc.score,
+                                "reasons": sc.reasons,
+                                "source": getattr(sc.candidate, "source", None),
+                            }
+                            for sc in quick_scored
+                        ]
 
-                    cleaned: list[dict] = []
-                    seen_keys: set[tuple[str, str]] = set()
-                    for r in out_quick:
-                        if r.get("score", 0) < 0:
-                            continue
-                        reasons = set(r.get("reasons") or [])
-                        is_generic = "GENERIC_ORG_CONTACT" in reasons
-                        if "GATE_FAIL" in reasons and not is_generic:
-                            continue
-                        if (r.get("score", 0) < 2.0 and not (r.get("name") or None)) and not is_generic:
-                            continue
+                        cleaned: list[dict] = []
+                        seen_keys: set[tuple[str, str]] = set()
+                        for r in out_quick:
+                            if r.get("score", 0) < 0:
+                                continue
+                            reasons = set(r.get("reasons") or [])
+                            is_generic = "GENERIC_ORG_CONTACT" in reasons
+                            if "GATE_FAIL" in reasons and not is_generic:
+                                continue
+                            if (r.get("score", 0) < 2.0 and not (r.get("name") or None)) and not is_generic:
+                                continue
 
-                        emails = r.get("emails") or []
-                        url_out = r.get("url") or ""
-                        if getattr(self, "gdpr_minimize", False):
-                            r["phones"] = []
-                            if emails:
-                                emails = [e for e in emails if _email_domain_matches_site(e, url_out)]
-                                r["emails"] = emails
+                            emails = r.get("emails") or []
+                            url_out = r.get("url") or ""
+                            if getattr(self, "gdpr_minimize", False):
+                                r["phones"] = []
+                                if emails:
+                                    emails = [e for e in emails if _email_domain_matches_site(e, url_out)]
+                                    r["emails"] = emails
 
-                        keys = [(e.lower(), url_out) for e in emails] if emails else [("", url_out)]
-                        if any(k in seen_keys for k in keys):
-                            continue
-                        for k in keys:
-                            seen_keys.add(k)
-                        cleaned.append(r)
+                            keys = [(e.lower(), url_out) for e in emails] if emails else [("", url_out)]
+                            if any(k in seen_keys for k in keys):
+                                continue
+                            for k in keys:
+                                seen_keys.add(k)
+                            cleaned.append(r)
 
-                    if cleaned:
-                        log.debug("EARLY_EXIT_STRONG_HIT: score=%.1f threshold=%.1f (skip profil-crawl)",
-                                  cleaned[0].get("score", 0.0), EARLY_EXIT_THRESHOLD)
-                        return cleaned
+                        if cleaned:
+                            log.debug(
+                                "EARLY_EXIT_STRONG_HIT: score=%.1f threshold=%.1f (skip profil-crawl)",
+                                cleaned[0].get("score", 0.0), EARLY_EXIT_THRESHOLD
+                            )
+                            return cleaned
+            # === ANKER: EARLY_EXIT_GENERIC_GUARD END ===
             # === ANKER: EARLY_EXIT_STRONG_HIT ===
 
         except Exception as _:
@@ -3377,32 +3476,39 @@ class ContactFinder:
             cleaned.append(r)
 
 
-         # ANKER: DIAG_NO_CONTACTS
+        # === ANKER: DIAG_NO_CONTACTS BEGIN ===
         if not cleaned:
             reasons: list[str] = []
-            if not htmls:
+            any_html = any(bool(h) for h in htmls.values())
+            any_mailto_or_tel = any(
+                (("mailto:" in (h or "").lower()) or ("tel:" in (h or "").lower()))
+                for h in htmls.values()
+            )
+            any_contact_ui = any(
+                any(k in (h or "").lower() for k in ("contact", "kontakt", "team", "staff", "medarbejd", "people"))
+                for h in htmls.values()
+            )
+
+            if not any_html:
                 reasons.append("NO_HTML_FETCHED")
             else:
-                any_html = False
-                any_mailto = False
-                any_contact_ui = False
-                for u_, h_ in htmls.items():
-                    if not h_:
-                        reasons.append(f"EMPTY:{u_}")
-                        continue
-                    any_html = True
-                    hl = h_.lower()
-                    if _looks_404(h_):
-                        reasons.append(f"404_LIKE:{u_}")
-                    if _MAILTO_TEL_RE.search(hl):
-                        any_mailto = True
-                    if _CONTACT_CLASS_RE.search(hl) or _CONTACT_H_RE.search(hl) or _CONTACT_LINK_RE.search(hl):
-                        any_contact_ui = True
-                if any_html and not any_mailto:
+                if not any_mailto_or_tel:
                     reasons.append("NO_MAILTO_OR_TEL")
-                if any_html and not any_contact_ui:
+                if not any_contact_ui:
                     reasons.append("NO_CONTACT_UI")
+
+            # Rate-limit signal
+            try:
+                host = (urlsplit(url).hostname or "").lower()
+                rl = int(_RL_429_COUNTS.get(host, 0))
+                if rl > 0:
+                    reasons.append(f"RL_429:{rl}")
+            except Exception:
+                pass
+
             log.info("CF DIAG no_contacts base=%s reasons=%s pages=%d", url, reasons, len(htmls))
+        # === ANKER: DIAG_NO_CONTACTS END ===
+
 
         # Metrics
         names_found = sum(1 for r in cleaned if r.get("name"))
@@ -3652,10 +3758,8 @@ def _print_table(items: list[dict]) -> None:
         line_fmt += f"{{source:<{caps['source']}}}  "
     line_fmt += f"{{url:<{caps['url']}}}"
 
-    sep = (
-        "-" * (caps["idx"] + caps["name"] + caps["title"] + caps["emails"]
-               + caps["phones"] + caps["score"] + caps["url"] + (caps["source"] if show_source else 0) + 14)
-    )
+    cols = ["idx", "name", "title", "emails", "phones", "score"] + (["source"] if show_source else []) + ["url"]
+    sep = "-" * (sum(caps[c] for c in cols) + 2 * (len(cols) - 1))  # 2 mellem hver kolonne
 
     print("  ".join(headers))
     print(sep)
@@ -3680,7 +3784,7 @@ def _print_table(items: list[dict]) -> None:
         if show_source:
             row["source"] = _trunc(r.get("source", ""), caps["source"])
         print(line_fmt.format(**row))
-
+    return
 
 if __name__ == "__main__":
     import argparse
