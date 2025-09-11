@@ -278,7 +278,9 @@ log.debug("ContactFinder module bootet og log-handler er aktiv.")
 # ------------------------------- Konstanter -----------------------------------
 
 # UI-ord (branche-agnostisk) der IKKE er titler
+# UI-ord (branche-agnostisk) der IKKE er titler
 UI_TITLE_BLACKLIST = {
+    # eksisterende
     "kontakt", "kontakt os", "contact", "contact us",
     "team", "om", "about",
     "support", "help", "helpdesk",
@@ -286,6 +288,11 @@ UI_TITLE_BLACKLIST = {
     "info", "adresse", "address",
     "åbningstider", "opening hours",
     "faq", "privacy", "cookies", "cookie", "policy",
+    # udvidede DK/EN fraser der ofte lander som “titel”-støj
+    "vi værner gennemsigtighed", "har du spørgsmål", "ring til os", "skriv til os",
+    "kundeservice", "kundecenter", "find medarbejder", "læs mere",
+    "vi hjælper", "mød os", "vores team", "find os", "se mere", "book møde",
+    "kontaktformular", "send besked", "send os en mail", "chat med os",
 }
 
 CONTACTISH_SLUGS = (
@@ -391,6 +398,31 @@ SPECIALIST_ROLES = {
 
 ROLE_LIKE = EXEC_ROLES | MANAGER_ROLES | SPECIALIST_ROLES
 
+# --- ANKER: DIRECTOR_HINT_HOOK ---
+# Valgfri integration: vexto.enrichment.cvr_bridge.director_names_for_host(host) -> iterable[str]
+try:
+    from vexto.enrichment.cvr_bridge import director_names_for_host as _director_names_for_host  # type: ignore
+except Exception:
+    _director_names_for_host = None  # type: ignore
+
+def _norm_person_name(s: Optional[str]) -> str:
+    if not s:
+        return ""
+    t = re.sub(r"[\s\.,;:’'\"-]+", " ", s.strip().lower())
+    return re.sub(r"\s+", " ", t).strip()
+
+def _director_match_for_site(name: Optional[str], site_url: Optional[str]) -> bool:
+    if not name or not site_url or _director_names_for_host is None:
+        return False
+    try:
+        host = (urlsplit(site_url).hostname or "").lower()
+        candidates = list(_director_names_for_host(host) or [])
+        n0 = _norm_person_name(name)
+        return any(_norm_person_name(c) == n0 for c in candidates)
+    except Exception:
+        return False
+
+
 # Generiske e-mail-brugere
 GENERIC_EMAIL_USERS = {
     "info","kontakt","mail","sales","support","hello","office",
@@ -483,6 +515,7 @@ def _default_should_check_link_status(u: str) -> bool:
         # vær konservativ ved fejl
         return True
     return True
+    # === ANKER: LINK_STATUS_FALLBACK_DONE ===
 
 
 DEFAULT_TIMEOUT = 12.0  # sekunder
@@ -581,6 +614,25 @@ class ScoredContact:
     candidate: ContactCandidate
     score: float
     reasons: list[str]
+
+def _confidence_from(sc: ScoredContact) -> float:
+    """Heuristisk 0–1 confidence ud fra score + nøglesignaler."""
+    s = max(0.0, min(10.0, float(sc.score or 0.0)))
+    conf = s / 8.0  # base normalisering
+    rs = sc.reasons or []
+    if any(str(r).startswith("EMAIL_MATCH") for r in rs):
+        conf += 0.10
+    if "DOM_NEAR" in rs:
+        conf += 0.05
+    if "ROLE_3" in rs:
+        conf += 0.10
+    if "GENERIC_EMAIL" in rs:
+        conf -= 0.10
+    # clamp 0..1 og afrund
+    if conf < 0.0: conf = 0.0
+    if conf > 1.0: conf = 1.0
+    return round(conf, 3)
+# === ANKER: CONFIDENCE_HELPER ===
 
 # ------------------------------- Utils ----------------------------------------
 
@@ -748,6 +800,7 @@ def _http_head_status(url: str, timeout: float = 10.0) -> Optional[int]:
     except Exception:
         return None
 
+@lru_cache(maxsize=256)
 def _detect_site_lang(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> str:
     """Returnér 'da'/'en'/'' baseret på <html lang> eller simple ord-heuristikker."""
     status, html = _safe_get(base_url, timeout=timeout)
@@ -770,9 +823,15 @@ def _fetch_robots_txt(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[
     Kun simpel parsing: 'Sitemap:' og 'Disallow:' linjer.
     """
     try:
-        sp = urlsplit(base_url)
-        robots_url = f"{sp.scheme}://{sp.netloc}/robots.txt"
-        status, text = _safe_get(robots_url, timeout=timeout)
+        host = _host_of(base_url)
+        # P1: genbrug _ROBOTS_CACHE pr. host
+        if host in _ROBOTS_CACHE:
+            status, text = _ROBOTS_CACHE[host]
+        else:
+            sp = urlsplit(base_url)
+            robots_url = f"{sp.scheme}://{sp.netloc}/robots.txt"
+            status, text = _safe_get(robots_url, timeout=timeout)
+            _ROBOTS_CACHE[host] = (status, text or "")
         if status == 0 or not text:
             return [], []
         sitemaps, disallows = [], []
@@ -800,6 +859,7 @@ def _is_disallowed(path: str, disallows: list[str]) -> bool:
             return True
     return False
 
+@lru_cache(maxsize=512)
 def _fetch_sitemap_urls(sitemap_url: str, timeout: float = DEFAULT_TIMEOUT) -> list[str]:
     """Hent sitemap (xml eller .gz) og returnér liste af <loc>-URLs."""
     urls: list[str] = []
@@ -887,6 +947,14 @@ def _apex(host: str) -> str:
     parts = host.lower().split(".")
     return ".".join(parts[-2:]) if len(parts) >= 2 else host.lower()
 
+def _same_apex(u1: str, u2: str) -> bool:
+    try:
+        h1 = (urlsplit(u1).hostname or "").lower()
+        h2 = (urlsplit(u2).hostname or "").lower()
+        return _apex(h1) == _apex(h2)
+    except Exception:
+        return True
+
 def _email_domain_matches_site(email: str, site_url: str) -> bool:
     try:
         ed = email.split("@", 1)[1].lower()
@@ -896,6 +964,16 @@ def _email_domain_matches_site(email: str, site_url: str) -> bool:
         return _apex(ed) == _apex(host)
     except Exception:
         return False
+
+# P5: Domain-mismatch whitelist (kan udvides fra andre moduler)
+DOMAIN_MISMATCH_WHITELIST: set[str] = set()
+def _is_whitelisted_mismatch(target_url: str) -> bool:
+    try:
+        ap = _apex((urlsplit(target_url).hostname or "").lower())
+        return ap in DOMAIN_MISMATCH_WHITELIST
+    except Exception:
+        return False
+# === ANKER: DOMAIN_MISMATCH_WHITELIST ===
 
 def _passes_identity_gate(
     name: str | None,
@@ -927,7 +1005,7 @@ def _passes_identity_gate(
             if not _is_generic_local(local) and _email_domain_matches_site(em, url):
                 return True
 
-    # D (lempelse på kontakt-/om-/team-sider):
+    # D (kontakt-/om-/team-sider – kræv 2 stærke signaler når domæne matcher)
     if url and _is_contactish_url(url) and dom_distance is not None and dom_distance <= 1:
         for em in (emails or []):
             try:
@@ -936,12 +1014,14 @@ def _passes_identity_gate(
                 continue
             if not _email_domain_matches_site(em, url):
                 continue
-            # NYT: kræv mindst EN af disse på kontakt/om/team:
-            #  - ikke-generisk local med >=3 bogstaver (ikke bare 2-4 initialer), ELLER
-            #  - der findes en titel der ligner en rolle
             letters = re.sub(r"[^a-zæøå]", "", local.lower())
-            if (len(letters) >= 3 and not _is_generic_local(local)) or _looks_like_role(title):
+            has_personal_local = (len(letters) >= 3) and (not _is_generic_local(local))
+            has_role = _looks_like_role(title)
+            has_name_email_match = _is_plausible_name(name) and (_email_name_score(em, name) >= 1)
+            # Kræv (personlig local) + (rolle ELLER navn↔email match)
+            if has_personal_local and (has_role or has_name_email_match):
                 return True
+    # === ANKER: GATE_CONTACT_TWO_SIGNALS ===
 
     return False
 
@@ -1330,9 +1410,13 @@ def _harvest_identity_from_container(node, max_depth: int = 7) -> tuple[Optional
             pass
         return ""
 
-    # 1) NAVN (headings + semantiske + Elementor)
+    # 1) NAVN (headings + semantiske + Elementor + udbredte klasser)
     try:
-        selectors = ("h1,h2,h3,h4,.name,[itemprop='name'],[role='heading'],.elementor-heading-title,.elementor-widget-heading")
+        selectors = (
+            "h1,h2,h3,h4,"
+            ".name,.person-name,.staff-name,.member-name,.employee-name,.bio-name,.team-member__name,"
+            "[itemprop='name'],[role='heading'],.elementor-heading-title,.elementor-widget-heading"
+        )
         if hasattr(container, "css"):
             for el in container.css(selectors):
                 raw = _collapse_ws(el.text())
@@ -1340,12 +1424,10 @@ def _harvest_identity_from_container(node, max_depth: int = 7) -> tuple[Optional
                     name = raw
                     break
                 if not name:
-                    # lowercase → Title Case (eksisterende)
                     promo = _maybe_promote_name_case(raw)
                     if promo and _is_plausible_name(promo):
                         name = promo
                         break
-                    # NYT: ALL CAPS → Title Case, så "HENRIK L. CHRISTIANSEN" bliver plausibelt
                     if raw and raw.isupper():
                         cap = " ".join(w[:1].upper() + w[1:].lower() for w in raw.split())
                         if _is_plausible_name(cap):
@@ -1362,7 +1444,6 @@ def _harvest_identity_from_container(node, max_depth: int = 7) -> tuple[Optional
                     if promo and _is_plausible_name(promo):
                         name = promo
                         break
-                    # NYT: ALL CAPS fallback
                     if raw and raw.isupper():
                         cap = " ".join(w[:1].upper() + w[1:].lower() for w in raw.split())
                         if _is_plausible_name(cap):
@@ -1370,11 +1451,13 @@ def _harvest_identity_from_container(node, max_depth: int = 7) -> tuple[Optional
                             break
     except Exception:
         pass
+    # === ANKER: NAME_SELECTORS_EXTENDED ===
 
     # 2) TITEL (først stærke selectorer; undgå at tage navne som titler)
     try:
+        title_selectors = "[itemprop='jobTitle'], .job-title, .title, .role, .position, .position-title, .team-member__role, .bio-title"
         if hasattr(container, "css"):
-            for el in container.css("[itemprop='jobTitle'], .job-title, .title, .role"):
+            for el in container.css(title_selectors):
                 tt_raw = _collapse_ws(el.text())
                 if _is_plausible_name(tt_raw):
                     if not name:
@@ -1406,7 +1489,7 @@ def _harvest_identity_from_container(node, max_depth: int = 7) -> tuple[Optional
                         title = tt
                         break
         elif hasattr(container, "select"):
-            for el in container.select("[itemprop='jobTitle'], .job-title, .title, .role"):
+            for el in container.select(title_selectors):
                 tt_raw = _collapse_ws(el.get_text(" ", strip=True))
                 if _is_plausible_name(tt_raw):
                     if not name:
@@ -1439,6 +1522,8 @@ def _harvest_identity_from_container(node, max_depth: int = 7) -> tuple[Optional
                         break
     except Exception:
         pass
+    # === ANKER: TITLE_SELECTORS_EXTENDED ===
+
 
     # 3) PHONES (tel: + tekstnumre m. anti-CVR)
     try:
@@ -2099,7 +2184,11 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
         ".elementor-section", ".elementor-container", ".elementor-row",
         ".elementor-column", ".elementor-widget", ".elementor-widget-container",
         ".elementor-image-box", ".elementor-team-member",
-        # Generic containers
+        # Generic/andre CMS
+        ".team-container", ".staff-list", ".employee-grid", ".profile-card", ".bio-card",
+        ".team-members", ".our-team", ".people", ".staff", ".person-list", ".members", ".employees",
+        ".team-member__list",
+        # Fald tilbage
         "section", "main", "article"
     ]
     try:
@@ -2123,13 +2212,17 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
                 cards = cont.css(
                     "figure, article, "
                     ".wp-block-column, .wp-block-media-text, .team-member, .wp-block-group > div, .is-layout-flow > div, "
-                    ".elementor-column, .elementor-widget, .elementor-widget-container, .elementor-image-box, .elementor-team-member"
+                    ".elementor-column, .elementor-widget, .elementor-widget-container, .elementor-image-box, .elementor-team-member, "
+                    ".staff-card, .employee, .employee-card, .profile-card, .bio-card, "
+                    ".member, .person, .staff-item, .team-item, .member-card, .people__item, .team-member__card, .card, .card-body"
                 )
+    # === ANKER: STAFF_GRID_CARD_SELECTORS_EXTENDED ===
             elif hasattr(cont, "select"):
                 cards = cont.select(
                     "figure, article, "
                     ".wp-block-column, .wp-block-media-text, .team-member, .wp-block-group > div, .is-layout-flow > div, "
-                    ".elementor-column, .elementor-widget, .elementor-widget-container, .elementor-image-box, .elementor-team-member"
+                    ".elementor-column, .elementor-widget, .elementor-widget-container, .elementor-image-box, .elementor-team-member, "
+                    ".staff-card, .employee, .employee-card, .profile-card, .bio-card"
                 ) or cont.select("div, figure, article")
         except Exception:
             cards = []
@@ -2140,17 +2233,37 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
                 continue
 
             # Lav flere linjer til at afgøre navn/titel
-            # (bevarer tydeligere opdeling end én lang linje)
             if hasattr(card, "get_text"):
                 text_multiline = card.get_text(separator="\n")
             else:
-                # selectolax: simuler linjeskift mellem blokke
                 try:
                     text_multiline = "\n".join([n.text().strip() for n in card.iter() if n.text() and n.text().strip()])
                 except Exception:
                     text_multiline = raw
 
-            name, title = _extract_lines_from_block_txt(text_multiline)
+            # Prøv direkte name/role klasser før heuristik
+            direct_name = None
+            direct_title = None
+            try:
+                if hasattr(card, "css"):
+                    dn = card.css_first(".person-name,.staff-name,.member-name,.employee-name,.bio-name,.team-member__name,.name")
+                    dr = card.css_first(".job-title,.role,.position,.position-title,.team-member__role,.bio-title,.title")
+                    if dn: direct_name = _collapse_ws(dn.text())
+                    if dr: direct_title = _sanitize_title(_collapse_ws(dr.text()))
+                elif hasattr(card, "select"):
+                    dn = card.select_one(".person-name,.staff-name,.member-name,.employee-name,.bio-name,.team-member__name,.name")
+                    dr = card.select_one(".job-title,.role,.position,.position-title,.team-member__role,.bio-title,.title")
+                    if dn: direct_name = _collapse_ws(dn.get_text(" ", strip=True))
+                    if dr: direct_title = _sanitize_title(_collapse_ws(dr.get_text(" ", strip=True)))
+            except Exception:
+                pass
+
+            name, title = None, None
+            if _is_plausible_name(direct_name):
+                name = direct_name
+                title = direct_title or None
+            else:
+                name, title = _extract_lines_from_block_txt(text_multiline)
             if not name:
                 continue
 
@@ -2260,6 +2373,11 @@ def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optiona
 
 # ------------------------------- Scoring --------------------------------------
 
+# P6: tunables til scoring
+INITIALS_PENALTY = 1.0
+EARLY_EXIT_THRESHOLD = 5.0
+# === ANKER: SCORING_CONSTANTS ===
+
 def _score_candidate(c: ContactCandidate) -> ScoredContact:
     s = 0.0
     why: list[str] = []
@@ -2344,16 +2462,26 @@ def _score_candidate(c: ContactCandidate) -> ScoredContact:
             local = c.emails[0].split("@", 1)[0]
             letters = re.sub(r"[^a-zæøå]", "", local.lower())
             if 2 <= len(letters) <= 4:
-                s -= 1.5
+                s -= INITIALS_PENALTY
                 why.append("INITIALS_DOWNWEIGHT")
         except Exception:
             pass
+    # === ANKER: INITIALS_PENALTY_TUNED ===
 
     # Root-only penalty (forside)
     if pth.strip("/") == "":
         s -= 1.0
 
+    # Direktør-match fra CVR/hook → bonus
+    try:
+        if _director_match_for_site(c.name, c.url):
+            s += 2.0
+            why.append("DIRECTOR_MATCH")
+    except Exception:
+        pass
+
     return ScoredContact(candidate=c, score=s, reasons=why)
+    # === ANKER: DIRECTOR_SCORE_BOOST ===
 
 def _build_candidate_pages(base_url: str, root_html: str) -> list[str]:
     """Kombinér kilder til kandidatsider i fast rækkefølge, uden duplikater."""
@@ -2430,26 +2558,42 @@ class _HeadCache:
 
 # Match navneløse emails til staff-grid navne via initialer (fx jb@ → Jens B…)
 def _match_emails_to_names(cands: list["ContactCandidate"]) -> list["ContactCandidate"]:
-    grid_by_initials: dict[str, ContactCandidate] = {}
+    grid_by_key: dict[str, ContactCandidate] = {}
+
+    def _keys_from_name(full: str) -> list[str]:
+        parts = re.findall(r"[A-Za-zÆØÅæøå]{2,}", full or "")
+        if len(parts) < 2:
+            return []
+        k2 = (parts[0][0] + parts[1][0]).lower()
+        keys = [k2]
+        if len(parts) >= 3:
+            k3 = (parts[0][0] + parts[1][0] + parts[2][0]).lower()
+            keys.append(k3)
+        return keys
+
+    # Indeksér staff-grid kandidater uden emails
     for c in cands:
         if c.source == "dom-staff-grid" and c.name and not c.emails:
-            parts = re.findall(r"[A-Za-zÆØÅæøå]{2,}", c.name)
-            if len(parts) >= 2:
-                initials = (parts[0][0] + parts[1][0]).lower()
-                grid_by_initials.setdefault(initials, c)
+            for k in _keys_from_name(c.name):
+                grid_by_key.setdefault(k, c)
 
+    # Prøv at matche navneløse emails til grid-navne via 2-3 initialer
     for c in cands:
         if c.name or not c.emails:
             continue
         for em in c.emails:
             local = em.split("@", 1)[0].lower()
-            if 2 <= len(local) <= 4 and local.isalpha() and local in grid_by_initials:
-                g = grid_by_initials[local]
+            if local.isalpha() and 2 <= len(local) <= 3 and local in grid_by_key:
+                g = grid_by_key[local]
                 c.name = g.name
                 c.title = c.title or g.title
-                c.hints["matched_from_grid"] = True
+                if isinstance(c.hints, dict):
+                    c.hints["matched_from_grid"] = True
+                else:
+                    c.hints = {"matched_from_grid": True}
                 break
     return cands
+
 
 # ------------------------------- Orkestrering ---------------------------------
 
@@ -2572,6 +2716,7 @@ class ContactFinder:
             return html or ""
 
         # 2) Vurdér om vi bør render’e (politik: use_browser = "never" | "auto" | "always")
+        # === ANKER: PW_POLICY_DECISION_BEGIN ===
         should_render = False
         if self.use_browser == "always":
             should_render = True
@@ -2580,6 +2725,7 @@ class ContactFinder:
             # NYT: brug _is_contactish_url + _needs_js (fanger fx "JavaScript er nødvendig...")
             should_render = _is_contactish_url(url) or (not html) or ("elementor" in lh) or _needs_js(html or "")
         # "never" -> False
+        # === ANKER: PW_POLICY_DECISION_END ===
 
         # 2b) Render aldrig hvis URL svarer 404 (billig HEAD for tom HTML)
         if should_render and not html:
@@ -2729,6 +2875,27 @@ class ContactFinder:
         except Exception:
             root_html = ""
 
+        # P5: Domain-mismatch guard – stop person-scrape ved krydsdomæne redirect (med whitelist)
+        try:
+            resolved_root, _st0 = _head_and_resolve(url, timeout=self.timeout)
+        except Exception:
+            resolved_root = url
+        if not _same_apex(url, resolved_root) and not _is_whitelisted_mismatch(resolved_root):
+            log.warning("Domain-mismatch guard: base=%s -> final=%s (stopper person-scrape)", url, resolved_root)
+            return [{
+                "name": None,
+                "title": None,
+                "emails": [],
+                "phones": [],
+                "score": 0.2,
+                "reasons": ["GENERIC_ORG_CONTACT", "DOMAIN_MISMATCH"],
+                "source": "page-generic",
+                "url": url,
+            }]
+        # === ANKER: DOMAIN_MISMATCH_GUARD ===
+
+        # Final website (efter evt. redirects)
+        final_site_url = resolved_root or url
         # 2) Robots + sitemap (samme host)
         try:
             sitemaps, disallows = _fetch_robots_txt(url, timeout=self.timeout)
@@ -2754,11 +2921,16 @@ class ContactFinder:
 
         # 3) Byg kandidat-liste i fast rækkefølge og tidlig dedup
         pages_ordered = _build_candidate_pages(url, root_html)
+        pages_ordered = _sticky_host_urls(url, root_html or "", pages_ordered)
+        # === ANKER: STICKY_HOST_AFTER_BUILD ===
         if sm_urls:
             # sitemap først, derefter vores plan (uden dupl.)
             pages_ordered = list(dict.fromkeys(sm_urls + pages_ordered))
+            pages_ordered = _sticky_host_urls(url, root_html or "", pages_ordered)
+            # === ANKER: STICKY_HOST_AFTER_SITEMAP_MERGE ===
 
-        # 4) Valgfrit filter fra http_client (fx drop assets/utm mm.) – ANKER
+        # 4) Valgfrit filter fra http_client (fx drop assets/utm mm.)
+        # === ANKER: LINK_STATUS_FILTER_BEGIN ===
         try:
             if callable(_hc_should_check):
                 pages_ordered = [u for u in pages_ordered if _hc_should_check(u)]  # bruger http_client, hvis tilgængelig
@@ -2767,6 +2939,7 @@ class ContactFinder:
         except Exception:
             # defensiv fallback på vores eget filter
             pages_ordered = [u for u in pages_ordered if _default_should_check_link_status(u)]
+        # === ANKER: LINK_STATUS_FILTER_END ===
 
         # 5) Sprogdetektion for at prune tydeligt forkerte fallback-stier FØR HEAD
         site_lang = _detect_site_lang(url, timeout=self.timeout)
@@ -2781,15 +2954,36 @@ class ContactFinder:
         elif site_lang == "en":
             pages_ordered = [p for p in pages_ordered if not _is_da_path(p)]
 
-        # 6) Resolve+HEAD præcis én gang pr. URL (med hård cap)
+        # 5b) TIDLIG GET-prefetch for de mest lovende "contactish" URLs (reducerer HEAD-støj)
+        # === ANKER: EARLY_PREFETCH_CONTACTISH_BEGIN ===
+        prefetched: set[str] = set()
+        prefetch_budget = min(4, max(1, limit_pages))
+        for u in pages_ordered:
+            if _is_contactish_url(u):
+                try:
+                    if u not in htmls or not htmls.get(u):
+                        htmls[u] = self._fetch_text_smart(u)
+                except Exception:
+                    htmls[u] = ""
+                prefetched.add(u)
+                if len(prefetched) >= prefetch_budget:
+                    break
+        # === ANKER: EARLY_PREFETCH_CONTACTISH_END ===
+
+        # 6) Resolve+HEAD præcis én gang pr. URL (med hård cap, reduceret)
         headcache = _HeadCache()
         resolved_unique: list[str] = []
         seen_resolved: set[str] = set()
-        MAX_HEADS = 25
+        MAX_HEADS = 10  # P2: reducer HEAD-storm
         heads_done = 0
 
         for u in pages_ordered:
-            if heads_done >= MAX_HEADS:
+            # Spring HEAD over for dem vi netop har GET-prefetchet
+            if u in prefetched:
+                ru = u
+                h = htmls.get(u) or ""
+                st = 200 if (h and not _looks_404(h)) else None
+            elif heads_done >= MAX_HEADS:
                 # Billig redirect-resolve + billig HEAD-status når budget er opbrugt
                 ru = _resolve_redirect(u, timeout=self.timeout) or u
                 try:
@@ -2812,6 +3006,9 @@ class ContactFinder:
         # 7) Robots Disallow + drop 4xx på FINAL URLS (uden at lave nye HEADs)
         pages_filtered: list[str] = []
         for u in resolved_unique:
+            if not _same_apex(url, u):
+                log.debug("Apex mismatch, skipping: base=%s -> final=%s", url, u)
+                continue
             path = (urlsplit(u).path or "")
             if _is_disallowed(path, disallows):
                 log.debug("Robots Disallow skip: %s", u)
@@ -2849,6 +3046,70 @@ class ContactFinder:
                 return (u, h)
             except Exception:
                 return (u, "")
+
+        try:
+            quick_cands: list[ContactCandidate] = []
+            for u in pages:
+                h = htmls.get(u) or ""
+                if not h or _looks_404(h):
+                    continue
+                quick_cands.extend(self._extract_all(u, h))
+
+            if quick_cands:
+                quick_merged = self._merge_dedup(quick_cands)
+                quick_scored = self._score_sort(quick_merged)
+                if quick_scored and quick_scored[0].score >= EARLY_EXIT_THRESHOLD:
+                    # Samme dict/cleaning som senere, men på quick_scored
+                    out_quick = [
+                        {
+                            "name": sc.candidate.name,
+                            "title": sc.candidate.title,
+                            "emails": sc.candidate.emails,
+                            "phones": sc.candidate.phones,
+                            "url": sc.candidate.url,
+                            "score": sc.score,
+                            "reasons": sc.reasons,
+                            "source": getattr(sc.candidate, "source", None),
+                        }
+                        for sc in quick_scored
+                    ]
+
+                    cleaned: list[dict] = []
+                    seen_keys: set[tuple[str, str]] = set()
+                    for r in out_quick:
+                        if r.get("score", 0) < 0:
+                            continue
+                        reasons = set(r.get("reasons") or [])
+                        is_generic = "GENERIC_ORG_CONTACT" in reasons
+                        if "GATE_FAIL" in reasons and not is_generic:
+                            continue
+                        if (r.get("score", 0) < 2.0 and not (r.get("name") or None)) and not is_generic:
+                            continue
+
+                        emails = r.get("emails") or []
+                        url_out = r.get("url") or ""
+                        if getattr(self, "gdpr_minimize", False):
+                            r["phones"] = []
+                            if emails:
+                                emails = [e for e in emails if _email_domain_matches_site(e, url_out)]
+                                r["emails"] = emails
+
+                        keys = [(e.lower(), url_out) for e in emails] if emails else [("", url_out)]
+                        if any(k in seen_keys for k in keys):
+                            continue
+                        for k in keys:
+                            seen_keys.add(k)
+                        cleaned.append(r)
+
+                    if cleaned:
+                        log.debug("EARLY_EXIT_STRONG_HIT: score=%.1f threshold=%.1f (skip profil-crawl)",
+                                  cleaned[0].get("score", 0.0), EARLY_EXIT_THRESHOLD)
+                        return cleaned
+            # === ANKER: EARLY_EXIT_STRONG_HIT ===
+
+        except Exception as _:
+            pass
+
 
         if len(pages) > 1 and self.parallel > 1:
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.parallel) as ex:
@@ -2966,19 +3227,31 @@ class ContactFinder:
         scored = self._score_sort(merged)
 
         # 12) Dict-output
-        out = [
-            {
+        out = []
+        for sc in scored:
+            hint_txt = None
+            try:
+                if isinstance(sc.candidate.hints, dict):
+                    hint_txt = sc.candidate.hints.get("near") or sc.candidate.hints.get("card")
+            except Exception:
+                hint_txt = None
+            domain_mismatch_flag = not _same_apex(url, locals().get("final_site_url", url))
+            out.append({
                 "name": sc.candidate.name,
                 "title": sc.candidate.title,
                 "emails": sc.candidate.emails,
                 "phones": sc.candidate.phones,
-                "url": sc.candidate.url,
+                "url": sc.candidate.url,                # eksisterende felt
+                "person_source_url": sc.candidate.url,  # alias til downstream CSV
+                "final_website": locals().get("final_site_url", url),
+                "domain_mismatch": domain_mismatch_flag,
                 "score": sc.score,
+                "confidence": _confidence_from(sc),
                 "reasons": sc.reasons,
                 "source": getattr(sc.candidate, "source", None),
-            }
-            for sc in scored
-        ]
+                "scraped_contact_text": hint_txt,
+            })
+        # === ANKER: OUTPUT_EXTENDED_FIELDS ===
 
         # 13) Rens output: drop negative/GATE_FAIL + dedup pr. (email,url)
         cleaned: list[dict] = []
@@ -3039,7 +3312,19 @@ class ContactFinder:
             names_found, titles_found, phones_found, initials_downweighted, section_bonus_hits,
             containers_detected, cf_emails_decoded
         )
+        # Kort, nyttig INFO-summary pr. domæne
+        try:
+            host = (urlsplit(url).hostname or "").lower()
+            final_host = (urlsplit(locals().get("final_site_url", url)).hostname or "").lower()
+            pw_renders = sum(1 for k in getattr(self, "_rendered_once", set()) if k)
+            emails_any = sum(1 for r in cleaned if r.get("emails"))
+            persons_any = sum(1 for r in cleaned if r.get("name"))
+            log.info("CF SUMMARY host=%s final=%s items=%d emails=%d persons=%d pw=%d time=%.3fs",
+                     host, final_host, len(cleaned), emails_any, persons_any, pw_renders, time.time()-t0)
+        except Exception:
+            pass
         return cleaned
+        # === ANKER: LOG_SUMMARY_PER_DOMAIN ===
 
 
 
