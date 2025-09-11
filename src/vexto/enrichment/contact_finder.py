@@ -362,19 +362,57 @@ _PROFILE_PATTERNS = [
 ]
 
 def _discover_profile_links(base_url: str, html: str, max_links: int = 40) -> list[str]:
-    """Find medarbejder-/profil-URLs i HTML (regex-baseret, hurtig)."""
-    urls: list[str] = []
-    for pat in _PROFILE_PATTERNS:
-        for m in re.finditer(rf'href=["\']({pat})["\']', html, flags=re.I):
-            try:
-                full = urljoin(base_url, m.group(1))
-                if _same_host(base_url, full):
-                    urls.append(full)
-            except Exception:
-                continue
-    # dedup + cap
+    """Find medarbejder-/profil-URLs i HTML – nu med prioritering på anker-tekst og “contactish” hints."""
+    # === ANKER: PROFILE_DISCOVERY_PRIORITIZE ===
+    scored: list[tuple[int, str]] = []
+    seen_raw: set[str] = set()
+
+    # 1) Gå via <a ...> for at kunne score på anker-tekst
+    for m in re.finditer(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', html, flags=re.I | re.S):
+        href = (m.group(1) or "").strip()
+        text = re.sub(r"<[^>]+>", " ", m.group(2) or "").lower()
+        # Kun interne links
+        absu = _abs_url(base_url, href)
+        if not absu or not _same_host(base_url, absu):
+            continue
+        path = (urlsplit(absu).path or "").lower()
+
+        # Matcher et profil-mønster?
+        if not any(re.search(pat, path, flags=re.I) for pat in _PROFILE_PATTERNS):
+            continue
+
+        # Basisscore
+        score = 1
+        # Boost hvis anker-tekst ligner kontakt/person
+        if any(kw in text for kw in ("kontakt", "contact", "email", "mail", "telefon", "phone",
+                                     "team", "staff", "medarbejder", "medarbejdere", "personale", "profil", "ansat", "people")):
+            score += 2
+        # Boost hvis stien selv er “contactish”
+        if _is_contactish_url(absu):
+            score += 1
+        # Favoriser kortere stier
+        score += max(0, 2 - len(path.split("/")))
+
+        if absu not in seen_raw:
+            seen_raw.add(absu)
+            scored.append((score, absu))
+
+    # 2) Fald tilbage: simple href-scan hvis ovenstående ikke fandt noget
+    if not scored:
+        for pat in _PROFILE_PATTERNS:
+            for m in re.finditer(rf'href=["\']({pat})["\']', html, flags=re.I):
+                try:
+                    full = urljoin(base_url, m.group(1))
+                    if _same_host(base_url, full) and full not in seen_raw:
+                        seen_raw.add(full)
+                        scored.append((1, full))
+                except Exception:
+                    continue
+
+    # 3) Sortér på score (desc) + kort sti
+    scored.sort(key=lambda t: (-t[0], len(urlsplit(t[1]).path)))
     out, seen = [], set()
-    for u in urls:
+    for _, u in scored:
         if u not in seen:
             out.append(u); seen.add(u)
         if len(out) >= max_links:
@@ -2310,9 +2348,6 @@ def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optiona
         if m:
             api_urls.append(f"{origin}/wp-json/wp/v2/pages/{m.group(1)}?_embed=1")
 
-    if not api_urls:
-        return out
-
     for api in api_urls[:2]:
         with contextlib.suppress(Exception):
             jtxt = _fetch_text(api, timeout=timeout, cache_dir=cache_dir, max_age_hours=6)
@@ -2345,6 +2380,7 @@ def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optiona
     if origin and slug:
         api_urls.append(f"{origin}/wp-json/wp/v2/pages?slug={slug}&_embed=1")
         api_urls.append(f"{origin}/wp-json/wp/v2/posts?slug={slug}&_embed=1")  # bare in case
+        api_urls.append(f"{origin}/wp-json/wp/v2/users?_embed=1")              # ANKER: WP_JSON_USERS
 
     # dedup
     api_urls = list(dict.fromkeys(api_urls))
@@ -2353,6 +2389,40 @@ def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optiona
         with contextlib.suppress(Exception):
             jtxt = _fetch_text(api, timeout=timeout, cache_dir=cache_dir, max_age_hours=6)
             data = json.loads(jtxt)
+
+            # WP-JSON users: liste af brugere med 'name' og evt. 'description'/'acf'
+            # Forsøg at udtrække navn + e-mail fra description/ACF-felter.
+            try:
+                if isinstance(data, list) and data and isinstance(data[0], dict) and "name" in data[0] and "content" not in data[0]:
+                    for u in data[:20]:
+                        nm = _collapse_ws(u.get("name"))
+                        desc = u.get("description") or ""
+                        # prøv ACF/yoast felter for ekstra tekst
+                        if not desc:
+                            acf = u.get("acf") or {}
+                            if isinstance(acf, dict):
+                                desc = json.dumps(acf, ensure_ascii=False)
+                        emails = []
+                        for m in re.finditer(r"[A-Z0-9._%+\-]{1,64}@[A-Z0-9.\-]{1,255}\.[A-Z]{2,}", str(desc), flags=re.I):
+                            em = _normalize_email(m.group(0))
+                            if em:
+                                emails.append(em)
+                        if nm or emails:
+                            out.append(ContactCandidate(
+                                name=nm if _is_plausible_name(nm) else None,
+                                title=None,
+                                emails=sorted(set(emails))[:3],
+                                phones=[],
+                                source="wp-json-users",
+                                url=page_url,
+                                dom_distance=0,
+                                hints={"api": "wp-json/users"}
+                            ))
+                    # Hop videre – users gav os evt. kandidater
+                    continue
+            except Exception:
+                pass
+
             if isinstance(data, list) and data:
                 data = data[0]
             if isinstance(data, dict):
@@ -2367,6 +2437,7 @@ def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optiona
             out.extend(_extract_from_staff_grid(page_url, t2))
             out.extend(_extract_from_mailtos(page_url, t2 if t2 is not None else rendered))
             out.extend(_extract_from_microformats(page_url, t2))
+
     
     return out
 # <<< STAFF GRID + WP-JSON HELPERS END
@@ -2378,7 +2449,8 @@ INITIALS_PENALTY = 1.0
 EARLY_EXIT_THRESHOLD = 5.0
 # === ANKER: SCORING_CONSTANTS ===
 
-def _score_candidate(c: ContactCandidate) -> ScoredContact:
+def _score_candidate(c: ContactCandidate, directors: Optional[list[str]] = None) -> ScoredContact:
+
     s = 0.0
     why: list[str] = []
 
@@ -2477,6 +2549,16 @@ def _score_candidate(c: ContactCandidate) -> ScoredContact:
         if _director_match_for_site(c.name, c.url):
             s += 2.0
             why.append("DIRECTOR_MATCH")
+    except Exception:
+        pass
+
+    # DF-hintede direktørnavne (valgfrit)
+    try:
+        if directors:
+            n0 = _norm_person_name(c.name)
+            if n0 and any(_norm_person_name(d) == n0 for d in directors):
+                s += 1.5
+                why.append("DIRECTOR_HINT")
     except Exception:
         pass
 
@@ -2856,16 +2938,22 @@ class ContactFinder:
         return list(final_by_name_host.values()) + orphans
 
 
-    def _score_sort(self, cands: Iterable[ContactCandidate]) -> list[ScoredContact]:
-        scored = [_score_candidate(c) for c in cands]
+    def _score_sort(self, cands: Iterable[ContactCandidate], directors: Optional[list[str]] = None) -> list[ScoredContact]:
+        scored = [_score_candidate(c, directors=directors) for c in cands]
         scored.sort(key=lambda sc: sc.score, reverse=True)
         return scored
 
     # ------------------------------- Sync API ---------------------------------
 
-    def find_all(self, url: str, limit_pages: int = 4) -> list[dict]:
+    def find_all(self, url: str, limit_pages: int = 4, directors: list[str] | None = None) -> list[dict]:
         """Returnér alle (scored) kandidater som dicts (reasons inkluderet)."""
         t0 = time.time()
+
+        # Nulstil PW-budget og -debounce pr. domæne/run (for DF-batches)
+        self._pw_budget = 3
+        self._pw_attempted = set()
+        self._rendered_once = set()
+        # ANKER: PW_BUDGET_RESET
 
         # 1) Hent forsiden først (så vi kan lave discovery)
         htmls: dict[str, str] = {}
@@ -3057,7 +3145,7 @@ class ContactFinder:
 
             if quick_cands:
                 quick_merged = self._merge_dedup(quick_cands)
-                quick_scored = self._score_sort(quick_merged)
+                quick_scored = self._score_sort(quick_merged, directors=directors)
                 if quick_scored and quick_scored[0].score >= EARLY_EXIT_THRESHOLD:
                     # Samme dict/cleaning som senere, men på quick_scored
                     out_quick = [
@@ -3122,7 +3210,7 @@ class ContactFinder:
                     htmls[u] = h
 
         # --- profil-crawl (dybde 1, cap) fra kontakt/teamsider ---
-        profile_cap = 10
+        profile_cap = 8  # ANKER: PROFILE_CAP_TUNED
         profile_urls: list[str] = []
         seen_prof: set[str] = set()
 
@@ -3224,7 +3312,7 @@ class ContactFinder:
 
         # 11) Merge + score
         merged = self._merge_dedup(all_cands)
-        scored = self._score_sort(merged)
+        scored = self._score_sort(merged, directors=directors)
 
         # 12) Dict-output
         out = []
@@ -3288,6 +3376,33 @@ class ContactFinder:
                 seen_keys.add(k)
             cleaned.append(r)
 
+
+         # ANKER: DIAG_NO_CONTACTS
+        if not cleaned:
+            reasons: list[str] = []
+            if not htmls:
+                reasons.append("NO_HTML_FETCHED")
+            else:
+                any_html = False
+                any_mailto = False
+                any_contact_ui = False
+                for u_, h_ in htmls.items():
+                    if not h_:
+                        reasons.append(f"EMPTY:{u_}")
+                        continue
+                    any_html = True
+                    hl = h_.lower()
+                    if _looks_404(h_):
+                        reasons.append(f"404_LIKE:{u_}")
+                    if _MAILTO_TEL_RE.search(hl):
+                        any_mailto = True
+                    if _CONTACT_CLASS_RE.search(hl) or _CONTACT_H_RE.search(hl) or _CONTACT_LINK_RE.search(hl):
+                        any_contact_ui = True
+                if any_html and not any_mailto:
+                    reasons.append("NO_MAILTO_OR_TEL")
+                if any_html and not any_contact_ui:
+                    reasons.append("NO_CONTACT_UI")
+            log.info("CF DIAG no_contacts base=%s reasons=%s pages=%d", url, reasons, len(htmls))
 
         # Metrics
         names_found = sum(1 for r in cleaned if r.get("name"))
@@ -3445,11 +3560,30 @@ def run_enrichment_on_dataframe(
             best_phones.append([]); best_scores.append(None); best_urls.append(None); all_json.append("[]")
             continue
 
+        # Prøv at hente direktørnavne fra DF-rækken, hvis kolonne findes
+        directors_list: list[str] = []
+        try:
+            for col in df.columns:
+                lc = col.lower()
+                if "direkt" in lc or "director" in lc:
+                    raw_dn = row.get(col)
+                    if raw_dn and str(raw_dn).strip() and str(raw_dn).strip().lower() != "nan":
+                        # split på ; , / |
+                        parts = re.split(r"[;,/|]+", str(raw_dn))
+                        directors_list = [p.strip() for p in parts if p and p.strip()]
+                        break
+        except Exception:
+            directors_list = []
+
         if top_n and top_n > 1:
-            results = cf.find_all(url, limit_pages=limit_pages)[:top_n]
+            results = cf.find_all(url, limit_pages=limit_pages, directors=directors_list or None)[:top_n]
         else:
-            best = cf.find(url, limit_pages=limit_pages)
-            results = [best] if best else []
+            # Brug find_all (top-1) når vi har direktør-hints; ellers find()
+            if directors_list:
+                results = cf.find_all(url, limit_pages=limit_pages, directors=directors_list)[:1]
+            else:
+                best = cf.find(url, limit_pages=limit_pages)
+                results = [best] if best else []
 
         if results:
             b = results[0]
