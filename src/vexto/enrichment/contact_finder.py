@@ -38,7 +38,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urljoin, urlsplit,  urlunsplit
 from typing import Any, Iterable, Optional
 from vexto.scoring.http_client import _accept_encoding
 
@@ -94,10 +94,38 @@ except Exception:
 
 _SHARED_PW_CLIENT = None
 
-# --- Playwright circuit-breaker ---
+# -------------------- P1: Per-host caches + sticky host helpers ----------------
 _PW_FAILS_BY_HOST: dict[str, int] = {}
 _PW_FAILS_MAX = 3  # efter 3 fejl i træk for en host stopper vi midlertidigt PW for DEN host
 _PW_DISABLED_HOSTS: set[str] = set()
+
+# In-memory (billigt) pr. run; suppler gerne med diskcache hvis ønsket
+_ROBOTS_CACHE: dict[str, tuple[int, str]] = {}
+_SITEMAP_CACHE: dict[str, tuple[int, str]] = {}
+_GET_CACHE: dict[str, tuple[int, str]] = {}  # URL→(status, html), kortlevet
+
+def _host_of(u: str) -> str:
+    try:
+        return urlsplit(u).netloc.lower()
+    except Exception:
+        return ""
+
+def _force_host(u: str, host: str) -> str:
+    try:
+        parts = urlsplit(u)
+        return f"{parts.scheme}://{host}{parts.path or '/'}" + (f"?{parts.query}" if parts.query else "")
+    except Exception:
+        return u
+
+def _canonical_host_from(html: str, fallback: str) -> str:
+    """Prøv at læse rel=canonical host; ellers behold fallback."""
+    try:
+        m = re.search(r'rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']', html, flags=re.I)
+        if m:
+            return urlsplit(m.group(1)).netloc.lower() or fallback
+    except Exception:
+        pass
+    return fallback
 
 def _norm_url_for_fetch(u: str) -> str:
     """Normalisér URL for dedup: fjern trailing slash (undtagen '/'), drop fragment."""
@@ -266,6 +294,17 @@ CONTACTISH_SLUGS = (
     "people", "staff", "ledelse", "about", "om", "om-os"
 )
 
+# === ANKER: PRECOMPILED REGEX (NEEDS_JS) ===
+_CONTACT_CLASS_RE = re.compile(r'class=["\'][^"\']*(team|staff|employee|person|medarbejder|medarbejdere)[^"\']*["\']', re.I)
+_CONTACT_H_RE     = re.compile(r'<h[12][^>]*>\s*(kontakt|team|medarbejdere|personale|ansatte|about|om\s+os)\s*</h[12]>', re.I)
+_MAILTO_TEL_RE    = re.compile(r'href=["\'](?:mailto:|tel:)', re.I)
+# “kontakt/om/about/team”-links i DOM (ikke kun headings)
+_CONTACT_LINK_RE  = re.compile(r'href=["\'][^"\']*(/kontakt|/kontakt-os|/contact|/contact-us|/about|/om-?os|/team|/medarbejdere)[^"\']*["\']', re.I)
+# Typiske SPA/JS markører
+_JS_MARKERS_RE    = re.compile(r'(javascript er nødvendig|elementor|id=["\']__next["\']|data-reactroot|ng-app|wp-json)', re.I)
+
+
+
 def _is_contactish_url(u: str) -> bool:
     p = (urlsplit(u).path or "").strip("/").lower()
     return any(p.endswith(sl) or f"/{sl}/" in f"/{p}/" for sl in CONTACTISH_SLUGS)
@@ -280,20 +319,29 @@ def _needs_js(html: str) -> bool:
     """
     if not html:
         return False
+
     lower = html.lower()
 
-    # Hvis statisk DOM allerede har person/sektion-strukturer → ingen JS nødvendig
-    if re.search(r'class=["\'][^"\']*(team|staff|employee|person|medarbejder|medarbejdere)[^"\']*["\']', lower):
+    # --- Kontakt-signaler (hurtig short-circuit) ---
+    # 1) mailto/tel
+    if _MAILTO_TEL_RE.search(lower):
         return False
-    if re.search(r'<h[12][^>]*>\s*(kontakt|team|medarbejdere|personale|ansatte|about|om os)\s*</h[12]>', lower):
+    # 2) team/medarbejder-klasser
+    if _CONTACT_CLASS_RE.search(lower):
+        return False
+    # 3) H1/H2 med kontakt-/team-ord
+    if _CONTACT_H_RE.search(lower):
+        return False
+    # 4) Links mod kontakt/om/team/medarbejdere
+    if _CONTACT_LINK_RE.search(lower):
         return False
 
-    # Typiske JS-krav: Elementor og ingen kontaktlinks i DOM
-    if "javascript er nødvendig" in lower or "elementor" in lower:
-        return True
-    if not re.search(r'href=["\']mailto:|href=["\']tel:', html, flags=re.I):
+    # --- JS-markører: kun hvis ingen kontakt-signaler ---
+    # (fx elementor, Next.js-root, React-hydration, Angular, WP JSON API)
+    if _JS_MARKERS_RE.search(lower):
         return True
 
+    # Default: ingen klare tegn på JS-behov
     return False
 
 _PROFILE_PATTERNS = [
@@ -354,14 +402,17 @@ NAME_TOKEN = r"[A-ZÆØÅ][a-zA-ZÀ-ÖØ-öø-ÿ'’\.-]{1,30}"
 
 # Sider vi prøver udover root
 FALLBACK_PATHS = (
-    "/contact", "/contact/", "/contact-us",
-    "/kontakt", "/kontakt/", "/kontakt-os",
-    "/om", "/om/", "/om-os", "/om-os/",
-    "/about", "/about/", "/about-us",
-    "/team", "/team/", "/teams", "/vores-team",
+    # EN
+    "/contact", "/contact/", "/contact-us", "/contact.aspx", "/contact-us.aspx",
+    "/about", "/about/", "/about-us", "/about-us.aspx",
+    "/people", "/staff", "/management",
+    # DA
+    "/kontakt", "/kontakt/", "/kontakt-os", "/kontakt-os.aspx",
+    "/om", "/om/", "/om-os", "/om-os/", "/om-os.aspx",
+    "/team", "/team/", "/teams", "/vores-team", "/team.aspx",
     "/medarbejder", "/medarbejder/", "/medarbejdere", "/medarbejdere/",
-    "/ansatte", "/personale", "/people", "/staff",
-    "/ledelse", "/management", "/board", "/organisation"
+    "/ansatte", "/personale",
+    "/ledelse", "/board", "/organisation"
 )
 
 # --- Fast HEAD status cache + URL-normalisering ---
@@ -389,19 +440,21 @@ def _looks_danish(html: str) -> bool:
     return bool(re.search(r"\b(kontakt|om os|åbningstider|find os|vi hjælper)\b", (html or "").lower()))
 
 def _localized_fallback_paths(base_url: str, home_html: str) -> tuple[str, ...]:
-    """Returnér sprog-tilpassede fallback-stier for kandidatplanen."""
     host = urlsplit(base_url).netloc.lower()
     dk_like = host.endswith(".dk")
     da = dk_like or _looks_danish(home_html)
     if da:
         return (
-            "/kontakt", "/kontakt/", "/kontakt-os", "/om", "/om/", "/om-os", "/om-os/",
-            "/team", "/team/", "/teams", "/medarbejder", "/medarbejder/", "/medarbejdere",
-            "/medarbejdere/", "/ansatte", "/personale", "/ledelse"
+            "/kontakt", "/kontakt/", "/kontakt-os", "/kontakt-os.aspx",
+            "/om", "/om/", "/om-os", "/om-os/", "/om-os.aspx",
+            "/team", "/team/", "/teams", "/team.aspx",
+            "/medarbejder", "/medarbejder/", "/medarbejdere", "/medarbejdere/",
+            "/ansatte", "/personale", "/ledelse"
         )
     else:
         return (
-            "/contact", "/contact/", "/contact-us", "/about", "/about/", "/about-us",
+            "/contact", "/contact/", "/contact-us", "/contact.aspx", "/contact-us.aspx",
+            "/about", "/about/", "/about-us", "/about-us.aspx",
             "/team", "/team/", "/people", "/staff", "/management"
         )
 
@@ -435,24 +488,59 @@ def _default_should_check_link_status(u: str) -> bool:
 DEFAULT_TIMEOUT = 12.0  # sekunder
 
 def _safe_get(url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[int, str]:
-    """Billig GET m. httpx; returnér (status, text)."""
+    """Billig GET m. per-URL cache (kun for dette run) og korte timeouts."""
+    if url in _GET_CACHE:
+        return _GET_CACHE[url]
+    status, html = 0, ""
     try:
-        import httpx
-        # Accept-Encoding kan være str eller callable; sikre en streng
-        ae = _accept_encoding() if callable(_accept_encoding) else _accept_encoding  # type: ignore[misc]
-        if not isinstance(ae, (str, bytes)) or (isinstance(ae, str) and not ae.strip()):
-            ae = "gzip, deflate, br"
+        if httpx:
+            ae = _accept_encoding() if callable(_accept_encoding) else _accept_encoding
+            if not isinstance(ae, (str, bytes)) or (isinstance(ae, str) and not ae.strip()):
+                ae = "gzip, deflate, br"
+            with httpx.Client(follow_redirects=True, timeout=timeout, headers={
+                "User-Agent": "VextoContactFinder/1.1",
+                "Accept-Encoding": ae,
+            }) as c:
+                r = c.get(url)
+                status = r.status_code
+                html = r.text or ""
+        elif requests:
+            r = requests.get(url, allow_redirects=True, timeout=timeout)
+            status, html = r.status_code, r.text or ""
+    except Exception:
+        status, html = 0, ""
+    _GET_CACHE[url] = (status, html)
+    return status, html
 
-        with httpx.Client(
-            follow_redirects=True,
-            timeout=timeout,
-            headers={"User-Agent": "VextoContactFinder/1.0", "Accept-Encoding": ae},
-        ) as c:
-            r = c.get(url)
-            return r.status_code, (r.text or "")
-    except Exception as e:
-        log.debug(f"_safe_get fejl for {url}: {e!r}")
-        return 0, ""
+def _fetch_robots_cached(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[int, str]:
+    host = _host_of(base_url)
+    if host in _ROBOTS_CACHE:
+        return _ROBOTS_CACHE[host]
+    robots_url = urljoin(f"https://{host}", "/robots.txt")
+    res = _safe_get(robots_url, timeout)
+    _ROBOTS_CACHE[host] = res
+    return res
+
+def _fetch_sitemap_cached(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[int, str]:
+    host = _host_of(base_url)
+    if host in _SITEMAP_CACHE:
+        return _SITEMAP_CACHE[host]
+    # Prøv typiske sitemap-stier
+    for path in ("/sitemap.xml", "/sitemap_index.xml", "/wp-sitemap.xml", "/page-sitemap.xml"):
+        status, html = _safe_get(urljoin(f"https://{host}", path), timeout)
+        if status == 200 and html:
+            _SITEMAP_CACHE[host] = (status, html)
+            return status, html
+    _SITEMAP_CACHE[host] = (0, "")
+    return 0, ""
+
+def _sticky_host_urls(base_url: str, home_html: str, urls: list[str]) -> list[str]:
+    """P1: Ensret alle kandidat-URLs til canonical host efter første GET."""
+    base_host = _host_of(base_url)
+    canon_host = _canonical_host_from(home_html, base_host) or base_host
+    if canon_host == base_host:
+        return urls
+    return [_force_host(u, canon_host) if _host_of(u) and _host_of(u) != canon_host else u for u in urls]
 
 __all__ = [
     "ContactFinder",
