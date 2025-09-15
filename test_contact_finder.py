@@ -304,19 +304,87 @@ def run_test(csv_path=None, output_dir=None, sample_size=None):
         
         # Step 4: Running Enrichment
         logger.info("\n--- Step 4: Running Enrichment ---")
-        # Valgfrit: giv et hint hvis der findes en sandsynlig kolonne (case-insensitiv)
+        # >>> ANKER START: PARALLEL_AND_METRICS
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        import time
+        import json
+        from src.vexto.enrichment.contact_finder import ContactFinder  # Direkte import for at få adgang til cf
+
+        # Gæt URL-kolonne
         url_hint = next((c for c in df.columns if c.lower() in {
             "url","website","web","domain","hjemmeside","site","company_url","homepage","website_url","www"
         }), None)
-        enriched_df = run_enrichment(df, url_col=url_hint)  # modulet håndterer stadig auto-guess
+        if not url_hint:
+            logger.error("✗ Ingen URL-kolonne fundet. Prøv en af: url, website, hjemmeside, osv.")
+            return False
 
-        # Markér alle som “success” i denne simple test
+        start_run = time.time()
+        results = []
+        errors = 0
         tracker = ProgressTracker(len(df), logger)
-        tracker.processed = len(df)
-        tracker.successful = len(df)
+
+        def _one(idx, row):
+            try:
+                url = str(row[url_hint]).strip()
+                if not url:
+                    return (idx, url, [], "No URL provided")
+                cf = ContactFinder(timeout=10.0, use_browser="auto")  # Opret ny instans pr. række for trådsikkerhed
+                out = cf.find_all(url, limit_pages=4, directors=row.get("directors", []))
+                return (idx, url, out, None)
+            except Exception as e:
+                return (idx, row.get(url_hint, ""), [], str(e))
+
+        max_workers = 6
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            futs = [ex.submit(_one, i, r) for i, r in df.iterrows()]
+            for fut in as_completed(futs):
+                idx, url, out, err = fut.result()
+                if err:
+                    errors += 1
+                    logger.warning(f"[PAR] Fejl på {url}: {err}")
+                    tracker.update(success=False)
+                else:
+                    tracker.update(success=bool(out))
+                results.append((idx, url, out))
+
+        results.sort(key=lambda x: x[0])
         
-        # Combine results (hvis batching brugt; ellers direkte run_enrichment_on_dataframe(df))
-        enriched_df = run_enrichment(df)  # Eller concat fra batches
+        # Map resultater til DataFrame
+        best_names, best_titles, best_emails, best_phones, best_scores, best_urls, all_json = [], [], [], [], [], [], []
+        for _, url, out in results:
+            if out:
+                r0 = out[0]
+                best_names.append(r0.get("name"))
+                best_titles.append(r0.get("title"))
+                best_emails.append(r0.get("emails") or [])
+                best_phones.append(r0.get("phones") or [])
+                best_scores.append(r0.get("score"))
+                best_urls.append(r0.get("url") or url)
+                all_json.append(json.dumps(out, ensure_ascii=False))
+            else:
+                best_names.append(None)
+                best_titles.append(None)
+                best_emails.append([])
+                best_phones.append([])
+                best_scores.append(None)
+                best_urls.append(url)
+                all_json.append("[]")
+
+        enriched_df = df.copy()
+        enriched_df["cf_best_name"] = best_names
+        enriched_df["cf_best_title"] = best_titles
+        enriched_df["cf_best_emails"] = best_emails
+        enriched_df["cf_best_phones"] = best_phones
+        enriched_df["cf_best_score"] = best_scores
+        enriched_df["cf_best_url"] = best_urls
+        enriched_df["cf_all"] = all_json
+
+        # Log metrics
+        duration = time.time() - start_run
+        hits = sum(1 for _, _, out in results if out)
+        hit_rate = (hits / max(1, len(results))) * 100.0
+        logger.info(f"Run summary: hits={hits}/{len(results)} ({hit_rate:.1f}%), duration={duration:.1f}s, errors={errors}")
+        # <<< ANKER SLUT: PARALLEL_AND_METRICS
         
         # Step 5: Save output
         output_path = output_dir / 'enriched_cvr_data.csv'
@@ -324,10 +392,26 @@ def run_test(csv_path=None, output_dir=None, sample_size=None):
         logger.info(f"✓ Enriched data saved to: {output_path}")
         
         # Step 6: Show summary
-        tracker.summary()
+        # >>> ANKER START: EXTRA_SUMMARY
+        try:
+            tracker.summary()
+            logger.info("\n=== EXTENDED METRICS SUMMARY ===")
+            total = len(results)
+            with_contacts = sum(1 for _, _, out in results if out)
+            hit_rate = (with_contacts / max(1, total)) * 100.0
+            logger.info(f"Total rows processed: {total}")
+            logger.info(f"Rows with contacts: {with_contacts} ({hit_rate:.1f}%)")
+            logger.info(f"Errors: {errors}")
+            logger.info(f"Total duration: {duration:.1f}s")
+            avg_time = duration / max(1, total)
+            logger.info(f"Average time per row: {avg_time:.2f}s")
+            logger.info("==============================")
+        except Exception as e:
+            logger.error(f"Fejl ved generering af summary: {e}")
+        # <<< ANKER SLUT: EXTRA_SUMMARY
         
         return True
-    
+                    
     except Exception as e:
         logger.error(f"Unexpected error in test run: {e}")
         logger.error(traceback.format_exc())
