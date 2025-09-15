@@ -597,6 +597,22 @@ def _contactish_terms(lang: str) -> list[str]:
 
 def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> list[str]:
     """Returner interne kandidatsider i prioriteret rækkefølge (Home → Sitemap → WP)."""
+    
+    # Validér base_url først
+    if not base_url or not isinstance(base_url, str):
+        return []
+    
+    base_url = base_url.strip()
+    if base_url.lower() in ("nan", "none", "null", ""):
+        return []
+    
+    # Tilføj protokol hvis manglende
+    if not base_url.startswith(('http://', 'https://')):
+        if re.match(r'^(www\.)?([a-z0-9\-]+\.)+[a-z]{2,}', base_url, re.I):
+            base_url = f"https://{base_url}"
+        else:
+            return []
+    
     seen: set[str] = set()
     ranked: list[tuple[int, str]] = []
 
@@ -620,7 +636,7 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
             ranked.append((score, abs_u))
             seen.add(abs_u)
 
-    # 2) Brug _fetch_robots_txt funktionen korrekt!
+    # 2) Brug _fetch_robots_txt funktionen
     sitemaps, disallows = _fetch_robots_txt(base_url)
     
     # Check sitemaps for contact pages
@@ -647,10 +663,10 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
             log.debug(f"Error fetching sitemap {sm_url}: {e}")
             continue
 
-    # 3) WordPress REST (hvis tilgængelig)
-    # Check først om /wp-json/ er disallowed
+    # 3) WordPress REST (hvis tilgængelig og ikke disallowed)
     if not _is_disallowed("/wp-json/", disallows):
-        st_wp, _ = http_get(urljoin(base_url, "/wp-json/"), timeout=5.0, retries=1)
+        wp_url = urljoin(base_url, "/wp-json/")
+        st_wp, _ = http_get(wp_url, timeout=5.0, retries=1)
         if st_wp == 200:
             for t in ["kontakt", "om", "about", "team", "medarbejdere", "staff", "management"]:
                 api = urljoin(base_url, f"/wp-json/wp/v2/pages?search={t}&_fields=link,title&per_page=5")
@@ -1071,19 +1087,43 @@ def _detect_site_lang(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> str:
     return ""
 
 def _fetch_robots_txt(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[list[str], list[str]]:
-    if not base_url or not re.match(r"^https?://", base_url, flags=re.I):
-        log.debug(f"Invalid base_url for robots.txt: {base_url}")
-        return [], []
+    """
+    Returnér (sitemaps, disallows) fra robots.txt.
+    Kun simpel parsing: 'Sitemap:' og 'Disallow:' linjer.
+    """
     try:
+        # Validér og normaliser base_url
+        if not base_url or not isinstance(base_url, str):
+            return [], []
+        
+        base_url = base_url.strip()
+        if base_url.lower() in ("nan", "none", "null", ""):
+            return [], []
+        
+        # Tilføj protokol hvis manglende
+        if not base_url.startswith(('http://', 'https://')):
+            if re.match(r'^(www\.)?([a-z0-9\-]+\.)+[a-z]{2,}', base_url, re.I):
+                base_url = f"https://{base_url}"
+            else:
+                log.debug(f"Invalid base_url for robots.txt: {base_url}")
+                return [], []
+        
         host = _host_of(base_url)
+        if not host:
+            return [], []
+            
+        # P1: genbrug _ROBOTS_CACHE pr. host
         if host in _ROBOTS_CACHE:
             status, text = _ROBOTS_CACHE[host]
         else:
-            robots_url = urljoin(base_url, "/robots.txt")
+            sp = urlsplit(base_url)
+            robots_url = f"{sp.scheme}://{sp.netloc}/robots.txt"
             status, text = http_get(robots_url, timeout=timeout)
             _ROBOTS_CACHE[host] = (status, text or "")
+        
         if status == 0 or not text:
             return [], []
+        
         sitemaps, disallows = [], []
         for line in text.splitlines():
             l = line.strip()
@@ -3012,36 +3052,53 @@ class ContactFinder:
         Billig HTTP først; render én gang for kontakt/om/team-sider
         eller hvis HTML er tom/tynd/JS-afhængig.
         """
+        # Validér URL først
+        if not url or not isinstance(url, str):
+            return ""
+        
+        url = url.strip()
+        if url.lower() in ("nan", "none", "null", ""):
+            return ""
+        
+        # Tilføj protokol hvis manglende
+        if not url.startswith(('http://', 'https://')):
+            if re.match(r'^(www\.)?([a-z0-9\-]+\.)+[a-z]{2,}', url, re.I):
+                url = f"https://{url}"
+            else:
+                log.debug(f"Invalid URL format: {url}")
+                return ""
+        
         key = _norm(url)
         # Lokal per-run cache
         cached = self._html_cache_local.get(key)
         if cached is not None:
             return cached
+        
         html = ""
-        # 1) Prøv hurtig HTTP (httpx/requests via eksisterende _fetch_text)
+        # 1) Prøv hurtig HTTP
         with contextlib.suppress(Exception):
             html = _fetch_text(url, self.timeout, self.cache_dir)
+        
         # 1b) Hvis vi kan se 404 i HTML, så drop Playwright og returnér
         if html and _looks_404(html):
             self._html_cache_local[key] = html or ""
             return html or ""
-        # 2) Vurdér om vi bør render’e (politik: use_browser = "never" | "auto" | "always")
-        # === ANKER: PW_POLICY_DECISION_BEGIN ===
+        
+        # 2) Vurdér om vi bør render'e
         should_render = False
         if self.use_browser == "always":
             should_render = True
         elif self.use_browser == "auto":
             lh = (html.lower() if html else "")
-            # NYT: brug _is_contactish_url + _needs_js (fanger fx "JavaScript er nødvendig...")
             should_render = _is_contactish_url(url) or (not html) or ("elementor" in lh) or _needs_js(html or "")
-        # "never" -> False
-        # === ANKER: PW_POLICY_DECISION_END ===
-        # 2b) Render aldrig hvis URL svarer 404 (brug http_get for tom HTML)
+        
+        # 2b) Render aldrig hvis URL svarer 404
         if should_render and not html:
             with contextlib.suppress(Exception):
                 status, _ = http_get(url, timeout=self.timeout)
                 if status and 400 <= status < 500:
-                    should_render = False # skip 4xx
+                    should_render = False
+        
         if should_render and key not in self._rendered_once:
             # Debounce + budget
             if key in self._pw_attempted or self._pw_budget <= 0:
@@ -3054,6 +3111,7 @@ class ContactFinder:
             if rendered:
                 html = rendered
             self._rendered_once.add(key)
+        
         # 3) Gem i lokal cache og retur
         self._html_cache_local[key] = html or ""
         return html or ""
