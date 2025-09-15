@@ -167,31 +167,72 @@ def http_get(u: str, timeout: float = 10.0, retries: int = 3) -> tuple[int, str]
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
                 "Accept-Encoding": ae,
             }
-            with httpx.Client(http2=True, timeout=timeout, headers=headers, follow_redirects=True) as cli:
-                r = cli.get(u)
-                last_status = r.status_code
-                last_text = r.text or ""
-                if last_status in (429, 503):
-                    # Respect Retry-After hvis sat
-                    ra = r.headers.get("Retry-After")
-                    sleep_for = (2 ** attempt) + random.uniform(0, 1.25)
-                    if ra:
-                        try:
-                            sleep_for = max(sleep_for, float(ra))
-                        except Exception:
-                            pass
-                    _RL_429_COUNTS[host] += 1
-                    # Sæt fremtidigt earliest-ok (circuit)
-                    _RATE_LIMIT_HOSTS[host] = _now() + min(60.0, sleep_for * 2.5)
-                    log.warning(f"Rate-limit {last_status} on {host} attempt={attempt+1}, backoff={sleep_for:.1f}s")
-                    time.sleep(sleep_for)
-                    continue
-                return last_status, last_text
+            
+            # Prøv først med SSL-verifikation
+            try:
+                with httpx.Client(http2=True, timeout=timeout, headers=headers, follow_redirects=True) as cli:
+                    r = cli.get(u)
+                    last_status = r.status_code
+                    last_text = r.text or ""
+            except httpx.ConnectError as e:
+                error_str = str(e)
+                
+                # DNS fejl - giv op med det samme (ingen retry)
+                if "getaddrinfo failed" in error_str or "Name or service not known" in error_str:
+                    log.debug(f"DNS resolution failed for {u}: {error_str}")
+                    return 0, ""
+                
+                # SSL certifikat fejl - prøv uden verifikation
+                elif "CERTIFICATE_VERIFY_FAILED" in error_str:
+                    log.warning(f"SSL certificate error for {u}, retrying without verification")
+                    try:
+                        with httpx.Client(http2=True, timeout=timeout, headers=headers, 
+                                        follow_redirects=True, verify=False) as cli:
+                            import urllib3
+                            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+                            r = cli.get(u)
+                            last_status = r.status_code
+                            last_text = r.text or ""
+                    except Exception as e2:
+                        log.debug(f"Failed even without SSL verification for {u}: {e2}")
+                        raise e  # Fortsæt med normal retry-logik
+                else:
+                    # Andre connection errors - kast videre for normal retry
+                    raise
+            
+            # Håndter rate limiting
+            if last_status in (429, 503):
+                # Respect Retry-After hvis sat
+                ra = r.headers.get("Retry-After") if 'r' in locals() else None
+                sleep_for = (2 ** attempt) + random.uniform(0, 1.25)
+                if ra:
+                    try:
+                        sleep_for = max(sleep_for, float(ra))
+                    except Exception:
+                        pass
+                _RL_429_COUNTS[host] += 1
+                # Sæt fremtidigt earliest-ok (circuit breaker)
+                _RATE_LIMIT_HOSTS[host] = _now() + min(60.0, sleep_for * 2.5)
+                log.warning(f"Rate-limit {last_status} on {host} attempt={attempt+1}, backoff={sleep_for:.1f}s")
+                time.sleep(sleep_for)
+                continue
+                
+            # Success - returner resultat
+            return last_status, last_text
+            
+        except httpx.TimeoutException as e:
+            # Timeout - hurtig retry
+            sleep_for = (1.2 ** attempt) + random.uniform(0, 0.5)
+            log.debug(f"Timeout on {u} – retry in {sleep_for:.1f}s")
+            time.sleep(sleep_for)
+            
         except Exception as e:
-            # TypeError mht. headers + netværksfejl → hurtig retry med jitter
+            # Andre fejl - eksponentiel backoff
             sleep_for = (1.2 ** attempt) + random.uniform(0, 0.5)
             log.debug(f"http_get error {e!r} on {u} – retry in {sleep_for:.1f}s")
             time.sleep(sleep_for)
+    
+    # Alle retries brugt op
     return last_status, last_text
 
 def _host_of(u: str) -> str:
