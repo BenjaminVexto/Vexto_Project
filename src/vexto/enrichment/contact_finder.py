@@ -126,14 +126,35 @@ def _respect_host_budget(u: str) -> bool:
 
 def http_get(u: str, timeout: float = 10.0, retries: int = 3) -> tuple[int, str]:
     """Eneste vej til HTML: GET med budget + exponential backoff + jitter + Retry-After."""
+    
+    # Validering af input
+    if not u or not isinstance(u, str):
+        return 0, ""
+    
+    # Håndter "nan" og andre ugyldige værdier
+    u = u.strip()
+    if u.lower() in ("nan", "none", "null", ""):
+        return 0, ""
+    
+    # Sørg for at URL har protokol
+    if not u.startswith(('http://', 'https://')):
+        # Prøv at rette det hvis det ligner et domæne
+        if re.match(r'^(www\.)?([a-z0-9\-]+\.)+[a-z]{2,}', u, re.I):
+            u = f"https://{u}"
+        else:
+            log.debug(f"Invalid URL format: {u}")
+            return 0, ""
+    
     if not _respect_host_budget(u):
         return 0, ""
+    
     host = _host_of(u)
     # Respektér evt. aktiv backoff-vindue
     earliest = _RATE_LIMIT_HOSTS.get(host, 0.0)
     if _now() < earliest:
         wait = earliest - _now()
         time.sleep(min(wait, 3.0))
+    
     last_status, last_text = 0, ""
     for attempt in range(retries):
         try:
@@ -483,8 +504,11 @@ _PROFILE_PATTERNS = [
 ]
 
 def _discover_profile_links(base_url: str, html: str, max_links: int = 40) -> list[str]:
-    """Find medarbejder-/profil-URLs i HTML – nu med prioritering på anker-tekst og “contactish” hints."""
-    # === ANKER: PROFILE_DISCOVERY_PRIORITIZE ===
+    """Find medarbejder-/profil-URLs i HTML – nu med prioritering på anker-tekst og "contactish" hints."""
+    
+    # Hent disallow rules først
+    _, disallows = _fetch_robots_txt(base_url)
+    
     scored: list[tuple[int, str]] = []
     seen_raw: set[str] = set()
 
@@ -496,7 +520,13 @@ def _discover_profile_links(base_url: str, html: str, max_links: int = 40) -> li
         absu = _abs_url(base_url, href)
         if not absu or not _same_host(base_url, absu):
             continue
+            
         path = (urlsplit(absu).path or "").lower()
+        
+        # Check om stien er disallowed
+        if _is_disallowed(path, disallows):
+            log.debug(f"Skipping disallowed profile link: {absu}")
+            continue
 
         # Matcher et profil-mønster?
         if not any(re.search(pat, path, flags=re.I) for pat in _PROFILE_PATTERNS):
@@ -508,7 +538,7 @@ def _discover_profile_links(base_url: str, html: str, max_links: int = 40) -> li
         if any(kw in text for kw in ("kontakt", "contact", "email", "mail", "telefon", "phone",
                                      "team", "staff", "medarbejder", "medarbejdere", "personale", "profil", "ansat", "people")):
             score += 2
-        # Boost hvis stien selv er “contactish”
+        # Boost hvis stien selv er "contactish"
         if _is_contactish_url(absu):
             score += 1
         # Favoriser kortere stier
@@ -590,41 +620,53 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
             ranked.append((score, abs_u))
             seen.add(abs_u)
 
-    # 2) robots.txt → sitemap
-    st, robots = http_get(urljoin(base_url, "/robots.txt"))
-    if st == 200:
-        sitemaps = [ln.split(":", 1)[1].strip() for ln in robots.splitlines() if ln.lower().startswith("sitemap:")]
-        for sm in sitemaps[:2]:
-            st2, xml = http_get(sm, timeout=8.0, retries=2)
-            if st2 != 200:
-                continue
-            for loc in re.findall(r"<loc>(.*?)</loc>", xml, flags=re.I):
+    # 2) Brug _fetch_robots_txt funktionen korrekt!
+    sitemaps, disallows = _fetch_robots_txt(base_url)
+    
+    # Check sitemaps for contact pages
+    for sm_url in sitemaps[:3]:  # Max 3 sitemaps
+        try:
+            sitemap_urls = _fetch_sitemap_urls(sm_url)
+            for loc in sitemap_urls:
                 if not _same_host(base_url, loc):
                     continue
+                    
+                # Respekter Disallow direktiver
+                loc_path = urlsplit(loc).path or "/"
+                if _is_disallowed(loc_path, disallows):
+                    log.debug(f"Skipping disallowed URL: {loc}")
+                    continue
+                    
+                # Check for contact-related terms
                 if any(t in loc.lower() for t in (t.replace(" ", "-") for t in terms)):
                     if loc not in seen:
                         ranked.append((3, loc))
                         seen.add(loc)
+                        
+        except Exception as e:
+            log.debug(f"Error fetching sitemap {sm_url}: {e}")
+            continue
 
     # 3) WordPress REST (hvis tilgængelig)
-    st_wp, _ = http_get(urljoin(base_url, "/wp-json/"), timeout=5.0, retries=1)
-    if st_wp == 200:
-        for t in ["kontakt", "om", "about", "team", "medarbejdere", "staff", "management"]:
-            api = urljoin(base_url, f"/wp-json/wp/v2/pages?search={t}&_fields=link,title&per_page=5")
-            stp, body = http_get(api, timeout=7.0, retries=1)
-            if stp == 200:
-                try:
-                    for item in json.loads(body):
-                        link = item.get("link")
-                        if link and _same_host(base_url, link) and link not in seen:
-                            ranked.append((4, link))
-                            seen.add(link)
-                except Exception:
-                    pass
+    # Check først om /wp-json/ er disallowed
+    if not _is_disallowed("/wp-json/", disallows):
+        st_wp, _ = http_get(urljoin(base_url, "/wp-json/"), timeout=5.0, retries=1)
+        if st_wp == 200:
+            for t in ["kontakt", "om", "about", "team", "medarbejdere", "staff", "management"]:
+                api = urljoin(base_url, f"/wp-json/wp/v2/pages?search={t}&_fields=link,title&per_page=5")
+                stp, body = http_get(api, timeout=7.0, retries=1)
+                if stp == 200:
+                    try:
+                        for item in json.loads(body):
+                            link = item.get("link")
+                            if link and _same_host(base_url, link) and link not in seen:
+                                ranked.append((4, link))
+                                seen.add(link)
+                    except Exception:
+                        pass
 
     ranked.sort(key=lambda x: x[0], reverse=True)
     return [u for _, u in ranked[:max_urls]]
-# <<< ANKER SLUT: DISCOVERY_HELPERS
 
 # Rolle-ord (generiske)
 EXEC_ROLES = {
@@ -1029,18 +1071,15 @@ def _detect_site_lang(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> str:
     return ""
 
 def _fetch_robots_txt(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[list[str], list[str]]:
-    """
-    Returnér (sitemaps, disallows) fra robots.txt.
-    Kun simpel parsing: 'Sitemap:' og 'Disallow:' linjer.
-    """
+    if not base_url or not re.match(r"^https?://", base_url, flags=re.I):
+        log.debug(f"Invalid base_url for robots.txt: {base_url}")
+        return [], []
     try:
         host = _host_of(base_url)
-        # P1: genbrug _ROBOTS_CACHE pr. host
         if host in _ROBOTS_CACHE:
             status, text = _ROBOTS_CACHE[host]
         else:
-            sp = urlsplit(base_url)
-            robots_url = f"{sp.scheme}://{sp.netloc}/robots.txt"
+            robots_url = urljoin(base_url, "/robots.txt")
             status, text = http_get(robots_url, timeout=timeout)
             _ROBOTS_CACHE[host] = (status, text or "")
         if status == 0 or not text:
@@ -1057,7 +1096,8 @@ def _fetch_robots_txt(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[
                 if dis and dis != "/":
                     disallows.append(dis)
         return sitemaps, disallows
-    except Exception:
+    except Exception as e:
+        log.debug(f"Error fetching robots.txt for {base_url}: {e}")
         return [], []
 
 def _is_disallowed(path: str, disallows: list[str]) -> bool:
@@ -1298,32 +1338,61 @@ def _write_cache(cp: Optional[Path], text: str) -> None:
 
 @lru_cache(maxsize=256)
 def _fetch_text(url: str, timeout: float = DEFAULT_TIMEOUT, cache_dir: Optional[Path] = None, max_age_hours: int = 24) -> str:
+    """Fetch text med caching og validering."""
+    
+    # Validering
+    if not url or not isinstance(url, str):
+        return ""
+    
+    url = url.strip()
+    if url.lower() in ("nan", "none", "null", ""):
+        return ""
+    
+    # Sørg for protokol
+    if not url.startswith(('http://', 'https://')):
+        if re.match(r'^(www\.)?([a-z0-9\-]+\.)+[a-z]{2,}', url, re.I):
+            url = f"https://{url}"
+        else:
+            return ""
+    
     cp = _cache_path_for(url, cache_dir)
     cached = _read_cache(cp, max_age_hours)
     if cached:
         return cached
 
-    ae = _accept_encoding() if callable(_accept_encoding) else _accept_encoding  # kan være str/callable
+    ae = _accept_encoding() if callable(_accept_encoding) else _accept_encoding
     if not isinstance(ae, (str, bytes)) or (isinstance(ae, str) and not ae.strip()):
         ae = "gzip, deflate, br"
+    
     headers = {
         "User-Agent": "VextoContactFinder/1.0 (+https://vexto.io)",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Encoding": ae,
-}
+    }
+    
     if httpx is not None:
-        with httpx.Client(http2=True, timeout=timeout, headers=headers, follow_redirects=True) as cli:
-            r = cli.get(url)
+        try:
+            with httpx.Client(http2=True, timeout=timeout, headers=headers, follow_redirects=True) as cli:
+                r = cli.get(url)
+                r.raise_for_status()
+                text = r.text
+                _write_cache(cp, text)
+                return text
+        except Exception as e:
+            log.debug(f"Failed to fetch {url}: {e}")
+            return ""
+    
+    if 'requests' in sys.modules:
+        try:
+            r = requests.get(url, headers=headers, timeout=timeout)  # type: ignore
             r.raise_for_status()
             text = r.text
             _write_cache(cp, text)
             return text
-    if 'requests' in sys.modules:
-        r = requests.get(url, headers=headers, timeout=timeout)  # type: ignore
-        r.raise_for_status()
-        text = r.text
-        _write_cache(cp, text)
-        return text
+        except Exception as e:
+            log.debug(f"Failed to fetch {url}: {e}")
+            return ""
+    
     raise RuntimeError("No HTTP client available (install httpx or requests)")
 
 # ------------------------------- Parsing --------------------------------------
@@ -3406,20 +3475,36 @@ def run_enrichment_on_dataframe(
         return None
 
     def _norm_url_value(v: str | None) -> str:
+        """Normaliser URL-værdi fra DataFrame."""
         s = (str(v or "")).strip()
-        if not s or s.lower() == "nan":
+        
+        # Bedre NaN/None check
+        if not s or s.lower() in ("nan", "none", "null", "n/a", "na", ""):
             return ""
-        # hvis der er mellemrum/kommaer – tag første token der ligner en URL/domæne
-        s = re.split(r"[,\s;]+", s)[0]
+        
+        # Fjern whitespace og split på komma/semicolon - tag første del
+        parts = re.split(r"[,;\s]+", s)
+        s = parts[0].strip() if parts else ""
+        
+        # Hvis tom efter split
+        if not s:
+            return ""
+        
+        # Har allerede protokol?
         if re.match(r"^https?://", s, flags=re.I):
             return s
-        # hvis 'www.' i starten → tilføj https://
+        
+        # Tilføj https:// hvis det starter med www.
         if s.lower().startswith("www."):
             return f"https://{s}"
-        # hvis det ligner et domæne → tilføj https://
+        
+        # Tilføj https:// hvis det ligner et domæne (mindst et punktum og 2+ bogstaver til sidst)
         if re.match(r"^([a-z0-9\-]+\.)+[a-z]{2,}(/.*)?$", s, flags=re.I):
             return f"https://{s}"
-        return s  # returnér som er (giver evt. 0-resultat senere)
+        
+        # Hvis det ikke ligner en valid URL/domæne, returner tom streng
+        log.debug(f"Could not normalize URL value: {v}")
+        return ""
 
     # --- Find URL-kolonne (case-insensitiv + heuristik) -----------------
     real_url_col = _guess_url_col(df, url_col)
