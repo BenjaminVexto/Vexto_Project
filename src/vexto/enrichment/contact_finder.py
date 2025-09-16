@@ -2779,16 +2779,44 @@ def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optiona
     """
     out: list[ContactCandidate] = []
     # 1) Find API-URLs in HTML
-# === ANKER: WP_JSON_BUILD_URLS BEGIN ===
+    # === ANKER: WP_JSON_BUILD_URLS BEGIN ===
     # 1) Direct page-API
     api_urls = [urljoin(page_url, "/wp-json/wp/v2/pages")]
 
-    # 2) Origin + www variant (robust ved 301 til www/non-www)
+    # 2) Definér origin/host-variabler korrekt
+    try:
+        parts = urlsplit(page_url)
+        scheme = parts.scheme or "https"
+        page_host = (parts.hostname or "").lower()
+    except Exception:
+        scheme = "https"
+        page_host = ""
+
+    # canonical host fra HTML (fallback = page_host)
+    try:
+        canon_host = _canonical_host_from(html, page_host) or page_host
+    except Exception:
+        canon_host = page_host
+
+    # helper: lav origin fra host
+    def _origin_from_host(host: str | None) -> str:
+        h = (host or "").lower()
+        return f"{scheme}://{h}" if h else ""
+
+    # korekte origins
+    page_origin = _origin_from_host(page_host)
+    base_origin = _origin_from_host(canon_host)
+
+    # www-varianter (brug _with_www på HOSTS, ikke på origins)
+    page_host_www = _with_www(page_host) or page_host
+    base_host_www = _with_www(canon_host) or canon_host
+
+    # 3) Origins vi vil prøve (dedup)
     bases = list({
         page_origin,
-        _with_www(page_origin),
+        _origin_from_host(page_host_www),
         base_origin,
-        _with_www(base_origin),
+        _origin_from_host(base_host_www),
     })
 
     # --- WP-JSON availability gate (circuit breaker) -------------------
