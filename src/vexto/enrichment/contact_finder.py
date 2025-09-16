@@ -30,11 +30,11 @@ import hashlib
 import json
 import logging
 import re
+import os
 import sys
 import time
 import threading
 import logging.handlers
-import os
 import random  # ANKER: RATE_LIMIT_BACKOFF
 from collections import defaultdict  # ANKER: RATE_LIMIT_BACKOFF
 from dataclasses import dataclass
@@ -113,10 +113,10 @@ _RL_429_COUNTS: defaultdict[str, int] = defaultdict(int)  # host -> count pr. ru
 _HOST_REQUESTS: defaultdict[str, int] = defaultdict(int)  # host -> requests pr. run
 _HOST_REQUEST_BUDGET = 25                      # hårdt cap pr. host pr. run
 
-# [PATCH] Per-host fejloptælling (DNS/SSL) → tidlig skip efter gentagne fejl
+# [PATCH] Per-host fejloptælling (DNS/SSL) → tidlig skip, fx ecovis.dk …
 _HOST_DNS_FAILS: defaultdict[str, int] = defaultdict(int)
 _HOST_SSL_FAILS: defaultdict[str, int] = defaultdict(int)
-_HOST_FAIL_LIMIT = 2  # efter 2 DNS/SSL-fejl for en host skipper vi resten af run'et for den host
+_HOST_FAIL_LIMIT = 5  # efter 5 DNS/SSL-fejl for en host skipper vi resten af run'et for den host
 
 
 def _now() -> float:
@@ -3066,6 +3066,7 @@ class ContactFinder:
     def __init__(
         self,
         timeout: float = DEFAULT_TIMEOUT,
+        pw_budget: int = 5,
         cache_dir: Optional[Path] = ".http_diskcache/html",
         use_browser: str = "auto", # {"auto","always","never"}
         gdpr_minimize: bool = False,
@@ -3083,7 +3084,7 @@ class ContactFinder:
         # Normaliserede URLs som vi allerede har Playwright-renderet i denne kørsel
         self._rendered_once: set[str] = set()
         self._pw_attempted: set[str] = set() # URLs forsøgt til PW (debounce)
-        self._pw_budget: int = 3 # maks. render pr. kørsel (kan tunes)
+        self._pw_budget: int = int(pw_budget)  # maks. render pr. kørsel (konfigurerbart)
 
     # ------------------------- Browser / rendering -------------------------
 
@@ -3333,8 +3334,7 @@ class ContactFinder:
         """Returnér alle (scored) kandidater som dicts (reasons inkluderet)."""
         t0 = time.time()
 
-        # Nulstil PW-budget og -debounce pr. domæne/run
-        self._pw_budget = 3
+        # Nulstil kun PW-debounce pr. domæne/run (behold konfigureret budget)
         self._pw_attempted = set()
         self._rendered_once = set()
 
@@ -3580,7 +3580,7 @@ class ContactFinder:
 
 
 
-    def find(self, url: str, limit_pages: int = 4) -> Optional[dict]:
+    def find(self, url: str, limit_pages: int = 10) -> Optional[dict]:
         """Returnér bedste kandidat som dict – eller None."""
         all_ = self.find_all(url, limit_pages=limit_pages)
         return all_[0] if all_ else None
@@ -3588,20 +3588,20 @@ class ContactFinder:
 
 # ------------------------------ Offentligt API --------------------------------
 
-def find_best_contact(url: str, limit_pages: int = 4) -> Optional[dict]:
+def find_best_contact(url: str, limit_pages: int = 10) -> Optional[dict]:
     return ContactFinder().find(url, limit_pages=limit_pages)
 
 # Kompat-aliaser (gamle kald i projektet)
-def find_contacts(url: str, limit_pages: int = 4) -> list[dict]:
+def find_contacts(url: str, limit_pages: int = 10) -> list[dict]:
     return ContactFinder().find_all(url, limit_pages=limit_pages)
 
-def extract_contacts(url: str, limit_pages: int = 4) -> list[dict]:
+def extract_contacts(url: str, limit_pages: int = 10) -> list[dict]:
     return ContactFinder().find_all(url, limit_pages=limit_pages)
 
-def extract_best_contact(url: str, limit_pages: int = 4) -> Optional[dict]:
+def extract_best_contact(url: str, limit_pages: int = 10) -> Optional[dict]:
     return ContactFinder().find(url, limit_pages=limit_pages)
 
-def find_top_contact(url: str, limit_pages: int = 4) -> Optional[dict]:
+def find_top_contact(url: str, limit_pages: int = 10) -> Optional[dict]:
     return ContactFinder().find(url, limit_pages=limit_pages)
 
 
@@ -3611,10 +3611,11 @@ def run_enrichment_on_dataframe(
     df,
     url_col: str | None = None,
     *,
-    limit_pages: int = 4,
+    limit_pages: int = 10,
     top_n: int = 1,
     gdpr_minimize: bool = False,
     use_browser: str = "auto",
+    max_workers: int = 4,
 ):
     """
     DataFrame-helper (robust):
@@ -3624,7 +3625,9 @@ def run_enrichment_on_dataframe(
     - Lægger kolonner: cf_best_* og cf_all (JSON)
     """
     import json, re
+    import os
     import pandas as _pd
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
     if not hasattr(df, "assign"):
         raise TypeError("run_enrichment_on_dataframe forventer en pandas.DataFrame")
@@ -3705,51 +3708,83 @@ def run_enrichment_on_dataframe(
     best_names, best_titles, best_emails, best_phones, best_scores, best_urls, all_json = \
         [], [], [], [], [], [], []
 
-    for _, row in df.iterrows():
+    # Byg arbejdslisten (beholder rækkefølge via indeks)
+    tasks = []
+    for i, row in df.reset_index(drop=True).iterrows():
         raw = row.get(real_url_col)
         url = _norm_url_value(raw)
+        tasks.append((i, url))
+
+    def _enrich_one(i_url_tuple):
+        i, url = i_url_tuple
         if not url:
-            best_names.append(None); best_titles.append(None); best_emails.append([])
-            best_phones.append([]); best_scores.append(None); best_urls.append(None); all_json.append("[]")
-            continue
-
-        # Prøv at hente direktørnavne fra DF-rækken, hvis kolonne findes
-        directors_list: list[str] = []
+            return i, {
+                "cf_best_name": None, "cf_best_title": None,
+                "cf_best_emails": None, "cf_best_phones": None,
+                "cf_best_score": None, "cf_best_url": None,
+                "cf_best_source": None, "cf_best_confidence": None,
+                "cf_all": json.dumps([]),
+            }
         try:
-            for col in df.columns:
-                lc = col.lower()
-                if "direkt" in lc or "director" in lc:
-                    raw_dn = row.get(col)
-                    if raw_dn and str(raw_dn).strip() and str(raw_dn).strip().lower() != "nan":
-                        # split på ; , / |
-                        parts = re.split(r"[;,/|]+", str(raw_dn))
-                        directors_list = [p.strip() for p in parts if p and p.strip()]
-                        break
-        except Exception:
-            directors_list = []
+            # Egen instans for tråd-sikkerhed; respekter evt. PW-budget via env
+            _pw_budget_env = int(os.environ.get("VEXTO_PW_BUDGET", "5"))
+            cf = ContactFinder(
+                timeout=DEFAULT_TIMEOUT,
+                pw_budget=_pw_budget_env,
+                use_browser=use_browser,
+                gdpr_minimize=gdpr_minimize
+            )
+            results = cf.find_all(url, limit_pages=limit_pages)
+        except Exception as e:
+            log.warning("Fejl ved enrichment for %s: %r", url, e)
+            results = []
 
-        if top_n and top_n > 1:
-            results = cf.find_all(url, limit_pages=limit_pages, directors=directors_list or None)[:top_n]
-        else:
-            # Brug find_all (top-1) når vi har direktør-hints; ellers find()
-            if directors_list:
-                results = cf.find_all(url, limit_pages=limit_pages, directors=directors_list)[:1]
-            else:
-                best = cf.find(url, limit_pages=limit_pages)
-                results = [best] if best else []
+        if not results:
+            return i, {
+                "cf_best_name": None, "cf_best_title": None,
+                "cf_best_emails": None, "cf_best_phones": None,
+                "cf_best_score": None, "cf_best_url": None,
+                "cf_best_source": None, "cf_best_confidence": None,
+                "cf_all": json.dumps([]),
+            }
 
-        if results:
-            b = results[0]
-            best_names.append(b.get("name"))
-            best_titles.append(b.get("title"))
-            best_emails.append(b.get("emails") or [])
-            best_phones.append(b.get("phones") or [])
-            best_scores.append(b.get("score"))
-            best_urls.append(b.get("url") or url)
-            all_json.append(json.dumps(results, ensure_ascii=False))
-        else:
-            best_names.append(None); best_titles.append(None); best_emails.append([])
-            best_phones.append([]); best_scores.append(None); best_urls.append(url); all_json.append("[]")
+        best = results[0] if isinstance(results, list) and results else None
+        if not best:
+            return i, {
+                "cf_best_name": None, "cf_best_title": None,
+                "cf_best_emails": None, "cf_best_phones": None,
+                "cf_best_score": None, "cf_best_url": None,
+                "cf_best_source": None, "cf_best_confidence": None,
+                "cf_all": json.dumps(results if isinstance(results, list) else []),
+            }
+
+        return i, {
+            "cf_best_name": best.get("name"),
+            "cf_best_title": best.get("title"),
+            "cf_best_emails": ", ".join(best.get("emails", []) or []),
+            "cf_best_phones": ", ".join(best.get("phones", []) or []),
+            "cf_best_score": best.get("score"),
+            "cf_best_url": best.get("url"),
+            "cf_best_source": best.get("source"),
+            "cf_best_confidence": best.get("confidence"),
+            "cf_all": json.dumps(results),
+        }
+
+    # Kør sekventielt hvis max_workers <= 1 (bevar gamle semantics)
+    out_rows: list[dict] = []  # <-- initér output-listen, så den findes i begge grene
+
+    if (max_workers or 0) <= 1:
+        for t in tasks:
+            _, row_out = _enrich_one(t)
+            out_rows.append(row_out)
+    else:
+        # Parallelisering med ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            futures = [ex.submit(_enrich_one, t) for t in tasks]
+            # Saml resultater og sorter efter indeks for stabil rækkefølge
+            tmp = [f.result() for f in as_completed(futures)]
+            for _, row_out in sorted(tmp, key=lambda x: x[0]):
+                out_rows.append(row_out)
 
     out = df.copy()
     out["cf_best_name"] = best_names
