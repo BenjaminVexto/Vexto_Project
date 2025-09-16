@@ -275,6 +275,23 @@ def _canonical_host_from(html: str, fallback: str) -> str:
         pass
     return fallback
 
+# [PATCH] ccTLD helpers (blokér cross-country redirects)
+def _cc_tld_from_host(host: str):
+    """Returner landekode-TLD (fx 'dk', 'se') hvis sidste label er 2 bogstaver, ellers None."""
+    try:
+        last = host.rsplit(".", 1)[1].lower()
+    except Exception:
+        return None
+    if len(last) == 2 and last.isalpha():
+        return last
+    return None
+
+def _same_country_tld(host_a: str, host_b: str) -> bool:
+    """True hvis begge hosts har samme 2-bogstavs ccTLD (dk==dk, se==se)."""
+    a = _cc_tld_from_host(host_a or "")
+    b = _cc_tld_from_host(host_b or "")
+    return bool(a and b and a == b)
+
 def _norm_url_for_fetch(u: str) -> str:
     """Normalisér URL for dedup: fjern trailing slash (undtagen '/'), drop fragment."""
     try:
@@ -1306,12 +1323,31 @@ def _email_domain_matches_site(email: str, site_url: str) -> bool:
 DOMAIN_MISMATCH_WHITELIST: set[str] = set()
 
 # [PATCH] Mulighed for at angive whitelist via env 'VEXTO_DOMAIN_MISMATCH_ALLOW' (komma-separerede apexdomæner)
+# [PATCH] Styring af ccTLD-redirects via env 'VEXTO_ALLOW_CROSS_CC_REDIRECTS' (default: OFF)
+import os  # lokal import er bevidst for at undgå rækkefølgeproblemer
 try:
     _env_whitelist = os.getenv("VEXTO_DOMAIN_MISMATCH_ALLOW", "")
     if _env_whitelist:
-        DOMAIN_MISMATCH_WHITELIST |= {ap.strip().lower() for ap in _env_whitelist.split(",") if ap.strip()}
+        DOMAIN_MISMATCH_WHITELIST |= {
+            ap.strip().lower()
+            for ap in _env_whitelist.split(",")
+            if ap.strip()
+        }
 except Exception:
     pass
+
+try:
+    _ALLOW_CROSS_CC_REDIRECTS = os.getenv("VEXTO_ALLOW_CROSS_CC_REDIRECTS", "").strip().lower() in {"1","true","yes","y"}
+except Exception:
+    _ALLOW_CROSS_CC_REDIRECTS = False
+
+def _host_in_whitelist(host: str) -> bool:
+    """Tjekker om 'host' svarer til en whitelisted apex (direkte eller som subdomæne)."""
+    h = (host or "").lower()
+    for ap in DOMAIN_MISMATCH_WHITELIST:
+        if h == ap or h.endswith("." + ap):
+            return True
+    return False
 
 def _is_whitelisted_mismatch(target_url: str) -> bool:
     try:
@@ -3317,18 +3353,44 @@ class ContactFinder:
             resolved_root, _st0 = _head_and_resolve(url, timeout=self.timeout)
         except Exception:
             resolved_root = url
-        if not _same_apex(url, resolved_root) and not _is_whitelisted_mismatch(resolved_root):
-            log.warning("Domain-mismatch guard: base=%s -> final=%s (stopper person-scrape)", url, resolved_root)
-            return [{
-                "name": None,
-                "title": None,
-                "emails": [],
-                "phones": [],
-                "score": 0.2,
-                "reasons": ["GENERIC_ORG_CONTACT", "DOMAIN_MISMATCH"],
-                "source": "page-generic",
-                "url": url,
-            }]
+
+        # ccTLD-strenghed: kun tillad mismatch hvis samme land (fx .dk -> .dk) eller eksplicit whitelist
+        from urllib.parse import urlsplit
+        base_host = (urlsplit(url).hostname or "").lower()
+        final_host = (urlsplit(resolved_root).hostname or "").lower()
+
+        # Faldbaggrund hvis env-flag ikke er defineret endnu
+        _allow_cross_cc = globals().get("_ALLOW_CROSS_CC_REDIRECTS", False)
+
+        if not _same_apex(url, resolved_root):
+            # 1) eksplicit whitelist (tillader også subdomæner af whitelisted apex)
+            if _host_in_whitelist(final_host) or _is_whitelisted_mismatch(resolved_root):
+                log.info("Domain-mismatch tilladt via whitelist: base=%s -> final=%s", url, resolved_root)
+            # 2) samme land (samme 2-bogstavs ccTLD, fx dk==dk)
+            elif _same_country_tld(base_host, final_host):
+                log.debug(
+                    "Domain-mismatch men samme ccTLD (%s) – tillades: base=%s -> final=%s",
+                    _cc_tld_from_host(final_host), url, resolved_root
+                )
+            # 3) global override via env (hvis du midlertidigt vil tillade cross-cc)
+            elif _allow_cross_cc:
+                log.info("Domain-mismatch tilladt af env VEXTO_ALLOW_CROSS_CC_REDIRECTS: base=%s -> final=%s", url, resolved_root)
+            # 4) ellers bloker (fremmed TLD)
+            else:
+                log.warning(
+                    "Domain-mismatch guard: base=%s -> final=%s (fremmed TLD blokeret)",
+                    url, resolved_root
+                )
+                return [{
+                    "name": None,
+                    "title": None,
+                    "emails": [],
+                    "phones": [],
+                    "score": 0.2,
+                    "reasons": ["GENERIC_ORG_CONTACT", "DOMAIN_MISMATCH", "FOREIGN_TLD_BLOCKED"],
+                    "source": "page-generic",
+                    "url": url,
+                }]
 
         final_site_url = resolved_root or url
 
