@@ -22,15 +22,14 @@
 # =============================================================================
 
 from __future__ import annotations
-
 import asyncio
 import concurrent.futures
 import contextlib
 import hashlib
 import json
 import logging
-import re
 import os
+import re
 import sys
 import time
 import threading
@@ -458,6 +457,18 @@ def _dedup_list(items: list[str]) -> list[str]:
     """Dedupliker en liste og bevarer rækkefølgen."""
     seen = set()
     return [x for x in items if not (x in seen or seen.add(x))]
+
+def _strip_www(host: str | None) -> str | None:
+    """Fjern 'www.' præfiks fra et hostnavn, hvis det findes."""
+    if not host:
+        return host
+    return host[4:] if host.lower().startswith("www.") else host
+
+def _with_www(host: str | None) -> str | None:
+    """Tilføj 'www.' hvis ikke til stede. Returnerer None uændret."""
+    if not host:
+        return host
+    return host if host.lower().startswith("www.") else f"www.{host}"
 # <<< ANKER SLUT: DEDUP_AND_NORM_HELPERS
 
 # === ANKER: STRUCTURED_CONTACT_EXTRACTOR ===
@@ -524,7 +535,7 @@ def _extract_contacts_from_ldjson(obj) -> list[dict]:
     return out
 
 # === ANKER: PRECOMPILED REGEX (NEEDS_JS) ===
-_CONTACT_CLASS_RE = re.compile(r'class=["\'][^"\']*(team|staff|employee|person|medarbejder|medarbejdere)[^"\']*["\']', re.I)
+_CONTACT_CLASS_RE = re.compile(r'class=["\'][^"\']*(team|staff|employee|person|medarbejder|medarbejdere|contact-person|employee-card|staff-member)[^"\']*["\']', re.I)
 _CONTACT_H_RE     = re.compile(r'<h[12][^>]*>\s*(kontakt|team|medarbejdere|personale|ansatte|about|om\s+os)\s*</h[12]>', re.I)
 _MAILTO_TEL_RE    = re.compile(r'href=["\'](?:mailto:|tel:)', re.I)
 _CONTACT_LINK_RE  = re.compile(r'href=["\'][^"\']*(/kontakt|/kontakt-os|/contact|/contact-us|/about|/om-?os|/team|/medarbejdere)[^"\']*["\']', re.I)
@@ -1350,12 +1361,37 @@ def _host_in_whitelist(host: str) -> bool:
     return False
 
 def _is_whitelisted_mismatch(target_url: str) -> bool:
+    """Returner True hvis target_url's apex er tilladt i whitelist."""
     try:
         ap = _apex((urlsplit(target_url).hostname or "").lower())
         return ap in DOMAIN_MISMATCH_WHITELIST
     except Exception:
         return False
 # === ANKER: DOMAIN_MISMATCH_WHITELIST ===
+
+# --- Nye hjælpere til ccTLD-regler og env-toggle ---
+def _hostname(u: str) -> str:
+    try:
+        return (urlsplit(u).hostname or "").lower()
+    except Exception:
+        return ""
+
+_CC_TLD_RE = re.compile(r"\.([a-z]{2})$")
+
+def _cc_tld(host: str) -> str:
+    m = _CC_TLD_RE.search(host or "")
+    return m.group(1) if m else ""
+
+def _same_country_tld(host_a: str, host_b: str) -> bool:
+    """True hvis begge værter deler samme to-bogstavs ccTLD (fx .dk == .dk)."""
+    a = _cc_tld(host_a)
+    b = _cc_tld(host_b)
+    return bool(a and a == b)
+
+def _allow_cross_cc_redirects() -> bool:
+    """Læs env-toggle til at tillade cross-cc omdirigeringer."""
+    v = os.environ.get("VEXTO_ALLOW_CROSS_CC_REDIRECTS", "").strip().lower()
+    return v in ("1", "true", "yes", "y")
 
 def _passes_identity_gate(
     name: str | None,
@@ -2706,40 +2742,56 @@ def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optiona
     """
     out: list[ContactCandidate] = []
     # 1) Find API-URLs in HTML
-    # === ANKER: WP_JSON_BUILD_URLS BEGIN ===
-    api_urls: list[str] = []
-    # Direct page-API URLs from HTML
-    for m in re.finditer(r'href=["\']([^"\']+/wp-json/wp/v2/pages/\d+[^"\']*)["\']', html, flags=re.I):
-        api_urls.append(m.group(1))
-    # Origin + www-variant
+# === ANKER: WP_JSON_BUILD_URLS BEGIN ===
+    # 1) Direct page-API
+    api_urls = [urljoin(page_url, "/wp-json/wp/v2/pages")]
+
+    # 2) Origin + www variant (robust ved 301 til www/non-www)
+    bases = list({
+        page_origin,
+        _with_www(page_origin),
+        base_origin,
+        _with_www(base_origin),
+    })
+
+    # --- WP-JSON availability gate (circuit breaker) -------------------
+    # Tjek om mindst ét af basis-urls svarer 200 på /wp-json/.
+    # Hvis ingen gør, skipper vi hele WP-JSON enrichment for denne side/host
     try:
-        s = urlsplit(page_url)
-        origin = f"{s.scheme}://{s.netloc}"
-        bases = [origin]
-        if not s.netloc.startswith("www."):
-            bases.append(f"{s.scheme}://www.{s.netloc}")
-    except Exception:
-        bases = []
-    # Slug from URL path
-    try:
-        parts = [p for p in urlsplit(page_url).path.split("/") if p]
-        slug = parts[-1] if parts else None
-    except Exception:
-        slug = None
-    if slug:
+        ok_any = False
         for b in bases:
-            api_urls.extend([
-                f"{b}/wp-json/wp/v2/pages?slug={slug}&_embed=1",
-                f"{b}/wp-json/wp/v2/posts?slug={slug}&_embed=1",
-            ])
-    # Users + types + search
+            st, _ = http_get(urljoin(b, "/wp-json/"), timeout=5.0, retries=1)
+            if st == 200:
+                ok_any = True
+                break
+        if not ok_any:
+            try:
+                hosts = { (urlsplit(b).hostname or "") for b in bases }
+                log.debug("WP-JSON gate: disabled for host(s) %s – skipping WP-JSON enrichment", ", ".join(sorted(hosts)))
+            except Exception:
+                log.debug("WP-JSON gate: disabled – skipping WP-JSON enrichment")
+            return []
+    except Exception:
+        # Vær defensiv: hvis tjekket fejler, så lad være med at spamme API’et
+        return []
+    # -------------------------------------------------------------------
+
+    api_urls += [urljoin(b, "/wp-json/wp/v2/pages") for b in bases]
+
+    # 3) Slug fra URL-path (fx /om-os/, /team/)
+    path = urlsplit(page_url).path.strip("/")
+    slugs = [s for s in re.split(r"[\/\-]", path) if s]
+    for slug in slugs[:3]:
+        for b in bases:
+            api_urls.append(urljoin(b, f"/wp-json/wp/v2/pages?search={slug}&_fields=link,title&per_page=5"))
+
+    # 4) Users + types kan ofte give forfatter/medarbejder-sider
     for b in bases:
-        api_urls.append(f"{b}/wp-json/wp/v2/users?per_page=100&context=view&_embed=1")
-        api_urls.append(f"{b}/wp-json/wp/v2/types")
-        for q in ["team", "medarbejder", "personale", "ansatte", "staff", "people", "medarbetare", "personal"]:
-            api_urls.append(f"{b}/wp-json/wp/v2/search?search={q}&per_page=50&_embed=1")
+        api_urls.append(urljoin(b, "/wp-json/wp/v2/users?_fields=name,link&per_page=10"))
+        api_urls.append(urljoin(b, "/wp-json/wp/v2/types?_fields=slug,rest_base"))
+    # Dedup
     api_urls = list(dict.fromkeys(api_urls))
-    # === ANKER: WP_JSON_BUILD_URLS END ===
+# === ANKER: WP_JSON_BUILD_URLS END ===
     # === ANKER: WP_JSON_PROCESS_LOOP BEGIN ===
     for idx, api in enumerate(api_urls[:10]):  # Cap at 10 calls per page
         try:
@@ -3725,6 +3777,7 @@ def run_enrichment_on_dataframe(
                 "cf_best_source": None, "cf_best_confidence": None,
                 "cf_all": json.dumps([]),
             }
+        time.sleep(random.uniform(0.5, 2.0))  # Jitter to avoid bursts
         try:
             # Egen instans for tråd-sikkerhed; respekter evt. PW-budget via env
             _pw_budget_env = int(os.environ.get("VEXTO_PW_BUDGET", "5"))
