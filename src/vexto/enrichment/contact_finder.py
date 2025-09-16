@@ -214,7 +214,23 @@ def http_get(u: str, timeout: float = 10.0, retries: int = 3) -> tuple[int, str]
                             last_text = r.text or ""
                     except Exception as e2:
                         log.debug(f"Failed even without SSL verification for {u}: {e2}")
-                        raise e  # Fortsæt med normal retry-logik
+                        # --- NYT: kontrolleret HTTP fallback (bag flag/allowlist) ---
+                        allow_http = os.getenv("VEXTO_ALLOW_HTTP_DOWNGRADE", "").strip().lower() in {"1","true","yes","y"}
+                        allow_list = {h.strip().lower() for h in (os.getenv("VEXTO_HTTP_DOWNGRADE_ALLOW","").split(",")) if h.strip()}
+                        if (allow_http or host in allow_list) and u.startswith("https://"):
+                            try:
+                                http_u = "http://" + u.split("://",1)[1]
+                                with httpx.Client(http2=True, timeout=timeout, headers=headers, follow_redirects=True) as cli2:
+                                    r2 = cli2.get(http_u)
+                                    last_status = r2.status_code
+                                    last_text = r2.text or ""
+                                    if last_status == 200 and last_text:
+                                        log.info(f"HTTP downgrade succeeded for {host}")
+                                        return last_status, last_text
+                            except Exception as e3:
+                                log.debug(f"HTTP downgrade failed for {u}: {e3}")
+                        # fallback til normal retry
+                        raise e
             
             # Håndter rate limiting
             if last_status in (429, 503):
@@ -545,23 +561,17 @@ _JS_MARKERS_RE    = re.compile(
 )
 
 def __needs_js_primary(html: str) -> bool:
-    """Kræv JS kun ved tynd DOM (<1800 tegn) og tydelige JS-markører, medmindre kontakt-signaler findes."""
     if not html:
         return False
     lower = html.lower()
+    # --- NYT: Cloudflare e-mail-obfuscation kræver JS-render ---
+    if "__cf_email__" in lower or "data-cfemail" in lower:
+        return True
     # --- Kontakt-signaler (hurtig short-circuit) ---
-    # 1) mailto/tel
-    if _MAILTO_TEL_RE.search(lower):
-        return False
-    # 2) team/medarbejder-klasser
-    if _CONTACT_CLASS_RE.search(lower):
-        return False
-    # 3) H1/H2 med kontakt-/team-ord
-    if _CONTACT_H_RE.search(lower):
-        return False
-    # 4) Links mod kontakt/om/team/medarbejdere
-    if _CONTACT_LINK_RE.search(lower):
-        return False
+    if _MAILTO_TEL_RE.search(lower): return False
+    if _CONTACT_CLASS_RE.search(lower): return False
+    if _CONTACT_H_RE.search(lower): return False
+    if _CONTACT_LINK_RE.search(lower): return False
     # --- JS-markører: kun hvis ingen kontakt-signaler ---
     body_len = len(re.sub(r"\s+", "", html))
     return (body_len < 1800) and bool(_JS_MARKERS_RE.search(html))
@@ -752,8 +762,10 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
     if not _is_disallowed("/wp-json/", disallows):
         wp_url = urljoin(base_url, "/wp-json/")
         st_wp, _ = http_get(wp_url, timeout=5.0, retries=1)
-        if st_wp == 200:
-            for t in ["kontakt", "om", "about", "team", "medarbejdere", "staff", "management"]:
+        if st_wp != 200:
+            log.debug(f"WP REST not available (status={st_wp}) for host={_host_of(base_url)} – skipping WP searches")
+        else:
+            for t in ["kontakt","om","about","team","medarbejdere","staff","management"]:
                 api = urljoin(base_url, f"/wp-json/wp/v2/pages?search={t}&_fields=link,title&per_page=5")
                 stp, body = http_get(api, timeout=7.0, retries=1)
                 if stp == 200:
@@ -767,7 +779,18 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
                         pass
 
     ranked.sort(key=lambda x: x[0], reverse=True)
-    return [u for _, u in ranked[:max_urls]]
+    urls = [u for _, u in ranked[:max_urls]]
+    # NYT: bind kandidater til canonical host for at undgå 302-pingpong
+    try:
+        urls = _sticky_host_urls(base_url, base_html, urls)
+    except Exception:
+        pass
+    # dedup for en sikkerheds skyld
+    out, seen = [], set()
+    for u in urls:
+        if u not in seen:
+            seen.add(u); out.append(u)
+    return out
 
 # Rolle-ord (generiske)
 EXEC_ROLES = {
@@ -1206,7 +1229,9 @@ def _fetch_robots_txt(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[
             status, text = http_get(robots_url, timeout=timeout)
             _ROBOTS_CACHE[host] = (status, text or "")
         
-        if status == 0 or not text:
+        # Ingen/ubrugelig robots → returnér tomt og cache, så vi ikke hamrer igen
+        if status == 0 or not text or status in (301, 302, 401, 403):
+            _ROBOTS_CACHE[host] = (status, text or "")
             return [], []
         
         sitemaps, disallows = [], []
@@ -1439,7 +1464,19 @@ def _passes_identity_gate(
             # Kræv (personlig local) + (rolle ELLER navn↔email match)
             if has_personal_local and (has_role or has_name_email_match):
                 return True
-    # === ANKER: GATE_CONTACT_TWO_SIGNALS ===
+   # === ANKER: GATE_CONTACT_TWO_SIGNALS ===
+
+    # E: kontakt/om/team-side + dom_distance tæt + same-domain ikke-generisk email
+    #    → tillad selv hvis navn/titel mangler (små virksomheder)
+    if url and _is_contactish_url(url) and dom_distance is not None and dom_distance <= 1:
+        for em in (emails or []):
+            try:
+                local = em.split("@", 1)[0]
+            except Exception:
+                continue
+            letters = re.sub(r"[^a-zæøå]", "", (local or "").lower())
+            if len(letters) >= 3 and (not _is_generic_local(local)) and _email_domain_matches_site(em, url):
+                return True
 
     return False
 
