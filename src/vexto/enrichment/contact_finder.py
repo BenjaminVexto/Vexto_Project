@@ -34,6 +34,7 @@ import sys
 import time
 import threading
 import logging.handlers
+import os
 import random  # ANKER: RATE_LIMIT_BACKOFF
 from collections import defaultdict  # ANKER: RATE_LIMIT_BACKOFF
 from dataclasses import dataclass
@@ -112,6 +113,12 @@ _RL_429_COUNTS: defaultdict[str, int] = defaultdict(int)  # host -> count pr. ru
 _HOST_REQUESTS: defaultdict[str, int] = defaultdict(int)  # host -> requests pr. run
 _HOST_REQUEST_BUDGET = 25                      # hårdt cap pr. host pr. run
 
+# [PATCH] Per-host fejloptælling (DNS/SSL) → tidlig skip efter gentagne fejl
+_HOST_DNS_FAILS: defaultdict[str, int] = defaultdict(int)
+_HOST_SSL_FAILS: defaultdict[str, int] = defaultdict(int)
+_HOST_FAIL_LIMIT = 2  # efter 2 DNS/SSL-fejl for en host skipper vi resten af run'et for den host
+
+
 def _now() -> float:
     return time.time()
 
@@ -149,11 +156,17 @@ def http_get(u: str, timeout: float = 10.0, retries: int = 3) -> tuple[int, str]
         return 0, ""
     
     host = _host_of(u)
+    # [PATCH] tidlig skip når per-host fejlgrænse er ramt
+    if _HOST_DNS_FAILS.get(host, 0) >= _HOST_FAIL_LIMIT or _HOST_SSL_FAILS.get(host, 0) >= _HOST_FAIL_LIMIT:
+        log.debug(f"Host {host} har nået fejlgrænse (dns={_HOST_DNS_FAILS.get(host,0)}, ssl={_HOST_SSL_FAILS.get(host,0)}) – skipper {u}")
+        return 0, ""
+
     # Respektér evt. aktiv backoff-vindue
     earliest = _RATE_LIMIT_HOSTS.get(host, 0.0)
     if _now() < earliest:
         wait = earliest - _now()
         time.sleep(min(wait, 3.0))
+
     
     last_status, last_text = 0, ""
     for attempt in range(retries):
@@ -165,6 +178,7 @@ def http_get(u: str, timeout: float = 10.0, retries: int = 3) -> tuple[int, str]
             headers = {
                 "User-Agent": "VextoContactFinder/1.0 (+https://vexto.io)",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
                 "Accept-Encoding": ae,
             }
             
@@ -180,11 +194,17 @@ def http_get(u: str, timeout: float = 10.0, retries: int = 3) -> tuple[int, str]
                 # DNS fejl - giv op med det samme (ingen retry)
                 if "getaddrinfo failed" in error_str or "Name or service not known" in error_str:
                     log.debug(f"DNS resolution failed for {u}: {error_str}")
+                    _HOST_DNS_FAILS[host] += 1
                     return 0, ""
+
                 
                 # SSL certifikat fejl - prøv uden verifikation
                 elif "CERTIFICATE_VERIFY_FAILED" in error_str:
+                    _HOST_SSL_FAILS[host] += 1
                     log.warning(f"SSL certificate error for {u}, retrying without verification")
+                    if _HOST_SSL_FAILS[host] >= _HOST_FAIL_LIMIT:
+                        log.debug(f"SSL fejlgrænse ramt for {host} – skipper yderligere forsøg")
+                        return 0, ""
                     try:
                         with httpx.Client(http2=True, timeout=timeout, headers=headers, 
                                         follow_redirects=True, verify=False) as cli:
@@ -196,9 +216,6 @@ def http_get(u: str, timeout: float = 10.0, retries: int = 3) -> tuple[int, str]
                     except Exception as e2:
                         log.debug(f"Failed even without SSL verification for {u}: {e2}")
                         raise e  # Fortsæt med normal retry-logik
-                else:
-                    # Andre connection errors - kast videre for normal retry
-                    raise
             
             # Håndter rate limiting
             if last_status in (429, 503):
@@ -319,8 +336,10 @@ def _fetch_with_playwright_sync(url: str, pre_html: Optional[str] = None, pre_st
                 "a[href^='tel:']",
                 ".__cf_email__",
                 "[data-cfemail]",
-                ".team", ".staff", ".employee", ".elementor-team-member"
+                ".team", ".staff", ".employee", ".elementor-team-member",
+                ".et_pb_team_member", ".vc_row", ".vc_column", ".vc_team"
             ]
+
             try:
                 html = await asyncio.wait_for(
                     _SHARED_PW_CLIENT.get_raw_html(
@@ -497,7 +516,7 @@ _JS_MARKERS_RE    = re.compile(
     re.I
 )
 
-def _needs_js(html: str) -> bool:
+def __needs_js_primary(html: str) -> bool:
     """Kræv JS kun ved tynd DOM (<1800 tegn) og tydelige JS-markører, medmindre kontakt-signaler findes."""
     if not html:
         return False
@@ -527,12 +546,9 @@ def _is_initials_like(local: str) -> bool:
     letters = re.sub(r"[^a-zæøå]", "", local.lower())
     return 2 <= len(letters) <= 4
 
+# [PATCH] alias → brug den primære heuristik
 def _needs_js(html: str) -> bool:
-    """Kræv JS kun ved tynd DOM (<1800 tegn) og tydelige JS-markører."""
-    if not html:
-        return False
-    body_len = len(re.sub(r"\s+", "", html))
-    return (body_len < 1800) and bool(_JS_MARKERS_RE.search(html))
+    return __needs_js_primary(html)
 
 _PROFILE_PATTERNS = [
     r'/medarbejder(?:e)?/[\w\-]+',
@@ -1288,6 +1304,15 @@ def _email_domain_matches_site(email: str, site_url: str) -> bool:
 
 # P5: Domain-mismatch whitelist (kan udvides fra andre moduler)
 DOMAIN_MISMATCH_WHITELIST: set[str] = set()
+
+# [PATCH] Mulighed for at angive whitelist via env 'VEXTO_DOMAIN_MISMATCH_ALLOW' (komma-separerede apexdomæner)
+try:
+    _env_whitelist = os.getenv("VEXTO_DOMAIN_MISMATCH_ALLOW", "")
+    if _env_whitelist:
+        DOMAIN_MISMATCH_WHITELIST |= {ap.strip().lower() for ap in _env_whitelist.split(",") if ap.strip()}
+except Exception:
+    pass
+
 def _is_whitelisted_mismatch(target_url: str) -> bool:
     try:
         ap = _apex((urlsplit(target_url).hostname or "").lower())
@@ -1327,7 +1352,7 @@ def _passes_identity_gate(
                 return True
 
     # D (kontakt-/om-/team-sider – kræv 2 stærke signaler når domæne matcher)
-    if url and _is_contactish_url(url) and dom_distance is not None and dom_distance <= 1:
+    if url and _is_contactish_url(url) and dom_distance is not None and dom_distance <= 2:
         for em in (emails or []):
             try:
                 local = em.split("@", 1)[0]
@@ -1448,6 +1473,7 @@ def _fetch_text(url: str, timeout: float = DEFAULT_TIMEOUT, cache_dir: Optional[
     headers = {
         "User-Agent": "VextoContactFinder/1.0 (+https://vexto.io)",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
         "Accept-Encoding": ae,
     }
     

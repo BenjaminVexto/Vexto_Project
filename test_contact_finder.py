@@ -1,6 +1,7 @@
 import sys
 import os
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 import traceback
@@ -180,7 +181,7 @@ def validate_csv_file(csv_path, logger):
             logger.debug(f"Columns found: {list(df.columns)}")
             
             # Add missing columns
-            if 'scraped_contact_text' not in df.columns:
+            if 'scraped_contact_text' not in df.columns:    
                 df['scraped_contact_text'] = ''
                 logger.info("Added missing 'scraped_contact_text' column")
             
@@ -296,6 +297,44 @@ def run_test(csv_path=None, output_dir=None, sample_size=None):
         if df is None:
             logger.error("Cannot proceed without valid CSV data")
             return False
+
+        # >>> ANKER START: PREFILTER_URLS
+        # Pre-filter ugyldige/blanke URL’er og normalisér til https://
+        def _norm_url_value(u):
+            if not isinstance(u, str):
+                return None
+            u = u.strip()
+            if not u or u.lower() in ("nan", "none", "null"):
+                return None
+            if not u.startswith(("http://", "https://")):
+                # Accepter domæne/host (evt. med www.) og tilføj https://
+                if re.match(r"^(www\.)?([a-z0-9\-]+\.)+[a-z]{2,}$", u, re.I):
+                    return "https://" + u
+                return None
+            return u
+
+        # Find sandsynlig URL-kolonne (matcher senere brug)
+        _candidates = {
+            "url","website","web","domain","hjemmeside","site","company_url","homepage","website_url","www"
+        }
+        _colmap = {c.lower(): c for c in df.columns}
+        _url_col = next(( _colmap[c] for c in _candidates if c in _colmap ), None)
+
+        if _url_col is not None:
+            _before = len(df)
+            df[_url_col] = df[_url_col].map(_norm_url_value)
+            df = df.dropna(subset=[_url_col]).reset_index(drop=True)
+            _removed = _before - len(df)
+            logger.info(f"Pre-filtered rows on '{_url_col}': {_before} -> {len(df)} (removed {_removed})")
+        else:
+            logger.warning("No URL-like column found for pre-filtering (looked for: "
+                           "url, website, web, domain, hjemmeside, site, company_url, homepage, website_url, www)")
+        # <<< ANKER SLUT: PREFILTER_URLS
+        
+        # Apply sample size if specified
+        if sample_size is not None:
+            df = df.head(sample_size)
+            logger.info(f"Limited to sample size: {sample_size} rows")
         
         # Apply sample size if specified
         if sample_size is not None:
