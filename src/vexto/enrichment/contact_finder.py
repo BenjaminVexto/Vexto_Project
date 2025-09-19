@@ -955,46 +955,6 @@ DISCOVERY_KEYWORDS = {
 
 DEFAULT_TIMEOUT = 12.0  # sekunder
 
-#def _safe_get(url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[int, str]:
-#    return http_get(u)
-
-#    if url in _GET_CACHE:
-#        return _GET_CACHE[url]
-#    status, html = 0, ""
-#    host = _host_of(url)
-#    # ANKER: RATE_LIMIT_BACKOFF — respekter backoff pr. host
-#    try:
-#        until = _RATE_LIMIT_HOSTS.get(host, 0.0)
-#        now = time.time()
-#        if until and now < until:
-#            time.sleep(min(10.0, until - now) + random.uniform(0, 0.5))
-#    except Exception:
-#        pass
-#
-#    try:
-#        if httpx:
-#            ae = _accept_encoding() if callable(_accept_encoding) else _accept_encoding
-#            if not isinstance(ae, (str, bytes)) or (isinstance(ae, str) and not ae.strip()):
-#                ae = "gzip, deflate, br"
-#            with httpx.Client(follow_redirects=True, timeout=timeout, headers={
-#                "User-Agent": "VextoContactFinder/1.1",
-#                "Accept-Encoding": ae,
-#            }) as c:
-#                r = c.get(url)
-#                status = r.status_code
-#                html = r.text or ""
-#        elif requests:
-#            r = requests.get(url, allow_redirects=True, timeout=timeout)  # type: ignore
-#            status, html = r.status_code, r.text or ""
-#        # 429 → backoff for host
-#        if status == 429:
-#            _RL_429_COUNTS[host] += 1
-#            _RATE_LIMIT_HOSTS[host] = time.time() + 60.0 + random.uniform(0, 5.0)
-#    except Exception:
-#        status, html = 0, ""
-#    _GET_CACHE[url] = (status, html)
-#    return status, html
-
 def _sticky_host_urls(base_url: str, home_html: str, urls: list[str]) -> list[str]:
     """P1: Ensret alle kandidat-URLs til canonical host efter første GET."""
     base_host = _host_of(base_url)
@@ -1126,18 +1086,6 @@ def _sanitize_title(title: str | None) -> str | None:
     t2 = re.sub(r"\s{2,}", " ", t2).strip(",;:-— ").strip()
     return t2 or None
 
-def _resolve_redirect(u: str, timeout: float = DEFAULT_TIMEOUT) -> str:
-    """Returnér endelig URL efter redirects (HEAD med follow_redirects).
-    Fallback: returnér u uændret.
-    """
-    try:
-        import httpx
-        with httpx.Client(follow_redirects=True, timeout=timeout, headers={"User-Agent": "VextoContactFinder/1.0"}) as c:
-            r = c.head(u)
-            return str(r.url) if r is not None and r.url is not None else u
-    except Exception:
-        return u
-
 def _role_strength(title: str | None) -> int:
     if not title:
         return 0
@@ -1229,23 +1177,6 @@ def _abs_url(base: str, href: str) -> Optional[str]:
         return urljoin(base, href)
     except Exception:
         return None
-
-@lru_cache(maxsize=256)
-def _detect_site_lang(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> str:
-    """Returnér 'da'/'en'/'' baseret på <html lang> eller simple ord-heuristikker."""
-    status, html = _safe_get(base_url, timeout=timeout)
-    if status == 0 or not html:
-        return ""
-    m = re.search(r"<html[^>]*lang=['\"]([a-zA-Z-]+)['\"]", html, flags=re.I)
-    if m:
-        return m.group(1).lower().split("-")[0]
-    da_hits = sum(1 for w in ("kontakt", "om os", "tilbage", "forside") if w in html.lower())
-    en_hits = sum(1 for w in ("contact", "about us", "back", "home") if w in html.lower())
-    if da_hits > en_hits:
-        return "da"
-    if en_hits > da_hits:
-        return "en"
-    return ""
 
 def _fetch_robots_txt(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[list[str], list[str]]:
     """
@@ -2857,8 +2788,13 @@ def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optiona
                     label = (v.get("name") or "").lower() if isinstance(v, dict) else ""
                     joined = " ".join([slug_t, rest_base, label])
                     if any(x in joined for x in ("team", "staff", "people", "personale", "medarbejder", "medarbetare", "ansat", "employee", "member")):
-                        for b in bases:
-                            api_urls.append(f"{b}/wp-json/wp/v2/{rest_base or slug_t}?per_page=100&_embed=1")
+                        # Byg origin ud fra selve 'api' i stedet for at bruge 'bases'
+                        try:
+                            _p = urlsplit(api)
+                            _origin = f"{_p.scheme}://{_p.netloc}"
+                            api_urls.append(f"{_origin}/wp-json/wp/v2/{rest_base or slug_t}?per_page=100&_embed=1")
+                        except Exception:
+                            pass
                 api_urls = list(dict.fromkeys(api_urls))
                 continue
             # B) WP search → follow 'url'/'link' and parse HTML
