@@ -10895,3 +10895,33 @@
 2025-09-04 11:31:34,381 [INFO] Final website status — true=342, false=103, na=331, total=776
 2025-09-04 11:31:34,405 [INFO] Gemte 776 aktive virksomheder → cvr_data.csv
 2025-09-04 11:31:34,406 [INFO] ✔  Workflow afsluttet kl. 11:31:34
+2025-09-17 12:17:18,796 [INFO] 🎛️  Starter Vexto-applikationen
+2025-09-17 12:19:19,500 [INFO] Valg: 633 postnumre · 12 branchekoder
+2025-09-17 12:19:19,561 [INFO] Henter CVR-hits for branchekode 86.10.00 …
+2025-09-17 12:19:19,760 [INFO] Henter CVR-hits for branchekode 86.21.00 …
+2025-09-17 12:19:20,404 [INFO] Henter CVR-hits for branchekode 86.22.00 …
+2025-09-17 12:19:21,233 [INFO] Henter CVR-hits for branchekode 86.23.00 …
+2025-09-17 12:19:22,315 [INFO] Henter CVR-hits for branchekode 86.91.00 …
+2025-09-17 12:19:22,362 [INFO] Henter CVR-hits for branchekode 86.92.00 …
+2025-09-17 12:19:22,415 [INFO] Henter CVR-hits for branchekode 86.93.00 …
+2025-09-17 12:19:23,254 [INFO] Henter CVR-hits for branchekode 86.94.00 …
+2025-09-17 12:19:23,401 [INFO] Henter CVR-hits for branchekode 86.95.00 …
+2025-09-17 12:19:24,076 [INFO] Henter CVR-hits for branchekode 86.96.00 …
+2025-09-17 12:19:24,397 [INFO] Henter CVR-hits for branchekode 86.97.00 …
+2025-09-17 12:19:24,469 [INFO] Henter CVR-hits for branchekode 86.99.00 …
+2025-09-17 12:19:24,811 [INFO] 13473 rå virksomheder modtaget
+2025-09-17 12:28:37,379 [INFO] Liveness summary — checked=4909, live=4191, failed=711. Top reasons: dns failure: 350, placeholder: 72, under konstruktion: 64, timeout: 57, status 404: 42
+2025-09-17 12:28:37,475 [INFO] Final website status — true=4092, false=810, na=5760, total=10662
+2025-09-17 12:28:37,711 [INFO] Gemte 10662 aktive virksomheder → cvr_data.csv
+2025-09-17 12:28:37,711 [INFO] ✔  Workflow afsluttet kl. 12:28:37
+2025-09-18 13:39:44,220 [INFO] 🎛️  Starter Vexto-applikationen
+2025-09-18 13:41:09,262 [INFO] Valg: 633 postnumre · 4 branchekoder
+2025-09-18 13:41:09,277 [INFO] Henter CVR-hits for branchekode 86.10.00 …
+2025-09-18 13:41:09,436 [INFO] Henter CVR-hits for branchekode 86.91.00 …
+2025-09-18 13:41:09,481 [INFO] Henter CVR-hits for branchekode 86.94.00 …
+2025-09-18 13:41:09,539 [INFO] Henter CVR-hits for branchekode 86.97.00 …
+2025-09-18 13:41:09,586 [INFO] 342 rå virksomheder modtaget
+2025-09-18 13:42:04,361 [INFO] Liveness summary — checked=136, live=114, failed=22. Top reasons: dns failure: 12, status 404: 4, placeholder: 2, under konstruktion: 1, timeout: 1
+2025-09-18 13:42:04,372 [INFO] Final website status — true=104, false=32, na=125, total=261
+2025-09-18 13:42:04,395 [INFO] Gemte 261 aktive virksomheder → cvr_data.csv
+2025-09-18 13:42:04,395 [INFO] ✔  Workflow afsluttet kl. 13:42:04

@@ -3465,13 +3465,13 @@ class ContactFinder:
             self._diag(url, "NO_HTML_FETCHED", {"status": 0})
             return []
 
-        # 2) Domain-mismatch guard
+        # >>> ANKER: CF/DOMAIN_MISMATCH_GUARD
+        # 2) Domain-mismatch guard – tillad cross-TLD hvis core label (brand) er ens
         try:
             resolved_root, _st0 = _head_and_resolve(url, timeout=self.timeout)
         except Exception:
             resolved_root = url
 
-        # ccTLD-strenghed: kun tillad mismatch hvis samme land (fx .dk -> .dk) eller eksplicit whitelist
         from urllib.parse import urlsplit
         base_host = (urlsplit(url).hostname or "").lower()
         final_host = (urlsplit(resolved_root).hostname or "").lower()
@@ -3479,25 +3479,43 @@ class ContactFinder:
         # Faldbaggrund hvis env-flag ikke er defineret endnu
         _allow_cross_cc = globals().get("_ALLOW_CROSS_CC_REDIRECTS", False)
 
+        def _core_label(host: str) -> str:
+            """Returnér 'brandet' (næstsidste label) – enkel og robust:
+               www.activemotion.dk -> activemotion
+               activemotion.se     -> activemotion
+               shop.company.com    -> company
+            """
+            h = (host or "").lstrip(".")
+            if h.startswith("www."):
+                h = h[4:]
+            parts = h.split(".")
+            return parts[-2] if len(parts) >= 2 else (parts[0] if parts else "")
+
+        same_core = bool(base_host and final_host and _core_label(base_host) == _core_label(final_host))
+
         if not _same_apex(url, resolved_root):
             # 1) eksplicit whitelist (tillader også subdomæner af whitelisted apex)
             if _host_in_whitelist(final_host) or _is_whitelisted_mismatch(resolved_root):
                 log.info("Domain-mismatch tilladt via whitelist: base=%s -> final=%s", url, resolved_root)
+                url = resolved_root
             # 2) samme land (samme 2-bogstavs ccTLD, fx dk==dk)
             elif _same_country_tld(base_host, final_host):
-                log.debug(
-                    "Domain-mismatch men samme ccTLD (%s) – tillades: base=%s -> final=%s",
-                    _cc_tld_from_host(final_host), url, resolved_root
-                )
-            # 3) global override via env (hvis du midlertidigt vil tillade cross-cc)
+                log.debug("Domain-mismatch men samme ccTLD (%s) – tillades: base=%s -> final=%s",
+                          _cc_tld_from_host(final_host), url, resolved_root)
+                url = resolved_root
+            # 3) samme core label (brand) – fx activemotion.dk -> activemotion.se
+            elif same_core:
+                log.info("Domain-mismatch allowed (same core label '%s'): base=%s -> final=%s",
+                         _core_label(final_host), url, resolved_root)
+                url = resolved_root
+            # 4) global override via env (midlertidigt tillad cross-cc)
             elif _allow_cross_cc:
-                log.info("Domain-mismatch tilladt af env VEXTO_ALLOW_CROSS_CC_REDIRECTS: base=%s -> final=%s", url, resolved_root)
-            # 4) ellers bloker (fremmed TLD)
+                log.info("Domain-mismatch tilladt af env VEXTO_ALLOW_CROSS_CC_REDIRECTS: base=%s -> final=%s",
+                         url, resolved_root)
+                url = resolved_root
+            # 5) ellers bloker (fremmed TLD)
             else:
-                log.warning(
-                    "Domain-mismatch guard: base=%s -> final=%s (fremmed TLD blokeret)",
-                    url, resolved_root
-                )
+                log.warning("Domain-mismatch guard: base=%s -> final=%s (fremmed TLD blokeret)", url, resolved_root)
                 return [{
                     "name": None,
                     "title": None,
@@ -3510,6 +3528,7 @@ class ContactFinder:
                 }]
 
         final_site_url = resolved_root or url
+        # <<< ANKER: CF/DOMAIN_MISMATCH_GUARD
 
         # 3) Structured data (JSON-LD/Microdata) først
         cands: list[ContactCandidate] = []

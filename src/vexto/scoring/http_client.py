@@ -1,40 +1,32 @@
 # src/vexto/scoring/http_client.py
-
 from __future__ import annotations
-
 import sys
 import asyncio
 import threading
 import time
 import logging
 import ssl
-from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
-from typing import Dict, Optional, Union, Any, List, Tuple, Iterable
-from urllib.parse import urlparse, urljoin
 import os
 import json
 import tempfile
 import shutil
 import re
-from datetime import datetime, timezone
 import random
 import certifi
 import httpx
+from datetime import datetime, timezone
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from typing import Dict, Optional, Union, Any, List, Tuple, Iterable
+from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
 from diskcache import Cache
 from fake_useragent import FakeUserAgentError, UserAgent
-from playwright.sync_api import (
-    sync_playwright,
-    Browser as PlaywrightBrowser,
-)
-from tenacity import (
-    AsyncRetrying,
-    RetryError,
-    retry_if_exception,
-    stop_after_attempt,
-    wait_exponential_jitter,
-)
+from playwright.sync_api import (sync_playwright,Browser as PlaywrightBrowser)
+from tenacity import (AsyncRetrying,RetryError,retry_if_exception,stop_after_attempt,wait_exponential_jitter)
+from ipaddress import ip_address, ip_network
+from urllib.parse import urlsplit
+
 
 log = logging.getLogger(__name__)
 
@@ -52,6 +44,26 @@ def _stealth_raw() -> str:
 def _stealth_env_enabled() -> bool:
     raw = _stealth_raw()
     return raw in ("1", "true", "yes", "on")
+
+_PRIVATE_NETS = (
+    ip_network("10.0.0.0/8"),
+    ip_network("172.16.0.0/12"),
+    ip_network("192.168.0.0/16"),
+    ip_network("127.0.0.0/8"),
+    ip_network("169.254.0.0/16"),
+)
+
+def _is_private_ip_host(host: str) -> bool:
+    if not host:
+        return False
+    try:
+        ip = ip_address(host)
+        return any(ip in net for net in _PRIVATE_NETS)
+    except ValueError:
+        # Ikke en IP-literal (domæne) – lad almindelig DNS/HTTP guard tage over
+        return False
+
+
 
 # --- Cache setup ---
 CACHE_DIR = Path(".http_diskcache")
@@ -122,6 +134,10 @@ def _is_blocked_cdn(url: str) -> bool:
     return any(host.startswith(p) for p in CDN_PREFIXES)
 
 def should_check_link_status(url: str) -> bool:
+    host = (urlsplit(u).hostname or "").strip()
+    if host and _is_private_ip_host(host):
+        log.debug("Private/net-local host blokeret: %s", host)
+        return False      
     """Filter links before HEAD checks."""
     if not url:
         return False
