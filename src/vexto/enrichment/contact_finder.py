@@ -692,27 +692,40 @@ def _contactish_terms(lang: str) -> list[str]:
 
 def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> list[str]:
     """Returner interne kandidatsider i prioriteret rækkefølge (Home → Sitemap → WP)."""
-    
-    # Validér base_url først
+
+    # --- Valider og normaliser input ---
     if not base_url or not isinstance(base_url, str):
         return []
-    
+
     base_url = base_url.strip()
     if base_url.lower() in ("nan", "none", "null", ""):
         return []
-    
+
     # Tilføj protokol hvis manglende
-    if not base_url.startswith(('http://', 'https://')):
-        if re.match(r'^(www\.)?([a-z0-9\-]+\.)+[a-z]{2,}', base_url, re.I):
+    if not base_url.startswith(("http://", "https://")):
+        if re.match(r"^(www\.)?([a-z0-9\-]+\.)+[a-z]{2,}", base_url, re.I):
             base_url = f"https://{base_url}"
         else:
             return []
-    
-    seen: set[str] = set()
+
+    # Sørg for at HTML er en streng
+    base_html = base_html or ""
+
+    # Normaliseringshjælper til dedup på tværs af kilder
+    def _norm(u: str) -> str:
+        try:
+            return re.sub(r"[?#].*$", "", (u or "").rstrip("/")).lower()
+        except Exception:
+            return (u or "").lower()
+
+    seen_norm: set[str] = set()
     ranked: list[tuple[int, str]] = []
 
+    # --- Hent robots-info tidligt så Disallow kan respekteres alle steder ---
+    sitemaps, disallows = _fetch_robots_txt(base_url)
+
     # 1) Home-link scoring
-    lang = _detect_lang_from_html(base_html or "")
+    lang = _detect_lang_from_html(base_html)
     terms = _contactish_terms(lang)
     for m in re.finditer(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', base_html, flags=re.I | re.S):
         href = (m.group(1) or "").strip()
@@ -720,6 +733,12 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
         abs_u = urljoin(base_url, href)
         if not _same_host(base_url, abs_u):
             continue
+
+        # Robots Disallow-respekt også for home-kandidater
+        path = urlsplit(abs_u).path or "/"
+        if _is_disallowed(path, disallows):
+            continue
+
         score = 0
         u_low = abs_u.lower()
         for t in terms:
@@ -728,32 +747,27 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
             if t.replace(" ", "-") in u_low:
                 score += 3
         if score:
-            ranked.append((score, abs_u))
-            seen.add(abs_u)
+            k = _norm(abs_u)
+            if k not in seen_norm:
+                seen_norm.add(k)
+                ranked.append((score, abs_u))
 
-    # 2) Brug _fetch_robots_txt funktionen
-    sitemaps, disallows = _fetch_robots_txt(base_url)
-    
-    # Check sitemaps for contact pages
+    # 2) Sitemaps → kontaktlignende links
     for sm_url in sitemaps[:3]:  # Max 3 sitemaps
         try:
             sitemap_urls = _fetch_sitemap_urls(sm_url)
             for loc in sitemap_urls:
                 if not _same_host(base_url, loc):
                     continue
-                    
-                # Respekter Disallow direktiver
                 loc_path = urlsplit(loc).path or "/"
                 if _is_disallowed(loc_path, disallows):
                     log.debug(f"Skipping disallowed URL: {loc}")
                     continue
-                    
-                # Check for contact-related terms
                 if any(t in loc.lower() for t in (t.replace(" ", "-") for t in terms)):
-                    if loc not in seen:
+                    k = _norm(loc)
+                    if k not in seen_norm:
+                        seen_norm.add(k)
                         ranked.append((3, loc))
-                        seen.add(loc)
-                        
         except Exception as e:
             log.debug(f"Error fetching sitemap {sm_url}: {e}")
             continue
@@ -765,31 +779,70 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
         if st_wp != 200:
             log.debug(f"WP REST not available (status={st_wp}) for host={_host_of(base_url)} – skipping WP searches")
         else:
-            for t in ["kontakt","om","about","team","medarbejdere","staff","management"]:
-                api = urljoin(base_url, f"/wp-json/wp/v2/pages?search={t}&_fields=link,title&per_page=5")
-                stp, body = http_get(api, timeout=7.0, retries=1)
-                if stp == 200:
-                    try:
-                        for item in json.loads(body):
-                            link = item.get("link")
-                            if link and _same_host(base_url, link) and link not in seen:
-                                ranked.append((4, link))
-                                seen.add(link)
-                    except Exception:
-                        pass
+            # >>> ANKER: CF/WP_REST_SHALLOW (konsolideret strategi)
+            KEYS = ("kontakt", "om", "about", "team", "medarbejdere", "staff", "management")
+            wp_blocked = False
 
+            # 1) Liste alle pages én gang og filtrér klient-side
+            api_list = urljoin(base_url, "/wp-json/wp/v2/pages/?_fields=link,title&per_page=100")
+            st_wp, body = http_get(api_list, timeout=7.0, retries=0)
+            if st_wp in (401, 403, 404):
+                wp_blocked = True  # kortslut – undgå 6–7 identiske WP-kald
+            elif st_wp == 200 and body:
+                try:
+                    for item in json.loads(body):
+                        link = (item.get("link") or "").strip()
+                        title = ((item.get("title") or {}).get("rendered") or "")
+                        if not link:
+                            continue
+                        s = f"{link} {title}".lower()
+                        if any(k in s for k in KEYS):
+                            lk = link.rstrip("/")
+                            k = _norm(lk)
+                            if k not in seen_norm:
+                                seen_norm.add(k)
+                                ranked.append((4, lk))
+                except Exception:
+                    pass
+
+            # 2) Minimal fallback: 1–2 søgninger, kun hvis ikke blokeret
+            if not wp_blocked and not any(score == 4 for score, _ in ranked[-8:]):
+                for t in ("kontakt", "om"):
+                    api = urljoin(base_url, f"/wp-json/wp/v2/pages/?search={t}&_fields=link,title&per_page=10")
+                    st_wp, body = http_get(api, timeout=5.0, retries=0)
+                    if st_wp in (401, 403, 404):
+                        break
+                    if st_wp == 200 and body:
+                        try:
+                            for item in json.loads(body):
+                                link = (item.get("link") or "").strip()
+                                if not link:
+                                    continue
+                                lk = link.rstrip("/")
+                                k = _norm(lk)
+                                if k not in seen_norm:
+                                    seen_norm.add(k)
+                                    ranked.append((4, lk))
+                        except Exception:
+                            pass
+            # <<< ANKER: CF/WP_REST_SHALLOW
+
+    # Sortér og klip til max_urls
     ranked.sort(key=lambda x: x[0], reverse=True)
     urls = [u for _, u in ranked[:max_urls]]
-    # NYT: bind kandidater til canonical host for at undgå 302-pingpong
+
+    # Bind kandidater til canonical host (undgå 302-pingpong)
     try:
         urls = _sticky_host_urls(base_url, base_html, urls)
     except Exception:
         pass
-    # dedup for en sikkerheds skyld
-    out, seen = [], set()
+
+    # Endelig dedup (forsigtighed)
+    out, _final_seen = [], set()
     for u in urls:
-        if u not in seen:
-            seen.add(u); out.append(u)
+        if u not in _final_seen:
+            _final_seen.add(u)
+            out.append(u)
     return out
 
 # Rolle-ord (generiske)
@@ -2780,83 +2833,17 @@ def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optiona
     out: list[ContactCandidate] = []
     # 1) Find API-URLs in HTML
     # === ANKER: WP_JSON_BUILD_URLS BEGIN ===
-    # 1) Direct page-API
-    api_urls = [urljoin(page_url, "/wp-json/wp/v2/pages")]
-
-    # 2) Definér origin/host-variabler korrekt
-    try:
-        parts = urlsplit(page_url)
-        scheme = parts.scheme or "https"
-        page_host = (parts.hostname or "").lower()
-    except Exception:
-        scheme = "https"
-        page_host = ""
-
-    # canonical host fra HTML (fallback = page_host)
-    try:
-        canon_host = _canonical_host_from(html, page_host) or page_host
-    except Exception:
-        canon_host = page_host
-
-    # helper: lav origin fra host
-    def _origin_from_host(host: str | None) -> str:
-        h = (host or "").lower()
-        return f"{scheme}://{h}" if h else ""
-
-    # korekte origins
-    page_origin = _origin_from_host(page_host)
-    base_origin = _origin_from_host(canon_host)
-
-    # www-varianter (brug _with_www på HOSTS, ikke på origins)
-    page_host_www = _with_www(page_host) or page_host
-    base_host_www = _with_www(canon_host) or canon_host
-
-    # 3) Origins vi vil prøve (dedup)
-    bases = list({
-        page_origin,
-        _origin_from_host(page_host_www),
-        base_origin,
-        _origin_from_host(base_host_www),
-    })
-
-    # --- WP-JSON availability gate (circuit breaker) -------------------
-    # Tjek om mindst ét af basis-urls svarer 200 på /wp-json/.
-    # Hvis ingen gør, skipper vi hele WP-JSON enrichment for denne side/host
-    try:
-        ok_any = False
-        for b in bases:
-            st, _ = http_get(urljoin(b, "/wp-json/"), timeout=5.0, retries=1)
-            if st == 200:
-                ok_any = True
-                break
-        if not ok_any:
-            try:
-                hosts = { (urlsplit(b).hostname or "") for b in bases }
-                log.debug("WP-JSON gate: disabled for host(s) %s – skipping WP-JSON enrichment", ", ".join(sorted(hosts)))
-            except Exception:
-                log.debug("WP-JSON gate: disabled – skipping WP-JSON enrichment")
-            return []
-    except Exception:
-        # Vær defensiv: hvis tjekket fejler, så lad være med at spamme API’et
-        return []
-    # -------------------------------------------------------------------
-
-    api_urls += [urljoin(b, "/wp-json/wp/v2/pages") for b in bases]
-
-    # 3) Slug fra URL-path (fx /om-os/, /team/)
-    path = urlsplit(page_url).path.strip("/")
-    slugs = [s for s in re.split(r"[\/\-]", path) if s]
-    for slug in slugs[:3]:
-        for b in bases:
-            api_urls.append(urljoin(b, f"/wp-json/wp/v2/pages?search={slug}&_fields=link,title&per_page=5"))
-
-    # 4) Users + types kan ofte give forfatter/medarbejder-sider
-    for b in bases:
-        api_urls.append(urljoin(b, "/wp-json/wp/v2/users?_fields=name,link&per_page=10"))
-        api_urls.append(urljoin(b, "/wp-json/wp/v2/types?_fields=slug,rest_base"))
-    # Dedup
+    # Konsolideret WP-REST strategi: få men effektive kald
+    api_urls = [
+        urljoin(page_url, "/wp-json/wp/v2/pages/?_fields=link,title&per_page=100"),
+    ]
+    # Fallback-søgninger (maks 2) – kun hvis liste ikke giver noget brugbart
+    for t in ("kontakt","om"):
+        api_urls.append(urljoin(page_url, f"/wp-json/wp/v2/pages/?search={t}&_fields=link,title&per_page=10"))
+    # Dedupér rækkefølgebevarende
     api_urls = list(dict.fromkeys(api_urls))
-# === ANKER: WP_JSON_BUILD_URLS END ===
+    # === ANKER: WP_JSON_BUILD_URLS END ===
+
     # === ANKER: WP_JSON_PROCESS_LOOP BEGIN ===
     for idx, api in enumerate(api_urls[:10]):  # Cap at 10 calls per page
         try:
