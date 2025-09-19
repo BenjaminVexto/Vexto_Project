@@ -1590,17 +1590,27 @@ class AsyncHtmlClient:
             canonical_data: Dict[str, Any] = {}
 
             try:
+                request = httpx.Request("GET", url)
                 if force_playwright:
-                    raise httpx.RequestError("Playwright blev tvunget manuelt for at få renderet indhold.")
+                    raise httpx.RequestError(
+                        "Playwright blev tvunget manuelt for at få renderet indhold.",
+                        request=request,
+                    )
 
                 response = await self.httpx_get(url)
                 html_content = response.text
                 self.last_fetch_method = "httpx"
 
                 if _looks_like_placeholder(html_content, url):
-                    raise httpx.RequestError("Placeholder content; escalate to Playwright")
+                    raise httpx.RequestError(
+                        "Placeholder content; escalate to Playwright",
+                        request=request,
+                    )
                 if needs_rendering(html_content) and not (url.lower().endswith(('.xml', '.txt')) or 'sitemap' in url.lower() or 'robots' in url.lower()):
-                    raise httpx.RequestError("Dynamic content; escalate to Playwright")
+                    raise httpx.RequestError(
+                        "Dynamic content; escalate to Playwright",
+                        request=request,
+                    )
 
             except (httpx.RequestError, RetryError) as e:
                 log.info(f"Escalating to Playwright for {url}: {e}")
