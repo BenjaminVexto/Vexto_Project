@@ -5,6 +5,7 @@ import sys
 import io  # For TextIOWrapper (beholdt som reference)
 import asyncio
 import argparse
+import json
 import locale
 from datetime import datetime
 from typing import Tuple, Union
@@ -33,22 +34,29 @@ else:
     # Unix/Linux UTF-8 fix
     locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
-# Generer log-filnavn
+# === LOGGING SETUP START ===
 log_filename = f"vexto_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
 
-# Basic config (stream = INFO)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+root = logging.getLogger()
+root.setLevel(logging.INFO)
+root.handlers.clear()  # undgå duplikerede handlers
 
-# Tilføj FileHandler med UTF-8 encoding
-file_handler = logging.FileHandler(log_filename, encoding='utf-8')
-file_handler.setLevel(logging.INFO)
-file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-logging.getLogger().addHandler(file_handler)
+fmt = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+stream = logging.StreamHandler(sys.stdout)
+stream.setLevel(logging.INFO)
+stream.setFormatter(fmt)
+root.addHandler(stream)
+
 try:
     file_handler = logging.FileHandler(log_filename, encoding='utf-8', errors='replace')
-except Exception as e:
-    # Fallback hvis UTF-8 fejler
-    file_handler = logging.FileHandler(log_filename, encoding='latin-1')
+except Exception:
+    file_handler = logging.FileHandler(log_filename)
+
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(fmt)
+root.addHandler(file_handler)
+# === LOGGING SETUP END ===
 
 
 # Maskér hemmeligheder i ALLE logs (efter handlers er sat op)
@@ -155,7 +163,8 @@ async def crawl_site(client: AsyncHtmlClient, start_url: str, max_pages: int = 5
     Simpel crawler (samme domæne). Filtrerer åbenlyse assets, robust soup-håndtering.
     Bruges kun til lokal test/diagnose.
     """
-    from urllib.parse import urljoin, urlparse
+    from urllib.parse import urljoin, urlparse, urlunparse, parse_qsl, urlencode 
+
 
     parsed_start = urlparse(start_url)
     base_domain = parsed_start.netloc
@@ -178,13 +187,51 @@ async def crawl_site(client: AsyncHtmlClient, start_url: str, max_pages: int = 5
         if not soup:
             continue
 
+        def _normalize_url(base_url: str, href: str, base_domain: str) -> str | None:
+            TRACK = {"utm_source","utm_medium","utm_campaign","utm_term","utm_content","gclid","fbclid"}
+            if not href or href.startswith(('#', 'mailto:', 'tel:', 'javascript:', 'data:', 'callto:')):
+                return None
+
+            s = href.strip()
+
+            # Fix kendte “knæk”:
+            if s.startswith('ttps://'):
+                s = 'h' + s  # -> https://...
+            if s.startswith('//'):
+                s = 'https:' + s  # schema-relative -> https://...
+            # “to.dk/...”, “.vexto.dk/...” eller “domæne.tld/...” uden schema:
+            if s and not s.startswith(('http://','https://','/')):
+                # hvis det ligner et domæne (foo.dk eller foo.bar/baz), prepender vi https://
+                import re
+                if re.match(r"^[A-Za-z0-9.-]+\.[A-Za-z]{2,}(/.*)?$", s):
+                    s = "https://" + s
+
+            absu = urljoin(base_url, s)
+            p = urlparse(absu)
+            if p.scheme not in ("http","https"):
+                return None
+            if p.netloc.lower() != base_domain.lower():
+                return None
+
+            # fjern tracking-parametre
+            q = [(k, v) for (k, v) in parse_qsl(p.query, keep_blank_values=True) if k not in TRACK]
+            p = p._replace(query=urlencode(q, doseq=True))
+
+            # normaliser path (behold "/" på rod)
+            path = p.path or "/"
+            # undgå dobbelte/trailing slashes (men bevar "/" på rod)
+            path = "/" + "/".join(filter(None, path.split("/")))
+            p = p._replace(path=path)
+
+        # ...
+
         for a in soup.find_all('a', href=True):
             href = a.get('href') or ''
-            if href.startswith(('#', 'mailto:', 'tel:', 'javascript:', 'data:', 'callto:')):
+            canon = _normalize_url(current_url, href, base_domain)
+            if not canon:
                 continue
-            absolute = urljoin(current_url, href)
-            if urlparse(absolute).netloc == base_domain and not any(absolute.lower().split('?', 1)[0].endswith(ext) for ext in exclude_ext):
-                urls_to_visit.add(absolute)
+            if not any(canon.lower().split('?', 1)[0].endswith(ext) for ext in exclude_ext):
+                urls_to_visit.add(canon)
 
     return {'total_pages_crawled': len(visited_urls), 'visited_urls': visited_urls}
 
@@ -192,7 +239,9 @@ async def crawl_site(client: AsyncHtmlClient, start_url: str, max_pages: int = 5
 # Hovedkørsel
 # =========================
 
-async def run_diagnostic(url: str, do_score: bool = False, max_pages: int = 50):
+async def run_diagnostic(url: str, do_score: bool = False, max_pages: int = 50, output: str | None = None):
+
+
     log.debug(f"Running diagnostic with max_pages={max_pages}")
 
     async with AsyncHtmlClient() as client:
@@ -332,6 +381,18 @@ async def run_diagnostic(url: str, do_score: bool = False, max_pages: int = 50):
                 not_eval_table.add_row(desc, str(maks))
             console.print(not_eval_table)
 
+    # --- JSON export (valgfrit via --output) ---
+    if output:
+        payload = {"analysis": analysis_data}
+        # hvis score_result findes i lokal scope, medtag den
+        try:
+            payload["score"] = score_result  # kun defineret hvis do_score=True
+        except NameError:
+            pass
+        with open(output, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+        console.print(f"[green]Skrev JSON-output til[/green] {output}")
+
 # =========================
 # CLI
 # =========================
@@ -343,6 +404,9 @@ if __name__ == "__main__":
     parser.add_argument("--company_name", help="(Valgfrit) Virksomhedsnavn")  # reserveret til senere brug
     parser.add_argument("--score", action="store_true", help="Vis den samlede Vexto-score baseret på reglerne")
     parser.add_argument("--max-pages", type=int, default=50, help="Maximum pages to crawl")
+    parser.add_argument("--output", help="(Valgfrit) Skriv fuld analyse (og evt. score) som JSON til fil")
     args = parser.parse_args()
 
-    asyncio.run(run_diagnostic(args.url, args.score, args.max_pages))
+    asyncio.run(run_diagnostic(args.url, args.score, args.max_pages, args.output))
+
+

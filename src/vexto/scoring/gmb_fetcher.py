@@ -10,6 +10,51 @@ from .schemas import SocialAndReputationMetrics
 
 log = logging.getLogger(__name__)
 
+def _resolve_places_locale(url: str) -> dict:
+    """
+    Returnér {'language': 'xx', 'region': 'XX'} ud fra TLD (best-effort).
+    Brug neutral/global hvis ukendt.
+    """
+    host = (urlparse(url).hostname or "").lower()
+    tld = host.rsplit('.', 1)[-1] if '.' in host else ''
+    mapping = {
+        'dk': ('da', 'dk'),
+        'se': ('sv', 'se'),
+        'no': ('nb', 'no'),  # eller 'nn' afhængigt af præference
+        'fi': ('fi', 'fi'),
+        'de': ('de', 'de'),
+        'nl': ('nl', 'nl'),
+        'fr': ('fr', 'fr'),
+        'es': ('es', 'es'),
+        'it': ('it', 'it'),
+        'pl': ('pl', 'pl'),
+        'pt': ('pt', 'pt'),
+        'cz': ('cs', 'cz'),
+        'sk': ('sk', 'sk'),
+        'hu': ('hu', 'hu'),
+        'ro': ('ro', 'ro'),
+        'bg': ('bg', 'bg'),
+        'gr': ('el', 'gr'),
+        'lt': ('lt', 'lt'),
+        'lv': ('lv', 'lv'),
+        'ee': ('et', 'ee'),
+        'ie': ('en', 'ie'),
+        'uk': ('en', 'gb'),
+        'co': ('es', 'co'),
+        'mx': ('es', 'mx'),
+        'ar': ('es', 'ar'),
+        'br': ('pt', 'br'),
+        'au': ('en', 'au'),
+        'nz': ('en', 'nz'),
+        'ca': ('en', 'ca'),
+        'us': ('en', 'us'),
+    }
+    if tld in mapping:
+        lang, reg = mapping[tld]
+        return {'language': lang, 'region': reg}
+    return {'language': None, 'region': None}
+
+
 def _guess_business_name_from_url(url: str) -> str:
     """ Gætter på et virksomhedsnavn ud fra domænet. """
     hostname = urlparse(url).hostname
@@ -116,10 +161,18 @@ async def fetch_gmb_data(
 
     for i, name in enumerate(queries, 1):
         log.info(f"🔎 [{i}/{len(queries)}] Søger place_id for '{name}'")
+
+        # Adaptiv locale ud fra URL TLD; ellers neutral/global
+        loc = _resolve_places_locale(url)
+        lang_param = f"&language={loc['language']}" if loc['language'] else ""
+
         find_url = (
             "https://maps.googleapis.com/maps/api/place/findplacefromtext/json"
             f"?input={quote_plus(name)}&inputtype=textquery"
-            f"&fields=place_id&locationbias=ipbias&key={api_key}"
+            f"&fields=place_id,name,formatted_address"
+            f"{lang_param}"
+            f"&locationbias=ipbias"
+            f"&key={api_key}"
         )
 
         try:
@@ -129,81 +182,84 @@ async def fetch_gmb_data(
             log.error(f"Fejl under Place-ID opslag for '{name}': {e}")
             continue
 
-        if j1.get("status") != "OK" or not j1.get("candidates"):
+        candidates = (j1 or {}).get("candidates") or []
+        if (j1 or {}).get("status") != "OK" or not candidates:
             log.warning(f"Status {j1.get('status')} for søgning '{name}' – ingen kandidater")
             continue
 
-        place_id = (j1["candidates"][0] or {}).get("place_id")
-        if not place_id:
-            log.warning(f"Ingen place_id i kandidat for '{name}'")
-            continue
-
-        log.info(f"→ Fandt Place ID '{place_id}' for '{name}'")
-
+        # PRØV ALLE kandidater for denne query, før vi går videre
+        host_wanted = (urlparse(url).hostname or "").lower()
         fields = "rating,user_ratings_total,name,formatted_address,opening_hours,website,photos"
-        details_url = (
-            "https://maps.googleapis.com/maps/api/place/details/json"
-            f"?place_id={place_id}&fields={fields}&key={api_key}&language=da"
-        )
 
-        try:
-            r2 = await client.httpx_get(details_url)
-            j2 = r2.json()
-        except Exception as e:
-            log.error(f"Fejl ved hentning af detaljer for '{name}': {e}")
-            continue
+        selected = None
+        for cand in candidates:
+            place_id = (cand or {}).get("place_id")
+            if not place_id:
+                continue
 
-        if j2.get("status") != "OK":
-            log.warning(f"Detalje-status {j2.get('status')} for Place ID '{place_id}'")
-            continue
+            details_url = (
+                "https://maps.googleapis.com/maps/api/place/details/json"
+                f"?place_id={place_id}&fields={fields}&key={api_key}"
+                f"{lang_param}"
+            )
 
-        result = j2.get("result") or {}
-        rating = result.get("rating")
-        count = result.get("user_ratings_total")
-        photos = result.get("photos") or []
-        opening_hours = result.get("opening_hours") or {}
+            try:
+                r2 = await client.httpx_get(details_url)
+                j2 = r2.json()
+            except Exception as e:
+                log.error(f"Fejl ved hentning af detaljer for Place ID '{place_id}': {e}")
+                continue
 
-        # Kræv reelt signal før vi accepterer profilen
-        has_reviews = (isinstance(count, (int, float)) and count > 0) or (
-            isinstance(rating, (int, float, str)) and float(rating) > 0
-        )
+            if j2.get("status") != "OK":
+                log.warning(f"Detalje-status {j2.get('status')} for Place ID '{place_id}'")
+                continue
 
-        # Fallback: ingen reviews, men domains match → brug profilen (giver måleligt signal)
-        website_ok = False
-        try:
-            site = (result.get("website") or "").strip().lower()
-            host_wanted = (urlparse(url).hostname or "").lower()
-            host_found = (urlparse(site).hostname or "").lower()
-            website_ok = bool(site) and (host_wanted and host_found and host_wanted.endswith(host_found) or host_found.endswith(host_wanted))
-        except Exception:
+            result = j2.get("result") or {}
+            rating = result.get("rating")
+            count = result.get("user_ratings_total")
+            photos = result.get("photos") or []
+            opening_hours = result.get("opening_hours") or {}
+
+            # Reelt signal: reviews/bedømmelse
+            has_reviews = (isinstance(count, (int, float)) and count > 0) or (
+                isinstance(rating, (int, float, str)) and float(rating) > 0
+            )
+
+            # Domænematch (tillad subdomæner/varianter)
             website_ok = False
+            try:
+                site = (result.get("website") or "").strip().lower()
+                host_found = (urlparse(site).hostname or "").lower()
+                website_ok = bool(site) and (
+                    (host_wanted and host_found and host_wanted.endswith(host_found)) or
+                    (host_found and host_wanted and host_found.endswith(host_wanted))
+                )
+            except Exception:
+                website_ok = False
 
-        if not (has_reviews or website_ok):
-            log.warning(f"Ingen anmeldelser/bedømmelse og intet domæne-match for '{name}', prøver næste…")
-            continue
+            if has_reviews or website_ok:
+                has_hours = bool(opening_hours.get("weekday_text") or opening_hours.get("periods"))
+                final_result: SocialAndReputationMetrics = {
+                    "gmb_review_count": int(count or 0),
+                    "gmb_average_rating": float(rating) if rating is not None else None,
+                    "gmb_profile_complete": True,
+                    "gmb_has_website": bool(result.get("website")),
+                    "gmb_has_hours": has_hours,
+                    "gmb_photo_count": int(len(photos)),
+                    "gmb_business_name": result.get("name"),
+                    "gmb_address": result.get("formatted_address"),
+                    "gmb_place_id": place_id,
+                    "gmb_status": "ok",
+                }
+                log.info(
+                    f"GMB data fetched once: review_count={final_result['gmb_review_count']}, "
+                    f"rating={final_result['gmb_average_rating']}"
+                )
+                return final_result
+        
+            # --- INGEN RESULTATER PÅ NOGEN SØGETERMER ---
+            log.warning("GMB: Ingen kandidater fundet på nogen søgetermer.")
+            return _empty_metrics(status="zero_results")
 
-        has_hours = bool(opening_hours.get("weekday_text") or opening_hours.get("periods"))
-
-        final_result: SocialAndReputationMetrics = {
-            "gmb_review_count": int(count or 0),
-            "gmb_average_rating": float(rating) if rating is not None else None,
-            "gmb_profile_complete": True,
-            "gmb_has_website": bool(result.get("website")),
-            "gmb_has_hours": has_hours,
-            "gmb_photo_count": int(len(photos)),
-            "gmb_business_name": result.get("name"),
-            "gmb_address": result.get("formatted_address"),
-            "gmb_place_id": place_id,
-            # NYT
-            "gmb_status": "ok",
-        }
-
-        log.info(
-            f"GMB data fetched once: review_count={final_result['gmb_review_count']}, "
-            f"rating={final_result['gmb_average_rating']}"
-        )
-        return final_result
-
-    # Hvis vi kommer hertil, fandt vi ikke en sikker profil
-    log.warning(f"GMB-søgning mislykkedes for {company_name or url}")
-    return _empty_metrics(status="unknown")
+        # Ingen brugbare kandidater for denne query → prøv næste query
+        log.warning(f"Ingen brugbar kandidat for '{name}', prøver næste søgeterm…")

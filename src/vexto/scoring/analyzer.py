@@ -226,28 +226,73 @@ def detect_schema_from_runtime(html_content: str, canonical_data: dict):
     """
     types, structured = [], {}
 
-    # 1) HTML → JSON-LD
+        # 1) HTML → JSON-LD (tolerant parsing + reparationer)
     try:
+        def _strip_html_comments(s: str) -> str:
+            return re.sub(r"<!--.*?-->", "", s, flags=re.DOTALL)
+
+        def _fix_trailing_commas(s: str) -> str:
+            # Fjern trailing commas i objekter/arrays: {...,} / [...,]
+            s = re.sub(r",\s*([}\]])", r"\1", s)
+            return s
+
+        def _coerce_to_json(s: str) -> str:
+            # Erstat single-quotes med double-quotes i simple tilfælde
+            # (bevarer indlejrede \" allerede i input)
+            if '"' not in s and s.count("'") >= 2:
+                s = re.sub(r"'", '"', s)
+            # Escape uescaped linebreaks i strenge (best-effort)
+            s = s.replace("\r\n", "\\n").replace("\n", "\\n")
+            # Fjern kontroltegn uden for whitespace
+            s = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F]", "", s)
+            return s
+
         soup = BeautifulSoup(html_content or "", "html.parser")
         for tag in soup.find_all("script", type=lambda v: v and "ld+json" in str(v).lower()):
             raw = (tag.string or tag.get_text() or "").strip()
             if not raw:
                 continue
+
+            data = None
+            # 1) Direkt
             try:
                 data = json.loads(raw)
             except Exception:
-                continue
+                pass
+
+            # 2) Nød-reparationer
+            if data is None:
+                txt = _strip_html_comments(raw)
+                txt = txt.replace('</script>', r'<\/script>')
+                txt = _fix_trailing_commas(txt)
+                try:
+                    data = json.loads(txt)
+                except Exception:
+                    pass
+
+            # 3) Lenient fallback
+            if data is None:
+                txt2 = _coerce_to_json(raw)
+                try:
+                    data = json.loads(txt2)
+                except Exception:
+                    continue  # helt ubrugelig blok → videre
+
             bucket = data if isinstance(data, list) else [data]
             for node in bucket:
                 if isinstance(node, dict) and node.get("@type"):
                     t = node["@type"]
-                    if isinstance(t, list): types.extend(map(str, t))
-                    else: types.append(str(t))
+                    if isinstance(t, list):
+                        types.extend(map(str, t))
+                    else:
+                        types.append(str(t))
                     structured[str(t)] = node
+
         if types:
             return True, sorted(set(types)), structured
     except Exception:
         pass
+
 
     # 2) Nuxt runtime_state → head.script[].innerHTML med ld+json
     try:
@@ -1202,7 +1247,6 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
         log.warning(f"Fixed invalid URL: {url}")
 
     log.info(f"Starting analysis for: {url}")
-    start_page_seen = False  # <- kun når crawled_url == url sætter vi BASIC_SEO + main_page_data
     client.user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
 
     analysis_data = {
@@ -1222,6 +1266,10 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
         "niche_score": 0,
     }
 
+    # --- ensure these exist even if we error early ---
+    main_page_data: Optional[dict] = None
+    start_page_data: Optional[dict] = None
+
     try:
         # Crawl flere sider
         from .crawler import crawl_site_for_links
@@ -1232,15 +1280,33 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
         parsed_url = urlparse(url)
         base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
-        gmb_data = await gmb_fetcher.fetch_gmb_data(client, url)
-        analysis_data['social_and_reputation'].update(gmb_data)
+        # --- GMB (robust mod None og uden crash) ---
+        _GMB_DEFAULTS = {
+            "gmb_review_count": 0,
+            "gmb_average_rating": None,
+            "gmb_profile_complete": False,
+            "gmb_has_website": False,
+            "gmb_has_hours": False,
+            "gmb_photo_count": 0,
+            "gmb_business_name": "ukendt",
+            "gmb_address": "ukendt",
+            "gmb_place_id": None,
+            "gmb_status": "unknown",
+        }
 
-        # Propagér bool til authority (scorerens data_key peger her)
-        analysis_data['authority']['gmb_profile_complete'] = bool(gmb_data.get('gmb_profile_complete', False))
+        try:
+            gmb_raw = await gmb_fetcher.fetch_gmb_data(client, url)
+        except Exception as _e:
+            log.warning(f"GMB fetch failed: {str(_e)[:120]}")
+            gmb_raw = None
+
+        gmb_data = {**_GMB_DEFAULTS, **(gmb_raw or {})}
+        analysis_data['social_and_reputation'].update(gmb_data)
+        analysis_data['authority']['gmb_profile_complete'] = bool(gmb_data.get('gmb_profile_complete'))
 
         log.info(
             f"GMB data fetched once: review_count={gmb_data.get('gmb_review_count', 0)}, "
-            f"rating={gmb_data.get('gmb_average_rating', 0)}"
+            f"rating={gmb_data.get('gmb_average_rating')}"
         )
 
         authority_data = await authority_fetcher.get_authority(client, url)
@@ -1748,7 +1814,108 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
                 performance_result = get_result("psi", DEFAULT_PERFORMANCE_METRICS)
                 performance_result.update(get_result("js_size", {}))
                 analysis_data['performance'].update(performance_result)
-                analysis_data['security'].update(get_result("security", DEFAULT_SECURITY_METRICS))
+
+                # --- Security: HEAD→GET fallback ---
+                sec_res = get_result("security", DEFAULT_SECURITY_METRICS)
+                analysis_data['security'].update(sec_res)
+
+                try:
+                    # Hvis HEAD ikke fandt noget, prøv en let GET for at aflæse headere
+                    all_false = not any(bool(sec_res.get(k)) for k in (
+                        "hsts_enabled", "csp_enabled", "x_content_type_options_enabled", "x_frame_options_enabled"
+                    ))
+                    measured_on = (sec_res.get("measured_on") or "").upper()
+                    if all_false and measured_on == "HEAD":
+                        r = await client.httpx_get(crawled_url, headers={"Range": "bytes=0-0"}, timeout=15.0)
+                        hdr = r.headers or {}
+
+                        def _has_hsts(h):      return "strict-transport-security" in h
+                        def _has_csp(h):       return "content-security-policy" in h
+                        def _has_xcto(h):      return h.get("x-content-type-options","").lower().strip() == "nosniff"
+                        def _has_xfo(h):       return "x-frame-options" in h
+
+                        hlower = {k.lower(): v for k, v in hdr.items()}
+                        improved = {
+                            "hsts_enabled":                  sec_res.get("hsts_enabled") or _has_hsts(hlower),
+                            "hsts_include_subdomains":       sec_res.get("hsts_include_subdomains") or ("includeSubDomains" in hdr.get("Strict-Transport-Security","")),
+                            "hsts_preload":                  sec_res.get("hsts_preload") or ("preload" in hdr.get("Strict-Transport-Security","").lower()),
+                            "csp_enabled":                   sec_res.get("csp_enabled") or _has_csp(hlower),
+                            "x_content_type_options_enabled":sec_res.get("x_content_type_options_enabled") or _has_xcto(hdr),
+                            "x_frame_options_enabled":       sec_res.get("x_frame_options_enabled") or _has_xfo(hlower),
+                            "measured_on":                   "GET"
+                        }
+
+                        # Kun hvis noget blev bedre, så opdatér
+                        if any(improved[k] and not sec_res.get(k) for k in ("hsts_enabled","csp_enabled","x_content_type_options_enabled","x_frame_options_enabled")):
+                            analysis_data['security'].update(improved)
+                except Exception:
+                    pass
+            
+                async def _augment_with_crux_and_lcp(_client, _url: str, strategy: str = "mobile") -> dict:
+                    """Supplér PSI-lab med CrUX-feltdata og LCP-element-resumé.
+                    Kører 'graceful' uden API-nøgle (får så kun begrænset PSI-data)."""
+                    out = {}
+                    try:
+                        import os
+                        from urllib.parse import quote_plus
+                        api_key = os.getenv("PAGESPEED_API_KEY") or os.getenv("GOOGLE_PSI_KEY") or ""
+                        qk = f"&key={api_key}" if api_key else ""
+                        psi_url = (
+                            "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
+                            f"?url={quote_plus(_url)}&strategy={strategy}"
+                            "&category=PERFORMANCE&category=ACCESSIBILITY" + qk
+                        )
+                        resp = await _client.httpx_get(psi_url, timeout=30.0)
+                        if resp.status_code != 200:
+                            return out
+                        data = resp.json()
+
+                        # 1) CrUX feltdata — LCP (ms, p75)
+                        try:
+                            le = data.get("loadingExperience") or {}
+                            ole = data.get("originLoadingExperience") or {}
+                            src = le if (le.get("metrics") or {}).get("LARGEST_CONTENTFUL_PAINT_MS") else ole
+                            metrics = (src or {}).get("metrics") or {}
+                            lcpm = metrics.get("LARGEST_CONTENTFUL_PAINT_MS") or {}
+                            pct = lcpm.get("percentile")
+                            if isinstance(pct, (int, float)) and pct > 0:
+                                out["lcp_field_ms"] = int(pct)
+                                out["performance_source"] = "lab+field"
+                            dist = lcpm.get("distributions") or []
+                            if dist:
+                                out["lcp_field_distribution"] = [
+                                    {"proportion": d.get("proportion"), "min": d.get("min"), "max": d.get("max")}
+                                    for d in dist if isinstance(d, dict)
+                                ]
+                        except Exception:
+                            pass
+
+                        # 2) Lighthouse audit — LCP-element resumé (kort tekst/selector)
+                        try:
+                            audits = ((data.get("lighthouseResult") or {}).get("audits") or {})
+                            lcp_elem = (audits.get("largest-contentful-paint-element") or {})
+                            disp = lcp_elem.get("displayValue")
+                            if disp:
+                                out["lcp_element_summary"] = disp
+                            # Gem rå LCP (lab) hvis allerede udfyldt af din PSI-fetcher
+                            if isinstance(analysis_data['performance'].get('lcp_ms'), (int, float)):
+                                out["lcp_ms_raw"] = analysis_data['performance'].get('lcp_ms')
+                        except Exception:
+                            pass
+
+                        return out
+                    except Exception:
+                        return out
+
+                try:
+                    crux = await _augment_with_crux_and_lcp(client, crawled_url, strategy="mobile")
+                    if crux:
+                        for k, v in crux.items():
+                            if v is not None:
+                                analysis_data['performance'][k] = v
+                except Exception:
+                    pass
+
 
             # Aggregér sektioner (med BOOL-OR i stedet for sum for bools)
             def _merge_section(sec_key: str, data: Dict[str, Any]):
@@ -1773,7 +1940,6 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
             # BASIC_SEO må ikke forurenes af undersider – kun start-URL må merge
             if is_start:
                 _merge_section("basic_seo", basic_seo_result)
-                start_page_seen = True
 
             # VIGTIGT: Undlad at merge content_data pr. underside (det er base-data og ellers fordobles tal)
             _merge_section("social_and_reputation", social_result)

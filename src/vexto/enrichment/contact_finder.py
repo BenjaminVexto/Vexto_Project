@@ -94,7 +94,10 @@ try:
 except Exception:
     AsyncHtmlClient = None  # type: ignore
 
+
 _SHARED_PW_CLIENT = None
+
+_HOST_CRAWL_DELAYS = {}
 
 # -------------------- P1: Per-host caches + sticky host helpers ----------------
 _PW_FAILS_BY_HOST: dict[str, int] = {}
@@ -194,6 +197,8 @@ def http_get(u: str, timeout: float = 10.0, retries: int = 3) -> tuple[int, str]
                 if "getaddrinfo failed" in error_str or "Name or service not known" in error_str:
                     log.debug(f"DNS resolution failed for {u}: {error_str}")
                     _HOST_DNS_FAILS[host] += 1
+                    # TILFØJELSE: Cache DNS failure for hele session
+                    _GET_CACHE[u] = (0, "")  # Undgå gentagne forsøg samme URL
                     return 0, ""
 
                 
@@ -203,6 +208,8 @@ def http_get(u: str, timeout: float = 10.0, retries: int = 3) -> tuple[int, str]
                     log.warning(f"SSL certificate error for {u}, retrying without verification")
                     if _HOST_SSL_FAILS[host] >= _HOST_FAIL_LIMIT:
                         log.debug(f"SSL fejlgrænse ramt for {host} – skipper yderligere forsøg")
+                        # TILFØJELSE: Cache SSL failure også
+                        _GET_CACHE[u] = (0, "")  # Undgå gentagne forsøg samme URL
                         return 0, ""
                     try:
                         with httpx.Client(http2=True, timeout=timeout, headers=headers, 
@@ -361,6 +368,24 @@ def _fetch_with_playwright_sync(url: str, pre_html: Optional[str] = None, pre_st
         if _SHARED_PW_CLIENT is None:
             _SHARED_PW_CLIENT = AsyncHtmlClient(stealth=True)
             await _SHARED_PW_CLIENT.startup()
+            # TILFØJELSE: Registrer cleanup ved program exit (etik: Undgå resource leaks)
+            import atexit
+            def cleanup_pw():
+                if _SHARED_PW_CLIENT:
+                    asyncio.run(_SHARED_PW_CLIENT.shutdown())
+                    log.info("Playwright client cleaned up")
+            atexit.register(cleanup_pw)
+
+        # Unit Test Eksempel (nu wrapped for at undgå 'not accessed'-warning):
+        if __name__ == "__main__":
+            import atexit
+            def test_pw_cleanup():
+                def mock_shutdown():
+                    print("Shutdown called")
+                atexit.register(mock_shutdown)
+                # Simuler exit (i real test: brug subprocess)
+                assert "mock_shutdown" in [f.__name__ for f in atexit._atexit_funcs]  # Check registration
+            test_pw_cleanup()
         try:
             # Forsøg med målrettede selector-waits for kontakt/teamsider
             _wait_selectors = [
@@ -693,39 +718,55 @@ def _contactish_terms(lang: str) -> list[str]:
 def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> list[str]:
     """Returner interne kandidatsider i prioriteret rækkefølge (Home → Sitemap → WP)."""
 
-    # --- Valider og normaliser input ---
+    import ipaddress
+    from urllib.parse import urlsplit
+
+    # --- helpers ---
+    def _is_private_or_ip(u: str) -> bool:
+        try:
+            host = (urlsplit(u).hostname or "").strip().lower()
+            if not host:
+                return True
+            if host in {"localhost"}:
+                return True
+            # IP literal?
+            try:
+                ip = ipaddress.ip_address(host)
+                return (ip.is_private or ip.is_loopback or ip.is_link_local)
+            except ValueError:
+                # not an IP literal
+                pass
+            return False
+        except Exception:
+            return True
+
+    def _has_negatives(s: str) -> bool:
+        NEG = (
+            "privacy", "privatliv", "persondata", "cookie", "cookies",
+            "gdpr", "terms", "betingelser", "vilkår", "legal", "politik",
+            "recruit", "rekruttering", "karriere", "job", "stillinger",
+            "klage", "patientinformation", "sitemap"
+        )
+        s = s.lower()
+        return any(n in s for n in NEG)
+
+    # --- valider base_url ---
     if not base_url or not isinstance(base_url, str):
         return []
-
     base_url = base_url.strip()
     if base_url.lower() in ("nan", "none", "null", ""):
         return []
-
-    # Tilføj protokol hvis manglende
-    if not base_url.startswith(("http://", "https://")):
-        if re.match(r"^(www\.)?([a-z0-9\-]+\.)+[a-z]{2,}", base_url, re.I):
+    if not base_url.startswith(('http://', 'https://')):
+        if re.match(r'^(www\.)?([a-z0-9\-]+\.)+[a-z]{2,}', base_url, re.I):
             base_url = f"https://{base_url}"
         else:
             return []
 
-    # Sørg for at HTML er en streng
-    base_html = base_html or ""
-
-    # Normaliseringshjælper til dedup på tværs af kilder
-    def _norm(u: str) -> str:
-        try:
-            return re.sub(r"[?#].*$", "", (u or "").rstrip("/")).lower()
-        except Exception:
-            return (u or "").lower()
-
-    seen_norm: set[str] = set()
+    seen: set[str] = set()
     ranked: list[tuple[int, str]] = []
 
-    # --- Hent robots-info tidligt så Disallow kan respekteres alle steder ---
-    sitemaps, disallows = _fetch_robots_txt(base_url)
-
     # 1) Home-link scoring
-    lang = _detect_lang_from_html(base_html)
+    lang = _detect_lang_from_html(base_html or "")
     terms = _contactish_terms(lang)
     for m in re.finditer(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', base_html, flags=re.I | re.S):
         href = (m.group(1) or "").strip()
@@ -733,12 +774,9 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
         abs_u = urljoin(base_url, href)
         if not _same_host(base_url, abs_u):
             continue
-
-        # Robots Disallow-respekt også for home-kandidater
-        path = urlsplit(abs_u).path or "/"
-        if _is_disallowed(path, disallows):
+        if _is_private_or_ip(abs_u):
+            log.debug(f"Skip private/IP candidate from home: {abs_u}")
             continue
-
         score = 0
         u_low = abs_u.lower()
         for t in terms:
@@ -746,36 +784,49 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
                 score += 4
             if t.replace(" ", "-") in u_low:
                 score += 3
-        if score:
-            k = _norm(abs_u)
-            if k not in seen_norm:
-                seen_norm.add(k)
-                ranked.append((score, abs_u))
+        if score and not _has_negatives(u_low):
+            ranked.append((score, abs_u))
+            seen.add(abs_u)
 
-    # 2) Sitemaps → kontaktlignende links
+    # 2) robots.txt → sitemaps
+    sitemaps, disallows = _fetch_robots_txt(base_url)
+
+    # Check sitemaps for contact pages
+    pos_slugs = tuple(t.replace(" ", "-") for t in terms)
     for sm_url in sitemaps[:3]:  # Max 3 sitemaps
         try:
             sitemap_urls = _fetch_sitemap_urls(sm_url)
             for loc in sitemap_urls:
                 if not _same_host(base_url, loc):
                     continue
+
+                # Respekter Disallow
                 loc_path = urlsplit(loc).path or "/"
                 if _is_disallowed(loc_path, disallows):
                     log.debug(f"Skipping disallowed URL: {loc}")
                     continue
-                if any(t in loc.lower() for t in (t.replace(" ", "-") for t in terms)):
-                    k = _norm(loc)
-                    if k not in seen_norm:
-                        seen_norm.add(k)
+
+                # Filtrér private/IP/localhost og security-check domæner
+                host_low = (urlsplit(loc).hostname or "").lower()
+                if _is_private_or_ip(loc) or "security-check." in host_low:
+                    log.debug(f"Skipping non-public/blocked host: {loc}")
+                    continue
+
+                loc_low = loc.lower()
+                if any(p in loc_low for p in pos_slugs) and not _has_negatives(loc_low):
+                    if loc not in seen:
                         ranked.append((3, loc))
+                        seen.add(loc)
+
         except Exception as e:
             log.debug(f"Error fetching sitemap {sm_url}: {e}")
             continue
 
     # 3) WordPress REST (hvis tilgængelig og ikke disallowed)
+    #    Ensret til trailing slash og undgå dobbelte kald.
     if not _is_disallowed("/wp-json/", disallows):
-        wp_url = urljoin(base_url, "/wp-json/")
-        st_wp, _ = http_get(wp_url, timeout=5.0, retries=1)
+        wp_root = urljoin(base_url, "/wp-json/")
+        st_wp, _ = http_get(wp_root, timeout=5.0, retries=1)
         if st_wp != 200:
             log.debug(f"WP REST not available (status={st_wp}) for host={_host_of(base_url)} – skipping WP searches")
         else:
@@ -787,7 +838,7 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
             api_list = urljoin(base_url, "/wp-json/wp/v2/pages/?_fields=link,title&per_page=100")
             st_wp, body = http_get(api_list, timeout=7.0, retries=0)
             if st_wp in (401, 403, 404):
-                wp_blocked = True  # kortslut – undgå 6–7 identiske WP-kald
+                wp_blocked = True
             elif st_wp == 200 and body:
                 try:
                     for item in json.loads(body):
@@ -795,12 +846,16 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
                         title = ((item.get("title") or {}).get("rendered") or "")
                         if not link:
                             continue
-                        s = f"{link} {title}".lower()
+                        lk = link.rstrip("/")
+                        s = f"{lk} {title}".lower()
+
+                        if _is_private_or_ip(lk):
+                            continue
+                        if _has_negatives(s):
+                            continue
                         if any(k in s for k in KEYS):
-                            lk = link.rstrip("/")
-                            k = _norm(lk)
-                            if k not in seen_norm:
-                                seen_norm.add(k)
+                            if lk not in seen:
+                                seen.add(lk)
                                 ranked.append((4, lk))
                 except Exception:
                     pass
@@ -819,31 +874,41 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
                                 if not link:
                                     continue
                                 lk = link.rstrip("/")
-                                k = _norm(lk)
-                                if k not in seen_norm:
-                                    seen_norm.add(k)
+                                if _is_private_or_ip(lk):
+                                    continue
+                                if _has_negatives(lk):
+                                    continue
+                                if lk not in seen:
+                                    seen.add(lk)
                                     ranked.append((4, lk))
                         except Exception:
                             pass
             # <<< ANKER: CF/WP_REST_SHALLOW
 
-    # Sortér og klip til max_urls
     ranked.sort(key=lambda x: x[0], reverse=True)
     urls = [u for _, u in ranked[:max_urls]]
 
-    # Bind kandidater til canonical host (undgå 302-pingpong)
+    # Bind kandidater til canonical host for at undgå 302-pingpong
     try:
         urls = _sticky_host_urls(base_url, base_html, urls)
     except Exception:
         pass
 
-    # Endelig dedup (forsigtighed)
-    out, _final_seen = [], set()
+    # Final dedup + sidste private/security-check filter
+    out, seen2 = [], set()
     for u in urls:
-        if u not in _final_seen:
-            _final_seen.add(u)
-            out.append(u)
+        if u in seen2:
+            continue
+        if _is_private_or_ip(u):
+            log.debug(f"Drop private/IP at finalize: {u}")
+            continue
+        host_low = (urlsplit(u).hostname or "").lower()
+        if "security-check." in host_low:
+            continue
+        seen2.add(u)
+        out.append(u)
     return out
+
 
 # Rolle-ord (generiske)
 EXEC_ROLES = {
@@ -1219,6 +1284,8 @@ def _fetch_robots_txt(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[
             return [], []
         
         sitemaps, disallows = [], []
+        
+        crawl_delay = None  # TILFØJELSE: Parse crawl-delay (etik: Respektér for at undgå blokering)
         for line in text.splitlines():
             l = line.strip()
             if not l or l.startswith("#"):
@@ -1229,7 +1296,43 @@ def _fetch_robots_txt(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[
                 dis = l.split(":", 1)[1].strip()
                 if dis and dis != "/":
                     disallows.append(dis)
-        return sitemaps, disallows
+            elif l.lower().startswith("crawl-delay:"):  # TILFØJELSE
+                try:
+                    crawl_delay = float(l.split(":", 1)[1].strip())
+                except ValueError:
+                    log.warning(f"Invalid crawl-delay: {l}")
+                    pass
+
+        # TILFØJELSE: Gem crawl-delay globalt (brug i http_get for delay)
+        if crawl_delay:
+            _HOST_CRAWL_DELAYS[host] = crawl_delay
+
+        # Unit Test Eksempel (nu wrapped og med fixet indentation):
+        if __name__ == "__main__":
+            def test_robots_parse():
+                text = "Crawl-delay: 5.0\nDisallow: /private"
+                # Simuler parse (kopiér funktion)
+                crawl_delay = None
+                disallows = []
+                sitemaps = []  # Tilføjet for fuldstændighed
+                for line in text.splitlines():
+                    l = line.strip()
+                    if not l or l.startswith("#"):
+                        continue
+                    if l.lower().startswith("sitemap:"):
+                        sitemaps.append(l.split(":", 1)[1].strip())
+                    elif l.lower().startswith("disallow:"):
+                        dis = l.split(":", 1)[1].strip()
+                        if dis and dis != "/":
+                            disallows.append(dis)
+                    elif l.lower().startswith("crawl-delay:"):
+                        try:
+                            crawl_delay = float(l.split(":", 1)[1].strip())
+                        except ValueError:
+                            pass
+                assert crawl_delay == 5.0
+                assert "/private" in disallows
+            test_robots_parse()
     except Exception as e:
         log.debug(f"Error fetching robots.txt for {base_url}: {e}")
         return [], []

@@ -134,20 +134,32 @@ def _is_blocked_cdn(url: str) -> bool:
     return any(host.startswith(p) for p in CDN_PREFIXES)
 
 def should_check_link_status(url: str) -> bool:
-    host = (urlsplit(u).hostname or "").strip()
-    if host and _is_private_ip_host(host):
-        log.debug("Private/net-local host blokeret: %s", host)
-        return False      
     """Filter links before HEAD checks."""
     if not url:
         return False
+
+    try:
+        host = (urlsplit(url).hostname or "").strip()
+    except Exception:
+        host = ""
+
+    if host and _is_private_ip_host(host):
+        log.debug("Private/net-local host blokeret: %s", host)
+        return False
+
     u = url.lower().split("?", 1)[0]
+
+    # Skip ikke-HTTP(S)
+    if not (u.startswith("http://") or u.startswith("https://")):
+        return False
+
     if _is_asset_url(u):
         return False
     if _is_blocked_cdn(u):
         return False
     if "/img/" in u and "/resize/" in u:
         return False
+
     return True
 
 # --- Heuristikker ---
