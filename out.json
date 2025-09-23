@@ -1,0 +1,565 @@
+{
+  "analysis": {
+    "url": "https://www.vexto.dk/",
+    "fetch_method": "unknown",
+    "basic_seo": {
+      "h1": "Få flere kunder - ingen binding og fuld gennemsigtighed",
+      "h1_count": 3,
+      "h1_texts": [
+        "Få flere kunder - ingen binding og fuld gennemsigtighed",
+        "Vores kunders resultater, er vores resultater",
+        "360˚ digital marketing bureau"
+      ],
+      "meta_description": "Vil du vækste online? Vexto er din digitale partner i SEO, Google Ads og performance marketing. Kontakt os og skab målbare resultater.",
+      "meta_description_length": 134,
+      "title_text": "Vexto.dk – Din digitale vækstpartner",
+      "title_length": 36,
+      "word_count": 821,
+      "image_count": 1,
+      "image_alt_count": 1,
+      "image_alt_pct": 100.0,
+      "avg_image_size_kb": 175.8,
+      "canonical_url": "https://www.vexto.dk",
+      "canonical_error": null,
+      "schema_markup_found": true,
+      "schema_types": [
+        "WebSite"
+      ],
+      "canonical_source": "link",
+      "schema_jsonld_valid": false,
+      "jsonld_repaired": true,
+      "schema_microdata_found": false,
+      "image_count_fetcher": 1
+    },
+    "technical_seo": {
+      "status_code": 200,
+      "is_https": true,
+      "robots_txt_found": true,
+      "sitemap_xml_found": true,
+      "sitemap_locations": [
+        "https://www.vexto.dk/sitemap_index.xml"
+      ],
+      "sitemap_is_fresh": true,
+      "response_time_ms": 32,
+      "total_pages_crawled": 23,
+      "total_links_found": 50,
+      "broken_links_count": 0,
+      "broken_links_pct": 0.0,
+      "broken_links_list": [],
+      "schema_markup_found": true,
+      "canonical_url": "https://www.vexto.dk",
+      "internal_link_score": 86,
+      "rendered_content_length": 196091,
+      "render_status": "content",
+      "soft_404_suspected": false,
+      "visited_urls": [
+        "https://www.vexto.dk/standard-eller-kommercielt-marketingbureau",
+        "https://www.vexto.dk/kom-godt-i-gang",
+        "https://www.vexto.dk/markedsfoering",
+        "https://www.vexto.dk/bliv-klogere",
+        "https://www.vexto.dk/kontakt-os",
+        "https://www.vexto.dk/kontakt",
+        "https://www.vexto.dk/om-os",
+        "https://www.vexto.dk/privatlivspolitik",
+        "https://www.vexto.dk/nyheder",
+        "https://www.vexto.dk/hvordan-kan-vextos-team-spare-dig-tid-og-penge-i-2025",
+        "https://www.vexto.dk/",
+        "https://www.vexto.dk/hvordan-vinder-jeg-flere-tilbud-som-entreprenoer-med-digital-marketing",
+        "https://www.vexto.dk/cookiepolitik",
+        "https://www.vexto.dk/google-ads",
+        "https://www.vexto.dk/hvordan-faar-jeg-flere-kundehenvendelser-som-malermester",
+        "https://www.vexto.dk/bedste-e-mail-automation-bureau-for-smaa-webshops-hvad-skal-du-kigge-efter",
+        "https://www.vexto.dk/hvordan-faar-jeg-kvalificerede-leads-til-industrivirksomhed",
+        "https://www.vexto.dk/hjemmesider",
+        "https://www.vexto.dk/nyheder/artikler",
+        "https://www.vexto.dk/hvordan-opsaetter-jeg-marketing-automation-i-b2b",
+        "https://www.vexto.dk/linkedin-leadgenerering-for-teknisk-b2b-virksomhed",
+        "https://www.vexto.dk/10-stoerste-fejl-i-servicebranchen",
+        "https://www.vexto.dk/de-nyeste-trends-i-servicebranchen-i-2025"
+      ],
+      "page_type_distribution": {
+        "product": 0,
+        "category": 6,
+        "info": 15,
+        "blog": 2,
+        "other": 0
+      },
+      "links_checked": 43
+    },
+    "performance": {
+      "lcp_ms": 10000.0,
+      "cls": 0.0,
+      "inp_ms": 118.0,
+      "viewport_score": 1,
+      "performance_score": 57,
+      "psi_status": "ok_mobile",
+      "total_js_size_kb": 832.8,
+      "js_file_count": 27,
+      "lcp_ms_raw": 12509.139663676051,
+      "performance_source": "lab",
+      "performance_strategy": "mobile",
+      "mobile_friendly_check": true,
+      "mobile_friendly_score": 1
+    },
+    "authority": {
+      "domain_authority": 0.0,
+      "page_authority": 0.0,
+      "global_rank": null,
+      "authority_status": "ok_openpagerank",
+      "gmb_profile_complete": false
+    },
+    "security": {
+      "hsts_enabled": false,
+      "csp_enabled": false,
+      "x_content_type_options_enabled": false,
+      "x_frame_options_enabled": false,
+      "measured_on": "GET",
+      "hsts_include_subdomains": false,
+      "hsts_preload": false
+    },
+    "content": {
+      "latest_post_date": "2025-04-27T09:11:41Z",
+      "days_since_last_post": 148,
+      "keywords_in_content": {
+        "vexto": 7,
+        "digitale": 3,
+        "marketing": 4,
+        "resultater": 7,
+        "vækstpartner": 1,
+        "google": 14,
+        "vores": 11,
+        "vækste": 1,
+        "online": 3,
+        "partner": 4
+      },
+      "internal_link_score": 86,
+      "keyword_relevance_score": 0.9400000000000001,
+      "average_word_count": 821,
+      "cta_score": 100,
+      "cta_analysis": [
+        "book",
+        "gratis",
+        "kontakt",
+        "pris",
+        "ring"
+      ],
+      "latest_post_date_source": "jsonld",
+      "latest_post_date_url": "https://www.vexto.dk",
+      "latest_post_date_snippet": "{\"@context\":\"https://schema.org\",\"@graph\":[{\"@type\":[\"Person\",\"Organization\"],\"@id\":\"https://www.vexto.dk/#person\",\"name\":\"Vexto.dk\",\"logo\":{\"@type\":\"ImageObject\",\"@id\":\"https://www.vexto.dk/#logo\",\"url\":\"https://www.vexto.dk/wp-content/upl"
+    },
+    "social_and_reputation": {
+      "gmb_review_count": 0,
+      "gmb_average_rating": null,
+      "gmb_profile_complete": false,
+      "social_media_links": [
+        "https://linkedin.com/company/vextodk",
+        "https://facebook.com/profile.php?id=61575765929567"
+      ],
+      "social_share_links": [],
+      "gmb_has_website": false,
+      "gmb_has_hours": false,
+      "gmb_photo_count": 0,
+      "gmb_business_name": null,
+      "gmb_address": null,
+      "gmb_place_id": null,
+      "gmb_status": "zero_results"
+    },
+    "conversion": {
+      "has_ga4": true,
+      "has_meta_pixel": true,
+      "emails_found": [
+        "info@vexto.dk"
+      ],
+      "phone_numbers_found": [],
+      "form_field_counts": [
+        2,
+        3,
+        7,
+        3,
+        3,
+        11,
+        3,
+        11,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        7,
+        3,
+        3,
+        3,
+        7,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "trust_signals_found": [
+        "anmeldelser",
+        "betaling",
+        "iso",
+        "kunde_logo_vaeg",
+        "partner"
+      ],
+      "cta_analysis": [
+        "book",
+        "gratis",
+        "kontakt",
+        "pris",
+        "ring"
+      ],
+      "cta_score": 100,
+      "ga4_measurement_id": null,
+      "has_gtm": true,
+      "gtm_container_id": "GTM-K839BLTQ",
+      "google_tag_id": "GT-NFBLLKCS",
+      "google_ads_conversion_ids": [],
+      "google_ads_labels": [],
+      "meta_pixel_id": "1307816147422153",
+      "has_tiktok_pixel": false,
+      "tiktok_pixel_id": null,
+      "has_pinterest_tag": false,
+      "pinterest_tag_id": null,
+      "has_snap_pixel": false,
+      "snap_pixel_id": null,
+      "has_linkedin_insight": false,
+      "linkedin_partner_id": null,
+      "has_bing_uet": false,
+      "bing_uet_id": null,
+      "has_twitter_pixel": false,
+      "twitter_pixel_id": null,
+      "ga4_measurement_id_source": "inferred",
+      "emails_low_confidence": [
+        "info@vexto.dk"
+      ],
+      "phone_numbers_low_confidence": [
+        "4560585893",
+        "45654583",
+        "60585893"
+      ],
+      "forms_meta": {
+        "form_count": 1,
+        "forms": [
+          {
+            "action": null,
+            "method": "post",
+            "input_count": 6,
+            "required_pct": 50.0,
+            "has_email": true,
+            "has_phone": false,
+            "has_textarea": true,
+            "has_honeypot": false,
+            "is_newsletter": false
+          }
+        ],
+        "form_field_counts": [
+          6
+        ],
+        "newsletter_forms_ignored": 0
+      }
+    },
+    "privacy": {
+      "cookie_banner_detected": true,
+      "detection_method": "text",
+      "personal_data_redacted": null,
+      "cookie_banner_confidence": 9.200000000000003
+    },
+    "benchmark_complete": false,
+    "ux_ui_score": 0,
+    "niche_score": 0
+  },
+  "score": {
+    "url": "https://www.vexto.dk/",
+    "total_score": 605,
+    "max_possible_points": 1000,
+    "score_percentage": 60,
+    "achieved_rules": [
+      {
+        "rule": "tracking_tags",
+        "description": "Om GA4/Meta-pixel/GTM er opsat korrekt.",
+        "points": 70,
+        "fetcher": "ukendt",
+        "value": {
+          "ga4": true,
+          "pixel": true,
+          "gtm": true
+        }
+      },
+      {
+        "rule": "cta_analysis",
+        "description": "Hvor tydelige og strategiske opfordringer til handling er.",
+        "points": 60,
+        "fetcher": "ukendt",
+        "value": 100
+      },
+      {
+        "rule": "site_status",
+        "description": "Viser om hjemmesiden er online og tilgængelig.",
+        "points": 55,
+        "fetcher": "ukendt",
+        "value": 200
+      },
+      {
+        "rule": "mobile_friendly_check",
+        "description": "Hvor godt siden tilpasser sig mobiltelefoner.",
+        "points": 45,
+        "fetcher": "ukendt",
+        "value": 1
+      },
+      {
+        "rule": "keyword_presence",
+        "description": "Om vigtige søgeord bruges strategisk.",
+        "points": 45,
+        "fetcher": "ukendt",
+        "value": 0.9400000000000001
+      },
+      {
+        "rule": "form_usability",
+        "description": "Hvor nemme og hurtige kontaktformularer er at udfylde.",
+        "points": 35,
+        "fetcher": "ukendt",
+        "value": {
+          "value": [
+            2,
+            3,
+            7,
+            3,
+            3,
+            11,
+            3,
+            11,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            7,
+            3,
+            3,
+            3,
+            7,
+            3,
+            3,
+            3,
+            3,
+            3
+          ]
+        }
+      },
+      {
+        "rule": "uses_https",
+        "description": "Krypterer data mellem browser og server.",
+        "points": 25,
+        "fetcher": "ukendt",
+        "value": true
+      },
+      {
+        "rule": "cls_score",
+        "description": "Måler hvor meget indholdet 'hopper' under indlæsning.",
+        "points": 25,
+        "fetcher": "ukendt",
+        "value": 0.0
+      },
+      {
+        "rule": "inp_score",
+        "description": "Måler en sides responsivitet på brugerinteraktion.",
+        "points": 25,
+        "fetcher": "ukendt",
+        "value": 118.0
+      },
+      {
+        "rule": "text_length",
+        "description": "Om der er tilstrækkeligt indhold på kernesider.",
+        "points": 25,
+        "fetcher": "ukendt",
+        "value": 821
+      },
+      {
+        "rule": "trust_elements",
+        "description": "Fremvisning af anmeldelser, certifikater, etc. på sitet.",
+        "points": 25,
+        "fetcher": "ukendt",
+        "value": {
+          "value": [
+            "anmeldelser",
+            "betaling",
+            "iso",
+            "kunde_logo_vaeg",
+            "partner"
+          ]
+        }
+      },
+      {
+        "rule": "robots_txt",
+        "description": "En fil, der guider søgemaskiner.",
+        "points": 20,
+        "fetcher": "ukendt",
+        "value": true
+      },
+      {
+        "rule": "schema_markup",
+        "description": "Kode der hjælper Google med at forstå indholdet (Rich Snippets).",
+        "points": 20,
+        "fetcher": "ukendt",
+        "value": true
+      },
+      {
+        "rule": "internal_links",
+        "description": "Hvordan siderne linker til hinanden internt.",
+        "points": 20,
+        "fetcher": "ukendt",
+        "value": 86
+      },
+      {
+        "rule": "sitemap_score",
+        "description": "En fil, der fortæller Google, hvilke sider der er på sitet.",
+        "points": 15,
+        "fetcher": "ukendt",
+        "value": {
+          "found": true,
+          "fresh": true
+        }
+      },
+      {
+        "rule": "broken_links",
+        "description": "Identificerer links, der fører til 'side ikke fundet' (404-fejl).",
+        "points": 15,
+        "fetcher": "ukendt",
+        "value": 0.0
+      },
+      {
+        "rule": "contact_visibility",
+        "description": "Hvor nemt det er at finde telefon, e-mail og adresse.",
+        "points": 15,
+        "fetcher": "ukendt",
+        "value": {
+          "emails": [
+            "info@vexto.dk"
+          ],
+          "phones": []
+        }
+      },
+      {
+        "rule": "canonical_score",
+        "description": "Sikrer at Google kun indekserer den foretrukne version af en side.",
+        "points": 10,
+        "fetcher": "ukendt",
+        "value": {
+          "value": "https://www.vexto.dk"
+        }
+      },
+      {
+        "rule": "description_length",
+        "description": "Længden på sidens beskrivelse i søgeresultater.",
+        "points": 10,
+        "fetcher": "ukendt",
+        "value": 134
+      },
+      {
+        "rule": "image_alt_texts",
+        "description": "Tekstbeskrivelser af billeder for SEO og tilgængelighed.",
+        "points": 10,
+        "fetcher": "ukendt",
+        "value": {
+          "value": 100.0
+        }
+      },
+      {
+        "rule": "latest_blog_post",
+        "description": "Dato for seneste blogindlæg eller nyhed.",
+        "points": 10,
+        "fetcher": "ukendt",
+        "value": 148
+      },
+      {
+        "rule": "social_presence",
+        "description": "Tilstedeværelse og aktivitet på sociale medier.",
+        "points": 10,
+        "fetcher": "ukendt",
+        "value": {
+          "value": [
+            "https://linkedin.com/company/vextodk",
+            "https://facebook.com/profile.php?id=61575765929567"
+          ]
+        }
+      },
+      {
+        "rule": "authority_score_v1",
+        "description": "Et samlet mål for domænets autoritet.",
+        "points": 8,
+        "fetcher": "ukendt",
+        "value": {
+          "pagerank": 0.0,
+          "domain_authority": 0.0,
+          "global_rank": null
+        }
+      },
+      {
+        "rule": "avg_image_size",
+        "description": "Hvor store billedfilerne er i gennemsnit.",
+        "points": 7,
+        "fetcher": "ukendt",
+        "value": 175.8
+      }
+    ],
+    "failed_rules": [
+      {
+        "rule": "lcp_score",
+        "description": "Tiden det tager for det største synlige indhold at dukke op.",
+        "value": 10000.0,
+        "fetcher": "ukendt"
+      },
+      {
+        "rule": "title_length",
+        "description": "Længden på sidens titel i søgeresultater.",
+        "value": 36,
+        "fetcher": "ukendt"
+      },
+      {
+        "rule": "google_reviews",
+        "description": "Google-anmeldelser, antal & gennemsnitsrating.",
+        "value": {
+          "count": 0,
+          "rating": null
+        },
+        "fetcher": "ukendt"
+      },
+      {
+        "rule": "gmb_profile",
+        "description": "Hvor komplet og optimeret Google-profilen er.",
+        "value": {
+          "profile_complete": false,
+          "has_website": false,
+          "has_hours": false,
+          "photo_count": 0
+        },
+        "fetcher": "ukendt"
+      },
+      {
+        "rule": "competitor_comparison",
+        "description": "En direkte sammenligning med konkurrenters nøgletal.",
+        "value": false,
+        "fetcher": "ukendt"
+      },
+      {
+        "rule": "ux_ui_quality",
+        "description": "Sidens overordnede brugervenlighed og visuelle design.",
+        "value": 0,
+        "fetcher": "ukendt"
+      },
+      {
+        "rule": "market_fit",
+        "description": "Hvor godt siden positionerer sig inden for sin niche.",
+        "value": 0,
+        "fetcher": "ukendt"
+      }
+    ],
+    "not_evaluated_rules": []
+  }
+}
