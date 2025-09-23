@@ -2,8 +2,8 @@
 import os
 import re
 import logging
+from difflib import SequenceMatcher
 from urllib.parse import urlparse, quote_plus
-
 from .http_client import AsyncHtmlClient
 from .schemas import SocialAndReputationMetrics
 
@@ -193,25 +193,69 @@ def _empty_metrics(status: str = "unknown") -> SocialAndReputationMetrics:
     }
 
 
+def _base_domain(host: str) -> str:
+    host = (host or "").lower().strip().strip(".")
+    parts = host.split(".")
+    if len(parts) >= 2:
+        return ".".join(parts[-2:])  # naive eTLD+1 (ok for .dk/.com/.net osv.)
+    return host
+
 def _domain_match(website_url: str, target_url: str) -> bool:
-    """Tolerant domænematch (tillad subdomæner/varianter i begge retninger)."""
     try:
-        host_wanted = (urlparse(target_url).hostname or "").lower()
-        host_found = (urlparse((website_url or "").strip()).hostname or "").lower()
-        if not host_wanted or not host_found:
+        wanted = (urlparse(target_url).hostname or "").lower()
+        found  = (urlparse((website_url or "").strip()).hostname or "").lower()
+        if not wanted or not found:
             return False
-        return host_wanted.endswith(host_found) or host_found.endswith(host_wanted)
+
+        # eksakt base-domæne-match (eTLD+1), og tillad subdomæner på kandidat
+        wanted_base = _base_domain(wanted)
+        found_base  = _base_domain(found)
+        if wanted_base != found_base:
+            return False
+
+        # hvis base er ens, accepter subdomæner/’www’
+        return True
     except Exception:
         return False
 
 
 def _build_details_url(place_id: str, api_key: str, language: str | None) -> str:
-    fields = "rating,user_ratings_total,name,formatted_address,opening_hours,website,photos"
+    fields = "rating,user_ratings_total,name,formatted_address,opening_hours,website,photos,geometry"
     lang_param = f"&language={language}" if language else ""
     return (
         "https://maps.googleapis.com/maps/api/place/details/json"
         f"?place_id={place_id}&fields={fields}{lang_param}&key={api_key}"
     )
+
+def _norm_company_name(s: str) -> str:
+    """Normaliser firmanavn for robust sammenligning."""
+    if not s:
+        return ""
+    s = s.strip().lower()
+    # fjern selskabsendelser og nemme støjord
+    s = re.sub(r'\b(aps|a\/s|ivS|aps\.|a\/s\.|ivS\.)\b', '', s, flags=re.I)
+    s = re.sub(r'[^a-z0-9æøåéèüö ]+', ' ', s)
+    s = re.sub(r'\s+', ' ', s).strip()
+    return s
+
+def _name_similarity(a: str, b: str) -> float:
+    """Jaro/Levenshtein-lignende ratio via stdlib (SequenceMatcher)."""
+    a_n = _norm_company_name(a)
+    b_n = _norm_company_name(b)
+    if not a_n or not b_n:
+        return 0.0
+    return SequenceMatcher(None, a_n, b_n).ratio()
+
+def _target_company_from(url: str, company_name: str | None) -> str:
+    """
+    Best-effort mål-firmanavn: foretræk eksplicit company_name,
+    ellers afled fra værtsnavn (fx 'vexto.dk' -> 'vexto').
+    """
+    if company_name:
+        return company_name
+    host = (urlparse(url).hostname or "").lower()
+    base = host.split('.', 1)[0] if '.' in host else host
+    return re.sub(r'[^a-z0-9æøå]', ' ', base).strip()
 
 
 # -----------------------------
@@ -229,9 +273,10 @@ async def fetch_gmb_data(
       1) Søger på (a) renset firmanavn, (b) fuldt firmanavn, (c) domæne-baseret gæt
       2) Finder place_id med Find Place
       3) Henter detaljer (rating, reviews, website, åbningstider, fotos)
-      4) Fallback: Text Search inden for en rimelig radius baseret på TLD
-    Returnerer første match, der har reelle reviews (count>0 eller rating>0)
-    ELLER website-domænematch med target.
+      4) Returnerer første match, som passer gates:
+        - website-domænematch (foretrukket), eller
+        - høj navnesimilaritet (>= 0.85)
+        'has_reviews' er kun informativt og udløser IKKE accept alene.
     """
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
@@ -308,27 +353,45 @@ async def fetch_gmb_data(
                 isinstance(rating, (int, float, str)) and str(rating).replace(",", ".").replace(" ", "").replace("\u00a0", "").isdigit()
             )
 
+            target_name = _target_company_from(url, company_name)
+            name_sim = _name_similarity(result.get("name") or "", target_name)
+            name_ok = name_sim >= 0.85
+
             website_ok = _domain_match(website, url)
 
-            if has_reviews or website_ok:
+            # Valgfrit: simpelt by-tjek (hvis du vil gate mere).
+            # Eksempel: kræv at target-by optræder i formatted_address, hvis du kan udlede 'target_city'.
+            # target_city = ...  # hent fra site/caller hvis muligt
+            # city_ok = (target_city.lower() in (result.get("formatted_address") or "").lower()) if target_city else True
+
+            # HÅRD GATE:
+            #  - Accepter KUN hvis website-match ELLER (høj navnesimilaritet)
+            #  - 'has_reviews' må ALDRIG alene være accept-kriterie (det gav 'Veo Technologies'-fejlen)
+            if website_ok or name_ok:  # og evt. 'and city_ok'
                 has_hours = bool(opening_hours.get("weekday_text") or opening_hours.get("periods"))
                 final_result: SocialAndReputationMetrics = {
                     "gmb_review_count": int(count or 0),
                     "gmb_average_rating": float(rating) if rating is not None else None,
-                    "gmb_profile_complete": True,
+                    "gmb_profile_complete": True,             # sæt kun True ved PASS af gates
                     "gmb_has_website": bool(website),
                     "gmb_has_hours": has_hours,
                     "gmb_photo_count": int(len(photos)),
                     "gmb_business_name": result.get("name"),
                     "gmb_address": result.get("formatted_address"),
                     "gmb_place_id": place_id,
-                    "gmb_status": "ok",
+                    "gmb_status": "ok"
                 }
                 log.info(
-                    f"GMB data fetched once: review_count={final_result['gmb_review_count']}, "
-                    f"rating={final_result['gmb_average_rating']}"
+                    f"[GMB/ACCEPT] name='{result.get('name')}' sim={name_sim:.2f} "
+                    f"website_ok={website_ok} reviews={count} url='{website}'"
                 )
                 return final_result
+
+            # Ellers: log præcis hvorfor vi afviser
+            log.warning(
+                f"[GMB/REJECT] name='{result.get('name')}' sim={name_sim:.2f} "
+                f"website_ok={website_ok} reason='gates_failed' website='{website}'"
+            )
 
         log.warning(f"Ingen brugbar kandidat for '{name}', prøver næste søgeterm…")
 
@@ -387,7 +450,11 @@ async def fetch_gmb_data(
                 )
                 website_ok = _domain_match(website, url)
 
-                if has_reviews or website_ok:
+                target_name = _target_company_from(url, company_name)
+                name_sim = _name_similarity(result.get("name") or "", target_name)
+                name_ok = name_sim >= 0.85
+
+                if website_ok or name_ok:  # evt. også city gate, hvis du senere tilføjer den
                     has_hours = bool(opening_hours.get("weekday_text") or opening_hours.get("periods"))
                     final_result: SocialAndReputationMetrics = {
                         "gmb_review_count": int(count or 0),
@@ -401,9 +468,15 @@ async def fetch_gmb_data(
                         "gmb_place_id": place_id,
                         "gmb_status": "ok",
                     }
-                    log.info("[TextSearch] Matchede kandidat via fallback.")
+                    log.info(
+                        f"[GMB/ACCEPT/FALLBACK] name='{result.get('name')}' sim={name_sim:.2f} "
+                        f"website_ok={website_ok} reviews={count} url='{website}'"
+                    )
                     return final_result
-
+                log.warning(
+                    f"[GMB/REJECT/FALLBACK] name='{result.get('name')}' sim={name_sim:.2f} "
+                    f"website_ok={website_ok} reason='gates_failed' website='{website}'"
+                )
             log.warning(f"[TextSearch] Ingen brugbar kandidat for '{name}' – prøver næste søgeterm…")
 
     # --------- Intet fundet ----------
