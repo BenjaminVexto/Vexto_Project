@@ -7,9 +7,26 @@ import unicodedata
 from difflib import SequenceMatcher
 from urllib.parse import urlparse, quote_plus
 from typing import Optional, Tuple, List
-
 from .http_client import AsyncHtmlClient
 from .schemas import SocialAndReputationMetrics
+
+# --- Robust imports (abs -> rel -> local) for Pylance friendliness ---
+try:
+    from src.vexto.http_client import AsyncHtmlClient  # type: ignore[reportMissingImports]
+except Exception:  # pragma: no cover
+    try:
+        from .http_client import AsyncHtmlClient  # type: ignore
+    except Exception:  # pragma: no cover
+        from http_client import AsyncHtmlClient  # type: ignore
+
+try:
+    from src.vexto.schemas import SocialAndReputationMetrics  # type: ignore[reportMissingImports]
+except Exception:  # pragma: no cover
+    try:
+        from .schemas import SocialAndReputationMetrics  # type: ignore
+    except Exception:  # pragma: no cover
+        from schemas import SocialAndReputationMetrics  # type: ignore
+# --------------------------------------------------------------------
 
 log = logging.getLogger(__name__)
 
@@ -744,22 +761,23 @@ async def fetch_gmb_data(
             )
 
             if decision == "ACCEPT":
-                has_hours = bool(opening_hours.get("weekday_text") or opening_hours.get("periods"))
-                final_result: SocialAndReputationMetrics = {
-                    "gmb_review_count": int(count or 0),
-                    "gmb_average_rating": float(rating) if rating is not None else None,
-                    "gmb_profile_complete": True,
-                    "gmb_has_website": bool(website),
-                    "gmb_has_hours": has_hours,
-                    "gmb_photo_count": int(len(photos)),
-                    "gmb_business_name": result.get("name"),
-                    "gmb_address": result.get("formatted_address"),
-                    "gmb_place_id": pid,
-                    "gmb_status": "ok",
-                }
-                log.info("===== [GMB/RESULT] status=ok via QUERY place_id=%s name='%s' =====",
-                         pid, result.get("name"))
-                return final_result
+                    has_hours = bool(opening_hours.get("weekday_text") or opening_hours.get("periods"))
+                    final_result: SocialAndReputationMetrics = {
+                        "gmb_review_count": int(count or 0),
+                        "gmb_average_rating": float(rating) if rating is not None else None,
+                        "gmb_profile_complete": True,
+                        "gmb_has_website": bool(website),
+                        "gmb_has_hours": has_hours,
+                        "gmb_photo_count": int(len(photos)),
+                        "gmb_business_name": result.get("name"),
+                        "gmb_address": result.get("formatted_address"),
+                        "gmb_place_id": pid,
+                        "gmb_status": "ok",
+                        "website": website or "",
+                    }
+                    log.info("===== [GMB/RESULT] status=ok via QUERY place_id=%s name='%s' =====",
+                             pid, result.get("name"))
+                    return final_result
 
     # -------- Fallback: Text Search nær center --------
     center = _center_from_url(url)
@@ -843,6 +861,7 @@ async def fetch_gmb_data(
                         "gmb_address": result.get("formatted_address"),
                         "gmb_place_id": pid,
                         "gmb_status": "ok",
+                        "website": website or "",
                     }
                     log.info("===== [GMB/RESULT] status=ok via FALLBACK place_id=%s name='%s' =====",
                              pid, result.get("name"))

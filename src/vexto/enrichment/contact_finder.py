@@ -1367,6 +1367,8 @@ def _fetch_robots_txt(
         if crawl_delay:
             _HOST_CRAWL_DELAYS[host] = crawl_delay
 
+        return sitemaps, disallows
+    
         # Unit Test Eksempel (nu wrapped og med fixet indentation):
         if __name__ == "__main__":
             def test_robots_parse():
@@ -2308,7 +2310,7 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
                 name = _find_heading_name(cf) or name
 
             title = None
-            m_title = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", near)
+            m_title = re.search(r"(?i)\b([A-Za-zÆØÅæøå\- ]{3,80})\b", near)
             if m_title:
                 title = _sanitize_title(m_title.group(1))
 

@@ -22,6 +22,8 @@ import pandas as pd
 from aiohttp import ClientError, ClientSession, ClientTimeout
 from dotenv import load_dotenv
 from urllib.parse import urlparse
+from ..scoring.http_client import AsyncHtmlClient
+from ..scoring.gmb_fetcher import fetch_gmb_data
 
 # --- robust import til ContentEncodingError (varierer ml. aiohttp-versioner) ---
 try:
@@ -1026,6 +1028,113 @@ async def _find_official_site_for_row(row: pd.Series, session: ClientSession) ->
     }
 
 # -----------------------------------------------------------------------------
+# WEBSITEVALG via GMB (helpers)
+# -----------------------------------------------------------------------------
+def _context_url_for_gmb(row: pd.Series) -> str:
+    raw = (str(row.get("Hjemmeside") or "").strip().lower())
+    raw = re.sub(r"^https?://", "", raw).rstrip("/")
+    if raw and raw != "n/a" and not _is_bad_website_domain(raw):
+        return "https://" + raw
+    email = str(row.get("Email") or "").strip().lower()
+    if "@" in email:
+        try:
+            dom = email.split("@", 1)[1]
+            dom = clean_domain(dom)
+            if dom and not _is_bad_website_domain(dom):
+                return "https://" + dom
+        except Exception:
+            pass
+    return "https://dummy.dk"
+
+_DK_POST_RE = re.compile(r"(^|\s)(\d{4})\s+([A-Za-zÆØÅæøå\-\s]+)$")
+def _parse_dk_city_post(gmb_address: str) -> tuple[str, str]:
+    s = (gmb_address or "").strip()
+    if not s:
+        return "", ""
+    m = _DK_POST_RE.search(s)
+    if not m:
+        return "", ""
+    return m.group(3).strip(), m.group(2)
+
+# -----------------------------------------------------------------------------
+# UDFYLD/RET HJEMMESIDER via GMB_FETCHER (single source of truth) → NYE felter
+# -----------------------------------------------------------------------------
+async def _fill_websites_via_gmb_async(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+
+    # Sikr GMB-kolonner (vi rører ikke den oprindelige 'Hjemmeside')
+    base_cols = [
+        "HjemmesideGMB", "HjemmesideGMB_Rå", "HjemmesideGMB_Kilde",
+        "HjemmesideGMB_PlaceId", "HjemmesideGMB_By", "HjemmesideGMB_Postnr",
+        "HjemmesideGMB_Status", "HjemmesideGMB_Score", "HjemmesideGMB_Confirm",
+    ]
+    for c in base_cols:
+        if c not in df.columns:
+            df[c] = "N/A"
+
+    idx_list, ctx_urls, cvrs, names, phones = [], [], [], [], []
+    for i, row in df.iterrows():
+        idx_list.append(i)
+        ctx_urls.append(_context_url_for_gmb(row))
+        cvrs.append(re.sub(r"\D", "", str(row.get("Vrvirksomhed_cvrNummer") or "")) or "")
+        names.append(str(row.get("Vrvirksomhed_virksomhedMetadata_nyesteNavn_navn") or "").strip())
+        phones.append(str(row.get("Telefon") or "").strip())
+
+    async with AsyncHtmlClient() as client:
+        tasks = [
+            fetch_gmb_data(client=client, url=ctx_urls[k],
+                           cvr=(cvrs[k] or None), company_name=(names[k] or None),
+                           phone=(phones[k] or None))
+            for k in range(len(idx_list))
+        ]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    for i, res in zip(idx_list, results):
+        if isinstance(res, Exception) or not isinstance(res, dict):
+            df.at[i, "HjemmesideGMB_Status"] = f"error:{type(res).__name__}" if isinstance(res, Exception) else "error"
+            continue
+        status = str(res.get("gmb_status") or "").lower()
+        df.at[i, "HjemmesideGMB_Status"] = status or "unknown"
+        if status != "ok":
+            continue
+
+        gmb_site = (res.get("website") or "").strip()
+        try:
+            host = urlparse(gmb_site).netloc.lower()
+            reg  = _registrable_domain(host) if host and not _is_bad_website_domain(host) else ""
+        except Exception:
+            reg = ""
+        if not reg:
+            continue
+
+        # UDFYLD KUN GMB-FELTERNE (IKKE 'Hjemmeside')
+        df.at[i, "HjemmesideGMB"]         = reg
+        df.at[i, "HjemmesideGMB_Rå"]      = gmb_site
+        df.at[i, "HjemmesideGMB_Kilde"]   = "gmb"
+        df.at[i, "HjemmesideGMB_PlaceId"] = res.get("gmb_place_id") or "N/A"
+        by, post = _parse_dk_city_post(res.get("gmb_address") or "")
+        if by:   df.at[i, "HjemmesideGMB_By"]     = by
+        if post: df.at[i, "HjemmesideGMB_Postnr"] = post
+        df.at[i, "HjemmesideGMB_Score"]   = 100
+        df.at[i, "HjemmesideGMB_Confirm"] = "gmb_ok"
+    return df
+
+def _fill_websites_via_gmb(df: pd.DataFrame) -> pd.DataFrame:
+    try:
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        return loop.run_until_complete(_fill_websites_via_gmb_async(df))
+    except Exception as e:
+        log.warning(f"GMB website selection skipped due to error: {e}")
+        return df
+
+
+
+# -----------------------------------------------------------------------------
 # UDFYLD/RET HJEMMESIDER VIA SØGNING
 # -----------------------------------------------------------------------------
 async def _fill_websites_via_search(df: pd.DataFrame) -> pd.DataFrame:
@@ -1120,10 +1229,6 @@ def _post_validate_web_candidates(df: pd.DataFrame) -> pd.DataFrame:
             row.get("GPlacePostnr",""),
         )
 
-    gp_mask = df.apply(_gp_mismatch, axis=1)
-    df.loc[gp_mask, "HjemmesidePreLiveBool"] = False
-    df.loc[gp_mask, "HjemmesideBemærkning"]  = "Ikke samme virksomhed"
-
     return df
 
 # -----------------------------------------------------------------------------
@@ -1182,7 +1287,8 @@ def clean_and_prepare_cvr_data(raw_hits: List[Dict[str, Any]]) -> pd.DataFrame:
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-        df = loop.run_until_complete(_fill_websites_via_search(df))
+        # Website-valg flyttet til GMB – uden at overskrive 'Hjemmeside'
+        df = _fill_websites_via_gmb(df)
     except Exception as e:
         log.warning(f"Website search augmentation skipped due to error: {e}")
 
@@ -1193,7 +1299,11 @@ def clean_and_prepare_cvr_data(raw_hits: List[Dict[str, Any]]) -> pd.DataFrame:
     # --------------------------------------------------------------------------
 
     # Liveness-check
-    raw_domains = df["Hjemmeside"].fillna("").astype(str)
+    # Liveness-check – brug "effektiv" hjemmeside (GMB først, derefter original)
+    gmb_domains = df.get("HjemmesideGMB", pd.Series([""] * len(df))).fillna("").astype(str)
+    raw_orig    = df.get("Hjemmeside",   pd.Series([""] * len(df))).fillna("").astype(str)
+    raw_domains = gmb_domains.where(~gmb_domains.str.strip().str.lower().isin(["", "n/a"]), raw_orig)
+
     display_domains = [_strip_host(s) if s and s.lower() != "n/a" else "" for s in raw_domains]
     http_domains = [_to_idna(h) if h else "" for h in display_domains]
 
@@ -1246,7 +1356,9 @@ def clean_and_prepare_cvr_data(raw_hits: List[Dict[str, Any]]) -> pd.DataFrame:
     df["HjemmesideBemærkning"] = [str(x or "") for x in final_rem]
 
     # Ingen hjemmeside => bool=<NA>, remark=""
-    no_site_mask = df["Hjemmeside"].astype(str).str.strip().str.lower().isin(["", "n/a"])
+    # Brug den samme effektive domæne-heuristik for "ingen hjemmeside"
+    eff_mask_src = raw_domains.astype(str).str.strip().str.lower()
+    no_site_mask = eff_mask_src.isin(["", "n/a"])
     df.loc[no_site_mask, "HjemmesideLiveBool"]   = pd.NA
     df.loc[no_site_mask, "HjemmesideBemærkning"] = ""
 
@@ -1297,6 +1409,16 @@ def clean_and_prepare_cvr_data(raw_hits: List[Dict[str, Any]]) -> pd.DataFrame:
         "Telefon",
         "Email",
         "Hjemmeside",
+        # --- GMB-beslutning (historikbevarende) ---
+        "HjemmesideGMB",
+        "HjemmesideGMB_Rå",
+        "HjemmesideGMB_Kilde",
+        "HjemmesideGMB_PlaceId",
+        "HjemmesideGMB_By",
+        "HjemmesideGMB_Postnr",
+        "HjemmesideGMB_Status",
+        "HjemmesideGMB_Score",
+        "HjemmesideGMB_Confirm",
         "HjemmesideLiveBool",   
         "HjemmesideBemærkning",
         "HjemmesideKilde",
