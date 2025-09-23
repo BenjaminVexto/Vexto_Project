@@ -170,6 +170,20 @@ class CachingHttpClient:
                 log.debug(f"Invalid URL format: {u}")
                 return 0, ""
         
+        try:
+            import brotli
+            ae = "gzip, deflate, br"
+        except ImportError:
+            ae = "gzip, deflate"
+            log.warning(f"Brotli not installed - using fallback Accept-Encoding: {ae} for {u}")
+        
+        headers = {
+            "User-Agent": "VextoContactFinder/1.0 (+https://vexto.io)",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
+            "Accept-Encoding": ae,
+        }
+
         # Cache check (hurtig return hvis hit)
         if u in self._cache:
             self.hits += 1
@@ -1325,6 +1339,8 @@ def _fetch_robots_txt(
         # Ingen/ubrugelig robots → returnér tomt og cache, så vi ikke hamrer igen
         if status == 0 or not text or status in (301, 302, 401, 403):
             _ROBOTS_CACHE[host] = (status, text or "")
+            if not text and status == 200:
+                log.debug(f"Empty text in robots.txt for {base_url} despite status 200 - likely decompression issue, treating as allow all")
             return [], []
         
         sitemaps, disallows = [], []

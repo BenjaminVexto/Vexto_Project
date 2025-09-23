@@ -163,7 +163,10 @@ def _domain_match(website_url: str, target_url: str) -> bool:
 
 
 def _build_details_url(place_id: str, api_key: str, language: Optional[str]) -> str:
-    fields = "rating,user_ratings_total,name,formatted_address,opening_hours,website,photos,geometry,types,international_phone_number"
+    fields = (
+        "rating,user_ratings_total,name,formatted_address,opening_hours,website,photos,"
+        "geometry,types,international_phone_number,formatted_phone_number"
+    )
     lang_param = f"&language={language}" if language else ""
     return (
         "https://maps.googleapis.com/maps/api/place/details/json"
@@ -267,47 +270,239 @@ def _norm_phone_for_google(phone: Optional[str]) -> Optional[str]:
         return "+" + p
     return p if p.startswith("+") else f"+{p}"
 
+def _digits_only(s: Optional[str]) -> str:
+    return re.sub(r"\D", "", s or "")
+
+def _normalize_for_compare(p: Optional[str]) -> str:
+    """
+    Sammenlign lokale/intl. varianter robust:
+    - normaliser til E.164 (+45 for DK hvor muligt via _norm_phone_for_google)
+    - fjern ikke-cifre
+    - hvis '45' + 8 lokale cifre -> brug sidste 8 til robust sammenligning
+    """
+    d = _digits_only(_norm_phone_for_google(p))
+    if len(d) == 10 and d.startswith("45"):
+        return d[-8:]
+    return d
+
+def _phones_equal(a: Optional[str], b: Optional[str]) -> bool:
+    return _normalize_for_compare(a) == _normalize_for_compare(b)
+
 
 # =============================
 # Phone autodiscovery (valgfri)
 # =============================
 
 _PHONE_SELECTORS = (r"kontakt", r"contact", r"kontakt-os", r"om-os")
-_PHONE_RE = re.compile(r"(\+?\d[\d\s\-().]{6,}\d)")
+# E.164 maks 15 cifre – strammere match for at undgå meget lange tokens fra scripts/IDs.
+_PHONE_RE = re.compile(r"(?<!\w)(\+?\d[\d\s().-]{6,18}\d)(?!\w)")
+# Fang og prioriter tel:-links (typisk mest pålidelige).
+_TEL_HREF_RE = re.compile(r'href=["\']tel:([+\d][\d\s().-]{6,18}\d)["\']', re.IGNORECASE)
+# Labels vi leder efter i nærheden af telefonnumre
+_LABEL_WORDS = ("telefon", "tlf", "phone", "ring", "kontakt", "sales")
+_LABEL_NEAR_RE = re.compile(r"(?i)(telefon|tlf|phone|ring|kontakt|sales)")
+# Simple kendt "fake"
+_FAKE_NUMBERS = {"+1234567890"}
+
+def _extract_jsonld_phones(html: str) -> List[str]:
+    phones: List[str] = []
+    try:
+        for m in re.finditer(r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>', html or "", re.I | re.S):
+            raw = m.group(1)
+            # Nogle sites har flere JSON-objekter i samme <script>; prøv begge formater
+            candidates = []
+            try:
+                candidates = [json.loads(raw)]
+            except Exception:
+                # Prøv at finde {…} blokke inde i scriptet
+                for jm in re.finditer(r"\{.*?\}", raw, re.S):
+                    try:
+                        candidates.append(json.loads(jm.group(0)))
+                    except Exception:
+                        pass
+            def walk(obj):
+                if isinstance(obj, dict):
+                    for k, v in obj.items():
+                        if k.lower() == "telephone" and isinstance(v, str):
+                            phones.append(v)
+                        elif k.lower() == "telephone" and isinstance(v, list):
+                            phones.extend([x for x in v if isinstance(x, str)])
+                        else:
+                            walk(v)
+                elif isinstance(obj, list):
+                    for it in obj:
+                        walk(it)
+            for cand in candidates:
+                walk(cand)
+    except Exception:
+        pass
+    # normaliser + dedup
+    out: List[str] = []
+    seen = set()
+    for p in phones:
+        norm = _norm_phone_for_google(p)
+        if not norm:
+            continue
+        digits = re.sub(r"\D", "", norm)
+        if not (8 <= len(digits) <= 15):
+            continue
+        if norm in _FAKE_NUMBERS:
+            continue
+        if norm not in seen:
+            seen.add(norm)
+            out.append(norm)
+    return out
+
+
+def _phones_with_html_evidence(html: str, candidates: List[str]) -> dict:
+    """
+    Returnér et dict phone->score baseret på evidens i HTML:
+    - tel:-links (stærk)
+    - label-nærhed (Telefon/Tlf/Phone/…)
+    """
+    html = html or ""
+    score: dict[str, float] = {p: 0.0 for p in candidates}
+    # tel: links
+    tel_hits = set(_norm_phone_for_google(p) for p in _TEL_HREF_RE.findall(html))
+    for p in tel_hits:
+        if p in score:
+            score[p] += 50.0
+    # label-nærhed: kig i nærheden (± 40 tegn) hvor nummer forekommer i rå HTML
+    for p in candidates:
+        if not p:
+            continue
+        # søg efter forskellige varianter (med/uden mellemrum)
+        pattern = re.escape(p).replace(r"\+", r"\+").replace(r"\ ", r"[ \s]*")
+        for m in re.finditer(pattern, html):
+            start = max(0, m.start() - 40)
+            end = min(len(html), m.end() + 5)
+            snippet = html[start:end]
+            if _LABEL_NEAR_RE.search(snippet):
+                score[p] += 20.0
+    return score
 
 def _extract_candidate_phones(text: str) -> List[str]:
-    raw = set(m.group(1) for m in _PHONE_RE.finditer(text or ""))
-    out: List[str] = []
-    for r in raw:
-        digits = re.sub(r"\D", "", r)
-        if len(digits) >= 8:  # heuristik
-            norm = _norm_phone_for_google(r)
-            if norm:
-                out.append(norm)
-    # dedup
+    text = text or ""
+    tel_hits = [m.strip() for m in _TEL_HREF_RE.findall(text)]
+    txt_hits = [m.strip() for m in _PHONE_RE.findall(text)]
+
+    def to_e164(p: str) -> Optional[str]:
+        norm = _norm_phone_for_google(p)
+        if not norm:
+            return None
+        digits = re.sub(r"\D", "", norm)
+        # E.164: max 15 cifre (uden +). Min 8 som simpel heuristik.
+        if not (8 <= len(digits) <= 15):
+            return None
+        if norm in _FAKE_NUMBERS:
+            return None
+        # DK-plausibilitet: +45 og første lokale ciffer må ikke være 0/1
+        if norm.startswith("+45"):
+            last8 = re.sub(r"\D", "", norm)[-8:]
+            if not last8 or last8[0] in ("0", "1"):
+                return None
+        return norm
+
+    cleaned: List[str] = []
+    # 1) tel: links først
+    for raw in tel_hits:
+        e164 = to_e164(raw)
+        if e164:
+            cleaned.append(e164)
+    # 2) synlig tekst som fallback
+    for raw in txt_hits:
+        e164 = to_e164(raw)
+        if e164:
+            cleaned.append(e164)
+
+    # dedup + prioritering: +45 først; derefter længde tæt på 10 (45 + 8 cifre)
     seen = set()
-    return [p for p in out if not (p in seen or seen.add(p))]
+    deduped = [p for p in cleaned if not (p in seen or seen.add(p))]
+    deduped.sort(key=lambda p: (0 if p.startswith("+45") else 1,
+                                abs(len(re.sub(r"\D", "", p)) - 10)))
+    return deduped
 
 async def _discover_site_phone_numbers(client: AsyncHtmlClient, url: str) -> List[str]:
     """
-    Meget let-weight autodetektion: hent / og et par sandsynlige kontakt-URLs,
-    parse for telefonnumre og normaliser.
+    Hent / og sandsynlige kontakt-URLs, udtræk telefoner fra:
+      - JSON-LD (telephone)
+      - tel:-links
+      - synlig tekst
+    og score dem på tværs af sider (kontakt-side bonus, tel-link/label bonus).
     """
     host = (urlparse(url).scheme + "://" + (urlparse(url).hostname or "")).rstrip("/")
-    candidates = [host] + [f"{host}/{slug.strip('/')}/" for slug in _PHONE_SELECTORS]
-    found: List[str] = []
-    for u in candidates:
+    pages = [host] + [f"{host}/{slug.strip('/')}/" for slug in _PHONE_SELECTORS]
+
+    # aggreger
+    total_score: dict[str, float] = {}
+    seen_on_pages: dict[str, int] = {}
+    dk_only = (urlparse(url).hostname or "").lower().endswith(".dk")
+
+    for u in pages:
         try:
             r = await client.httpx_get(u)
-            phones = _extract_candidate_phones(r.text or "")
-            if phones:
-                log.info(f"[GMB/PHONE/AUTO] {u} -> {phones}")
-                found.extend(phones)
+            html = r.text or ""
+
+            # 1) JSON-LD
+            jsonld_phones = _extract_jsonld_phones(html)
+
+            # 2) Synlig tekst/tel: (genbruger eksisterende extractor til at normalisere)
+            text_phones = _extract_candidate_phones(html)
+
+            # union af kandidater på siden
+            page_candidates = list({*jsonld_phones, *text_phones})
+
+            # evidens-score i denne HTML
+            evid = _phones_with_html_evidence(html, page_candidates)
+
+            # bonus: hvis URL ligner kontakt-side
+            is_contact = any(slug in u.lower() for slug in ("kontakt", "contact"))
+            for p in page_candidates:
+                if dk_only and not (p or "").startswith("+45"):
+                    # Hvis .dk-domæne → foretræk danske numre
+                    continue
+                base = 0.0
+                if p in jsonld_phones:
+                    base += 100.0  # stærk kilde
+                base += evid.get(p, 0.0)
+                if is_contact:
+                    base += 15.0
+                # fordeling på tværs af sider
+                total_score[p] = total_score.get(p, 0.0) + base
+                seen_on_pages[p] = seen_on_pages.get(p, 0) + 1
+
+            # Kun vis DK i preview for mindre støj
+            preview_dk = [p for p in page_candidates if p.startswith("+45")]
+            preview = preview_dk[:10] + (["…"] if len(preview_dk) > 10 else [])
+            if preview:
+                log.info(f"[GMB/PHONE/AUTO] {u} -> {preview}")
         except Exception as e:
             log.debug(f"[GMB/PHONE/AUTO] fejl på {u}: {e}")
-    # dedup
-    seen = set()
-    return [p for p in found if not (p in seen or seen.add(p))]
+
+    if not total_score:
+        return []
+
+    # Endelig rangering:
+    #  - høj score først
+    #  - flere sider først
+    #  - +45 først
+    #  - længde tæt på 10 (45 + 8 cifre)
+    def rank_key(p: str):
+        digits_len = len(re.sub(r"\D", "", p))
+        return (-total_score.get(p, 0.0),
+                -seen_on_pages.get(p, 0),
+                0 if p.startswith("+45") else 1,
+                abs(digits_len - 10))
+
+    ranked = sorted(total_score.keys(), key=rank_key)
+
+    # Debug: vis top-10 med score og antal sider
+    debug_top = sorted(total_score.keys(), key=lambda p: (-total_score[p], -seen_on_pages[p]))[:10]
+    dbg = [f"{p} (score={total_score[p]:.1f}, pages={seen_on_pages[p]})" for p in debug_top]
+    if dbg:
+        log.info("[GMB/PHONE/RANKED] %s%s", dbg[:10], " …" if len(debug_top) > 10 else "")
+
+    return ranked
 
 
 # =============================
@@ -374,27 +569,52 @@ async def fetch_gmb_data(
     locationbias = _locationbias_from_url(url)
 
     # ---- ANKER: BEFORE ----
-    log.info("===== [GMB/START] domain=%s cvr=%s company=%s phone=%s =====",
-             (urlparse(url).hostname or ""), cvr or "N/A", company_name or "N/A", phone or "N/A")
+    log.info(
+        "===== [GMB/START] domain=%s cvr=%s company=%s phone=%s =====",
+        (urlparse(url).hostname or ""), cvr or "N/A", company_name or "N/A", phone or "N/A"
+    )
 
     # -------- Telefon først --------
     norm_phone = _norm_phone_for_google(phone)
     phones_tried: List[str] = []
     if not norm_phone:
         try:
-            discovered = await _discover_site_phone_numbers(client, url)
-            if discovered:
-                norm_phone = discovered[0]
-                phones_tried = discovered
-                log.info("[GMB/PHONE/DISCOVERED] %s", phones_tried)
+            phones_tried = await _discover_site_phone_numbers(client, url)
+            if phones_tried:
+                log.info(
+                    "[GMB/PHONE/DISCOVERED] %s%s",
+                    phones_tried[:10], " …" if len(phones_tried) > 10 else ""
+                )
         except Exception as e:
             log.debug(f"[GMB/PHONE/DISCOVER] fejl: {e}")
+    else:
+        phones_tried = [norm_phone]
 
+    if phones_tried:
+        log.info(
+            "[GMB/PHONE/CANDIDATES] top=%s%s",
+            phones_tried[:5], " …" if len(phones_tried) > 5 else ""
+        )
+
+    # --- PATCH: samle site-telefoner til senere phone-match ---
+    site_phones_set = set()
     if norm_phone:
-        log.info("[GMB/PHONE] søger place_id for phone='%s'", norm_phone)
+        site_phones_set.add(norm_phone)
+    if phones_tried:
+        site_phones_set.update(phones_tried)
+
+    # Prøv op til 5 bedste kandidater i prioriteret rækkefølge
+    for idx, ph in enumerate(phones_tried[:5], 1):
+        log.info("[GMB/PHONE] (%d/%d) søger place_id for phone='%s'",
+                 idx, min(5, len(phones_tried)), ph)
         try:
-            jph = await _find_by_phone(client, api_key, norm_phone)
-            if (jph or {}).get("status") == "OK":
+            jph = await _find_by_phone(client, api_key, ph)
+            # --- PATCH: tydelig status/candidates log ---
+            ph_status = str((jph or {}).get("status"))
+            ph_candidates = int(len((jph or {}).get("candidates") or []))
+            log.info("[GMB/PHONE] status=%s candidates=%d for %s", ph_status, ph_candidates, ph)
+
+            if ph_status == "OK":
                 for cand in (jph.get("candidates") or []):
                     pid = (cand or {}).get("place_id")
                     if not pid:
@@ -404,16 +624,29 @@ async def fetch_gmb_data(
                         continue
                     result = (j2 or {}).get("result") or {}
                     website = (result.get("website") or "").strip().lower()
+                    g_place_phone_int = result.get("international_phone_number") or ""
+                    g_place_phone_fmt = result.get("formatted_phone_number") or ""
+
                     target_name = _target_company_from(url, company_name)
                     name_sim = _name_similarity(result.get("name") or "", target_name)
-                    contains_token = _contains_as_token(result.get("name") or "", target_name)
-                    name_ok = (name_sim >= 0.92 or contains_token) and not _looks_confusable(target_name, result.get("name") or "")
+                    name_ok = (name_sim >= 0.90) and not _looks_confusable(
+                        target_name, result.get("name") or ""
+                    )
                     website_ok = _domain_match(website, url)
 
-                    decision = "ACCEPT" if (website_ok or name_ok) else "REJECT"
+                    # match begge Google-felter mod alle kendte site-telefoner
+                    phone_ok = any(
+                        _phones_equal(gp, sp)
+                        for gp in (g_place_phone_int, g_place_phone_fmt)
+                        for sp in site_phones_set
+                    )
+
+                    decision = "ACCEPT" if (website_ok or name_ok or phone_ok) else "REJECT"
                     log.info(
-                        "[GMB/ANCHOR/PHONE] decision=%s name='%s' sim=%.2f website_ok=%s website='%s' place_id=%s",
-                        decision, result.get("name"), name_sim, website_ok, website, pid
+                        "[GMB/ANCHOR/PHONE] decision=%s name='%s' sim=%.2f website_ok=%s phone_ok=%s "
+                        "place_phone_int='%s' place_phone_fmt='%s' website='%s' place_id=%s",
+                        decision, result.get("name"), name_sim, website_ok, phone_ok,
+                        g_place_phone_int, g_place_phone_fmt, website, pid
                     )
 
                     if decision == "ACCEPT":
@@ -434,7 +667,8 @@ async def fetch_gmb_data(
                             "gmb_place_id": pid,
                             "gmb_status": "ok",
                         }
-                        log.info("===== [GMB/RESULT] status=ok via PHONE place_id=%s name='%s' =====", pid, result.get("name"))
+                        log.info("===== [GMB/RESULT] status=ok via PHONE place_id=%s name='%s' =====",
+                                 pid, result.get("name"))
                         return metrics
         except Exception as e:
             log.error(f"[GMB/PHONE] fejl: {e}")
@@ -451,7 +685,9 @@ async def fetch_gmb_data(
     for i, name in enumerate(queries, 1):
         log.info("🔎 [FindPlace %d/%d] '%s'", i, len(queries), name)
         try:
-            candidates, status = await _find_place_candidates(client, api_key, name, language, locationbias)
+            candidates, status = await _find_place_candidates(
+                client, api_key, name, language, locationbias
+            )
         except Exception as e:
             log.error("Fejl under FindPlace for '%s': %s", name, e)
             continue
@@ -485,13 +721,26 @@ async def fetch_gmb_data(
             target_name = _target_company_from(url, company_name)
             name_sim = _name_similarity(result.get("name") or "", target_name)
             contains_token = _contains_as_token(result.get("name") or "", target_name)
-            name_ok = (name_sim >= 0.92 or contains_token) and not _looks_confusable(target_name, result.get("name") or "")
+            name_ok = (name_sim >= 0.92 or contains_token) and not _looks_confusable(
+                target_name, result.get("name") or ""
+            )
             website_ok = _domain_match(website, url)
 
-            decision = "ACCEPT" if (website_ok or name_ok) else "REJECT"
+            # --- PATCH: phone-match mod site_phones_set ---
+            g_place_phone_int = result.get("international_phone_number") or ""
+            g_place_phone_fmt = result.get("formatted_phone_number") or ""
+            phone_ok = any(
+                _phones_equal(gp, sp)
+                for gp in (g_place_phone_int, g_place_phone_fmt)
+                for sp in site_phones_set
+            )
+
+            decision = "ACCEPT" if (website_ok or name_ok or phone_ok) else "REJECT"
             log.info(
-                "[GMB/ANCHOR] decision=%s name='%s' sim=%.2f website_ok=%s reviews=%s website='%s' place_id=%s",
-                decision, result.get("name"), name_sim, website_ok, count, website, pid
+                "[GMB/ANCHOR] decision=%s name='%s' sim=%.2f website_ok=%s phone_ok=%s reviews=%s "
+                "place_phone_int='%s' place_phone_fmt='%s' website='%s' place_id=%s",
+                decision, result.get("name"), name_sim, website_ok, phone_ok, count,
+                g_place_phone_int, g_place_phone_fmt, website, pid
             )
 
             if decision == "ACCEPT":
@@ -508,7 +757,8 @@ async def fetch_gmb_data(
                     "gmb_place_id": pid,
                     "gmb_status": "ok",
                 }
-                log.info("===== [GMB/RESULT] status=ok via QUERY place_id=%s name='%s' =====", pid, result.get("name"))
+                log.info("===== [GMB/RESULT] status=ok via QUERY place_id=%s name='%s' =====",
+                         pid, result.get("name"))
                 return final_result
 
     # -------- Fallback: Text Search nær center --------
@@ -516,7 +766,8 @@ async def fetch_gmb_data(
     if center:
         lat, lng, radius = center
         for i, name in enumerate(queries, 1):
-            log.info("[Fallback/TextSearch %d/%d] '%s' near %.4f,%.4f (r=%dm)", i, len(queries), name, lat, lng, radius)
+            log.info("[Fallback/TextSearch %d/%d] '%s' near %.4f,%.4f (r=%dm)",
+                     i, len(queries), name, lat, lng, radius)
             try:
                 ts_url = (
                     "https://maps.googleapis.com/maps/api/place/textsearch/json"
@@ -556,13 +807,27 @@ async def fetch_gmb_data(
                 target_name = _target_company_from(url, company_name)
                 name_sim = _name_similarity(result.get("name") or "", target_name)
                 contains_token = _contains_as_token(result.get("name") or "", target_name)
-                name_ok = (name_sim >= 0.92 or contains_token) and not _looks_confusable(target_name, result.get("name") or "")
+                name_ok = (name_sim >= 0.92 or contains_token) and not _looks_confusable(
+                    target_name, result.get("name") or ""
+                )
                 website_ok = _domain_match(website, url)
 
-                decision = "ACCEPT" if (website_ok or name_ok) else "REJECT"
+                # --- PATCH: phone-match mod site_phones_set ---
+                g_place_phone_int = result.get("international_phone_number") or ""
+                g_place_phone_fmt = result.get("formatted_phone_number") or ""
+
+                phone_ok = any(
+                    _phones_equal(gp, sp)
+                    for gp in (g_place_phone_int, g_place_phone_fmt)
+                    for sp in site_phones_set
+                )
+
+                decision = "ACCEPT" if (website_ok or name_ok or phone_ok) else "REJECT"
                 log.info(
-                    "[GMB/ANCHOR/FALLBACK] decision=%s name='%s' sim=%.2f website_ok=%s reviews=%s website='%s' place_id=%s",
-                    decision, result.get("name"), name_sim, website_ok, count, website, pid
+                    "[GMB/ANCHOR/FALLBACK] decision=%s name='%s' sim=%.2f website_ok=%s phone_ok=%s reviews=%s "
+                    "place_phone_int='%s' place_phone_fmt='%s' website='%s' place_id=%s",
+                    decision, result.get("name"), name_sim, website_ok, phone_ok, count,
+                    g_place_phone_int, g_place_phone_fmt, website, pid
                 )
 
                 if decision == "ACCEPT":
@@ -579,7 +844,8 @@ async def fetch_gmb_data(
                         "gmb_place_id": pid,
                         "gmb_status": "ok",
                     }
-                    log.info("===== [GMB/RESULT] status=ok via FALLBACK place_id=%s name='%s' =====", pid, result.get("name"))
+                    log.info("===== [GMB/RESULT] status=ok via FALLBACK place_id=%s name='%s' =====",
+                             pid, result.get("name"))
                     return final_result
 
     # -------- Intet fundet --------
