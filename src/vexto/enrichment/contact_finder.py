@@ -36,6 +36,7 @@ import threading
 import logging.handlers
 import random  # ANKER: RATE_LIMIT_BACKOFF
 import httpx
+import importlib
 import dns.resolver
 from collections import defaultdict  # ANKER: RATE_LIMIT_BACKOFF
 from dataclasses import dataclass
@@ -45,6 +46,10 @@ from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 from typing import Any, Iterable, Optional
 from vexto.scoring.http_client import _accept_encoding
+
+urllib3 = None
+if importlib.util.find_spec("urllib3") is not None:
+    urllib3 = importlib.import_module("urllib3")
 
 # --- http_client-ankre (robuste med fallback-navne) ---
 try:
@@ -229,9 +234,10 @@ class CachingHttpClient:
                             _GET_CACHE[u] = (0, "")  # Undgå gentagne forsøg samme URL
                             return 0, ""
                         try:
-                            with httpx.Client(http2=True, timeout=self.timeout, headers=headers, 
+                            with httpx.Client(http2=True, timeout=self.timeout, headers=headers,
                                             follow_redirects=True, verify=False) as cli:
-                                urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+                                if urllib3 is not None:
+                                    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
                                 r = cli.get(u)
                                 last_status = r.status_code
                                 last_text = r.text or ""
@@ -286,7 +292,7 @@ class CachingHttpClient:
             except Exception as e:
                 # Andre fejl - eksponentiel backoff
                 sleep_for = (1.2 ** attempt) + random.uniform(0, 0.5)
-                log.debug(f"http_get error {e!r} on {u} – retry in {sleep_for:.1f}s")
+                log.debug(f"HTTP client error {e!r} on {u} – retry in {sleep_for:.1f}s")
                 time.sleep(sleep_for)
         
         # Alle retries brugt op
@@ -345,7 +351,12 @@ def _norm_url_for_fetch(u: str) -> str:
     except Exception:
         return u
 
-def _fetch_with_playwright_sync(url: str, pre_html: Optional[str] = None, pre_status: Optional[int] = None) -> str:
+def _fetch_with_playwright_sync(
+    url: str,
+    pre_html: Optional[str] = None,
+    pre_status: Optional[int] = None,
+    http_client: Optional[CachingHttpClient] = None,
+) -> str:
     """Renderer side med delt Playwright-klient (singleton).
     Indeholder status/_needs_js logging, timeout og circuit-breaker.
     Accepterer evt. pre_html/pre_status for at undgå ekstra GET.
@@ -353,13 +364,15 @@ def _fetch_with_playwright_sync(url: str, pre_html: Optional[str] = None, pre_st
     if AsyncHtmlClient is None:
         return ""
     import asyncio
+    client = http_client or CachingHttpClient(timeout=10.0)
+
     async def _go(u: str, given_html: Optional[str], given_status: Optional[int]) -> str:
         global _SHARED_PW_CLIENT, _PW_FAILS_BY_HOST, _PW_FAILS_MAX, _PW_DISABLED_HOSTS
         # Brug pre_html/pre_status hvis givet; ellers billig GET
         status = given_status
         pre_html = given_html
         if status is None or pre_html is None:
-            s2, h2 = http_get(u, timeout=10.0)
+            s2, h2 = client.get(u)
             if status is None:
                 status = s2
             if pre_html is None:
@@ -734,7 +747,12 @@ def _contactish_terms(lang: str) -> list[str]:
     """Returner sprog-specifikke kontakt-relaterede termer."""
     return _LANG_TERMS.get(lang.split("-")[0], _LANG_TERMS["da"])
 
-def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> list[str]:
+def discover_candidates(
+    base_url: str,
+    base_html: str,
+    max_urls: int = 5,
+    http_client: Optional[CachingHttpClient] = None,
+) -> list[str]:
     """Returner interne kandidatsider i prioriteret rækkefølge (Home → Sitemap → WP)."""
 
     import ipaddress
@@ -784,6 +802,8 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
     seen: set[str] = set()
     ranked: list[tuple[int, str]] = []
 
+    client = http_client or CachingHttpClient(timeout=DEFAULT_TIMEOUT)
+
     # 1) Home-link scoring
     lang = _detect_lang_from_html(base_html or "")
     terms = _contactish_terms(lang)
@@ -808,13 +828,13 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
             seen.add(abs_u)
 
     # 2) robots.txt → sitemaps
-    sitemaps, disallows = _fetch_robots_txt(base_url)
+    sitemaps, disallows = _fetch_robots_txt(base_url, http_client=client)
 
     # Check sitemaps for contact pages
     pos_slugs = tuple(t.replace(" ", "-") for t in terms)
     for sm_url in sitemaps[:3]:  # Max 3 sitemaps
         try:
-            sitemap_urls = _fetch_sitemap_urls(sm_url)
+            sitemap_urls = _fetch_sitemap_urls(sm_url, http_client=client)
             for loc in sitemap_urls:
                 if not _same_host(base_url, loc):
                     continue
@@ -845,7 +865,7 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
     #    Ensret til trailing slash og undgå dobbelte kald.
     if not _is_disallowed("/wp-json/", disallows):
         wp_root = urljoin(base_url, "/wp-json/")
-        st_wp, _ = http_get(wp_root, timeout=5.0, retries=1)
+        st_wp, _ = client.get(wp_root)
         if st_wp != 200:
             log.debug(f"WP REST not available (status={st_wp}) for host={_host_of(base_url)} – skipping WP searches")
         else:
@@ -855,7 +875,7 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
 
             # 1) Liste alle pages én gang og filtrér klient-side
             api_list = urljoin(base_url, "/wp-json/wp/v2/pages/?_fields=link,title&per_page=100")
-            st_wp, body = http_get(api_list, timeout=7.0, retries=0)
+            st_wp, body = client.get(api_list)
             if st_wp in (401, 403, 404):
                 wp_blocked = True
             elif st_wp == 200 and body:
@@ -883,7 +903,7 @@ def discover_candidates(base_url: str, base_html: str, max_urls: int = 5) -> lis
             if not wp_blocked and not any(score == 4 for score, _ in ranked[-8:]):
                 for t in ("kontakt", "om"):
                     api = urljoin(base_url, f"/wp-json/wp/v2/pages/?search={t}&_fields=link,title&per_page=10")
-                    st_wp, body = http_get(api, timeout=5.0, retries=0)
+                    st_wp, body = client.get(api)
                     if st_wp in (401, 403, 404):
                         break
                     if st_wp == 200 and body:
@@ -1262,7 +1282,11 @@ def _abs_url(base: str, href: str) -> Optional[str]:
     except Exception:
         return None
 
-def _fetch_robots_txt(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[list[str], list[str]]:
+def _fetch_robots_txt(
+    base_url: str,
+    timeout: float = DEFAULT_TIMEOUT,
+    http_client: Optional[CachingHttpClient] = None,
+) -> tuple[list[str], list[str]]:
     """
     Returnér (sitemaps, disallows) fra robots.txt.
     Kun simpel parsing: 'Sitemap:' og 'Disallow:' linjer.
@@ -1294,7 +1318,8 @@ def _fetch_robots_txt(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[
         else:
             sp = urlsplit(base_url)
             robots_url = f"{sp.scheme}://{sp.netloc}/robots.txt"
-            status, text = http_get(robots_url, timeout=timeout)
+            client = http_client or CachingHttpClient(timeout=timeout)
+            status, text = client.get(robots_url)
             _ROBOTS_CACHE[host] = (status, text or "")
         
         # Ingen/ubrugelig robots → returnér tomt og cache, så vi ikke hamrer igen
@@ -1322,7 +1347,7 @@ def _fetch_robots_txt(base_url: str, timeout: float = DEFAULT_TIMEOUT) -> tuple[
                     log.warning(f"Invalid crawl-delay: {l}")
                     pass
 
-        # TILFØJELSE: Gem crawl-delay globalt (brug i http_get for delay)
+        # TILFØJELSE: Gem crawl-delay globalt (bruges af CachingHttpClient)
         if crawl_delay:
             _HOST_CRAWL_DELAYS[host] = crawl_delay
 
@@ -1367,12 +1392,17 @@ def _is_disallowed(path: str, disallows: list[str]) -> bool:
     return False
 
 @lru_cache(maxsize=512)
-def _fetch_sitemap_urls(sitemap_url: str, timeout: float = DEFAULT_TIMEOUT) -> list[str]:
+def _fetch_sitemap_urls(
+    sitemap_url: str,
+    timeout: float = DEFAULT_TIMEOUT,
+    http_client: Optional[CachingHttpClient] = None,
+) -> list[str]:
     """Hent sitemap (xml eller .gz) og returnér liste af <loc>-URLs."""
     urls: list[str] = []
     try:
         import httpx, io, gzip as _gz
-        status, text = http_get(sitemap_url, timeout=timeout)
+        client = http_client or CachingHttpClient(timeout=timeout)
+        status, text = client.get(sitemap_url)
         if status != 200:
             return []
         data = text.encode("utf-8") if text else b""
@@ -2878,7 +2908,13 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
     return out
 
 
-def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optional[Path]) -> list[ContactCandidate]:
+def _wp_json_enrich(
+    page_url: str,
+    html: str,
+    timeout: float,
+    cache_dir: Optional[Path],
+    http_client: Optional[CachingHttpClient] = None,
+) -> list[ContactCandidate]:
     """
     WP-JSON fallback: find <link ... href=".../wp-json/wp/v2/pages/<id>"> or ?p=<id>,
     fetch content.rendered, parse again for staff-grid/mailto/microformats.
@@ -2896,8 +2932,10 @@ def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optiona
     # Dedupér rækkefølgebevarende
     api_urls = list(dict.fromkeys(api_urls))
     # === ANKER: WP_JSON_BUILD_URLS END ===
-
+    
     # === ANKER: WP_JSON_PROCESS_LOOP BEGIN ===
+    client = http_client or CachingHttpClient(timeout=timeout)
+
     for idx, api in enumerate(api_urls[:10]):  # Cap at 10 calls per page
         try:
             jtxt = _fetch_text(api, timeout=timeout, cache_dir=cache_dir, max_age_hours=6)
@@ -2925,7 +2963,7 @@ def _wp_json_enrich(page_url: str, html: str, timeout: float, cache_dir: Optiona
                     pgurl = it.get("url") or it.get("link")
                     if not pgurl:
                         continue
-                    st2, html2 = http_get(pgurl, timeout=timeout)
+                    st2, html2 = client.get(pgurl)
                     if st2 == 200 and html2:
                         t2 = _parse_html(html2)
                         out.extend(_extract_from_staff_grid(pgurl, t2))
@@ -3378,7 +3416,12 @@ class ContactFinder:
             self._pw_attempted.add(key)
             self._pw_budget -= 1
             pre_status = 200 if html and not _looks_404(html) else None
-            rendered = _fetch_with_playwright_sync(url, pre_html=html or None, pre_status=pre_status)
+            rendered = _fetch_with_playwright_sync(
+                url,
+                pre_html=html or None,
+                pre_status=pre_status,
+                http_client=self.http_client,
+            )
             if rendered:
                 html = rendered
             self._rendered_once.add(key)
@@ -3429,7 +3472,15 @@ class ContactFinder:
         # NEW: WP-JSON fallback hvis vi stadig ikke fandt noget og siden ligner WP
         if not out and ("wp-content" in html or "wp-json" in html or "wp-block" in html or "wp-" in html):
             with contextlib.suppress(Exception):
-                out.extend(_wp_json_enrich(url, html, timeout=self.timeout, cache_dir=self.cache_dir))
+                out.extend(
+                    _wp_json_enrich(
+                        url,
+                        html,
+                        timeout=self.timeout,
+                        cache_dir=self.cache_dir,
+                        http_client=self.http_client,
+                    )
+                )
 
         # Normaliser let
         norm: list[ContactCandidate] = []
@@ -3613,7 +3664,12 @@ class ContactFinder:
                     return cleaned
 
         # 4) Kandidat-sider (Home → Sitemap → WP)
-        candidates = discover_candidates(url, root_html, max_urls=min(5, limit_pages))
+        candidates = discover_candidates(
+            url,
+            root_html,
+            max_urls=min(5, limit_pages),
+            http_client=self.http_client,
+        )
         candidates = _sticky_host_urls(url, root_html, candidates)
 
         # 5) Hent kandidat-sider
@@ -3664,7 +3720,12 @@ class ContactFinder:
         # 6) Playwright kun hvis nødvendig
         if _needs_js(root_html) and AsyncHtmlClient is not None and self._pw_budget > 0:
             try:
-                rendered = _fetch_with_playwright_sync(url, pre_html=root_html, pre_status=200 if root_html else None)
+                rendered = _fetch_with_playwright_sync(
+                    url,
+                    pre_html=root_html,
+                    pre_status=200 if root_html else None,
+                    http_client=self.http_client,
+                )
                 if rendered and not _looks_404(rendered):
                     htmls[url] = rendered
                     cands.extend(self._extract_all(url, rendered))

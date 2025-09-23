@@ -257,6 +257,15 @@ def _target_company_from(url: str, company_name: str | None) -> str:
     base = host.split('.', 1)[0] if '.' in host else host
     return re.sub(r'[^a-z0-9æøå]', ' ', base).strip()
 
+def _norm_phone_for_google(phone: str | None) -> str | None:
+    if not phone:
+        return None
+    # fjern alt undtagen cifre og plus
+    p = re.sub(r"[^\d+]", "", phone)
+    # sikr landskode (+45) hvis dansk 8-cifret uden kode
+    if p and not p.startswith("+") and len(p) == 8:
+        p = "+45" + p
+    return p
 
 # -----------------------------
 # Main fetcher
@@ -266,7 +275,8 @@ async def fetch_gmb_data(
     client: AsyncHtmlClient,
     url: str,
     cvr: str | None = None,
-    company_name: str | None = None
+    company_name: str | None = None,
+    phone: str | None = None,           # <- NYT
 ) -> SocialAndReputationMetrics:
     """
     Henter Google Business-data via Places API:
@@ -293,6 +303,54 @@ async def fetch_gmb_data(
     locationbias = _locationbias_from_url(url)
 
     log.info(f"Forsøger GMB for CVR {cvr or 'N/A'}, søgeliste: {queries}")
+
+    norm_phone = _norm_phone_for_google(phone)
+    if norm_phone:
+        log.info(f"[FindPlace/phone] Søger place_id for phone='{norm_phone}'")
+        find_phone_url = (
+            "https://maps.googleapis.com/maps/api/place/findplacefromtext/json"
+            f"?input={quote_plus(norm_phone)}&inputtype=phonenumber"
+            f"&fields=place_id,name,formatted_address&key={api_key}"
+        )
+        try:
+            rph = await client.httpx_get(find_phone_url)
+            jph = rph.json()
+            if (jph or {}).get("status") == "OK":
+                for cand in (jph or {}).get("candidates") or []:
+                    place_id = (cand or {}).get("place_id")
+                    if not place_id:
+                        continue
+                    details_url = _build_details_url(place_id, api_key, None)
+                    r2 = await client.httpx_get(details_url)
+                    j2 = r2.json()
+                    if (j2 or {}).get("status") != "OK":
+                        continue
+                    result = (j2 or {}).get("result") or {}
+                    website = (result.get("website") or "").strip().lower()
+                    target_name = _target_company_from(url, company_name)
+                    name_sim = _name_similarity(result.get("name") or "", target_name)
+                    if _domain_match(website, url) or name_sim >= 0.85:
+                        opening_hours = result.get("opening_hours") or {}
+                        photos = result.get("photos") or []
+                        count = result.get("user_ratings_total") or 0
+                        rating = result.get("rating")
+                        has_hours = bool(opening_hours.get("weekday_text") or opening_hours.get("periods"))
+                        log.info(f"[GMB/ACCEPT/PHONE] name='{result.get('name')}' sim={name_sim:.2f} website='{website}'")
+                        return {
+                            "gmb_review_count": int(count or 0),
+                            "gmb_average_rating": float(rating) if rating is not None else None,
+                            "gmb_profile_complete": True,
+                            "gmb_has_website": bool(website),
+                            "gmb_has_hours": has_hours,
+                            "gmb_photo_count": int(len(photos)),
+                            "gmb_business_name": result.get("name"),
+                            "gmb_address": result.get("formatted_address"),
+                            "gmb_place_id": place_id,
+                            "gmb_status": "ok",
+                        }
+        except Exception as e:
+            log.error(f"[FindPlace/phone] Fejl: {e}")
+
 
     # --------- Først: Find Place ----------
     for i, name in enumerate(queries, 1):
