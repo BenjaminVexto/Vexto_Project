@@ -31,6 +31,18 @@ log = logging.getLogger(__name__)
 print("Loading analyzer.py from:", __file__)
 
 # -------------------- DEFAULTS --------------------
+PLACEHOLDER_EMAIL_DOMAINS = {
+    "example.com", "example.org", "example.net",
+    "mysite.com", "test.com", "test.local"
+}
+
+PHONE_NOISE_WORDS = {
+    "gtm", "google", "analytics", "ga", "fb", "facebook",
+    "pixel", "tagmanager", "gtag"
+}
+# Robust telefon-regex (+45 valgfri, 8+ cifre med mellemrum/streger)
+PHONE_RE = re.compile(r'(?:\+?\s?45[\s-]?)?(?:(?:\d[\s-]?){8,})')
+
 DEFAULT_BASIC_SEO: BasicSEO = {
     'h1': None, 'h1_count': 0, 'h1_texts': None,
     'meta_description': None, 'meta_description_length': 0,
@@ -1842,8 +1854,9 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
                             "csp_enabled":                   sec_res.get("csp_enabled") or _has_csp(hlower),
                             "x_content_type_options_enabled":sec_res.get("x_content_type_options_enabled") or _has_xcto(hdr),
                             "x_frame_options_enabled":       sec_res.get("x_frame_options_enabled") or _has_xfo(hlower),
-                            "measured_on":                   "GET"
                         }
+                        
+                        analysis_data['security']['measured_on'] = "GET"
 
                         # Kun hvis noget blev bedre, så opdatér
                         if any(improved[k] and not sec_res.get(k) for k in ("hsts_enabled","csp_enabled","x_content_type_options_enabled","x_frame_options_enabled")):
@@ -2045,12 +2058,31 @@ async def analyze_single_url(client: http_client.AsyncHtmlClient, url: str, max_
     analysis_data['content']['average_word_count'] = int(sum(word_counts) / len(word_counts)) if word_counts else 0
     if keyword_scores:
         analysis_data['content']['keyword_relevance_score'] = sum(keyword_scores) / len(keyword_scores)
-    
-    analysis_data['conversion']['emails_found'] = sorted(emails)
+
+    # Filtrér kendte placeholder-mails/domæner (brug global liste)
+    placeholder_domains = PLACEHOLDER_EMAIL_DOMAINS
+    placeholder_addresses = {
+        "contact@mysite.com", "contact@example.com", "support@example.com",
+        "admin@example.com", "noreply@example.com"
+    }
+    filtered_emails = {
+        e for e in emails
+        if e and e.lower() not in placeholder_addresses
+        and not e.lower().split("@")[-1] in placeholder_domains
+        and not e.lower().endswith(tuple(f"@{d}" for d in placeholder_domains))
+    }
+
+    analysis_data['conversion']['emails_found'] = sorted(filtered_emails)
     analysis_data['conversion']['phone_numbers_found'] = sorted(phones)
     analysis_data['conversion']['form_field_counts'] = form_counts
     analysis_data['conversion']['trust_signals_found'] = sorted(trust_signals)
     
+    # Spejl CTA fra content → conversion, hvis conversion er tom
+    if not analysis_data['conversion'].get('cta_analysis') and analysis_data['content'].get('cta_analysis'):
+        analysis_data['conversion']['cta_analysis'] = analysis_data['content']['cta_analysis']
+        if analysis_data['content'].get('cta_score') is not None:
+            analysis_data['conversion']['cta_score'] = analysis_data['content']['cta_score']
+
     # Canonical og schema fra main_page_data (hvis bedre)
     if main_page_data:
         # Lås canonical til start-URL, hvis den findes; ellers må main_page_data supplere

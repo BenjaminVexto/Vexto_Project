@@ -35,6 +35,8 @@ import time
 import threading
 import logging.handlers
 import random  # ANKER: RATE_LIMIT_BACKOFF
+import httpx
+import dns.resolver
 from collections import defaultdict  # ANKER: RATE_LIMIT_BACKOFF
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -94,7 +96,6 @@ try:
 except Exception:
     AsyncHtmlClient = None  # type: ignore
 
-
 _SHARED_PW_CLIENT = None
 
 _HOST_CRAWL_DELAYS = {}
@@ -133,146 +134,142 @@ def _respect_host_budget(u: str) -> bool:
         return False
     return True
 
-def http_get(u: str, timeout: float = 10.0, retries: int = 3) -> tuple[int, str]:
-    """Eneste vej til HTML: GET med budget + exponential backoff + jitter + Retry-After."""
-    
-    # Validering af input
-    if not u or not isinstance(u, str):
-        return 0, ""
-    
-    # Håndter "nan" og andre ugyldige værdier
-    u = u.strip()
-    if u.lower() in ("nan", "none", "null", ""):
-        return 0, ""
-    
-    # Sørg for at URL har protokol
-    if not u.startswith(('http://', 'https://')):
-        # Prøv at rette det hvis det ligner et domæne
-        if re.match(r'^(www\.)?([a-z0-9\-]+\.)+[a-z]{2,}', u, re.I):
-            u = f"https://{u}"
-        else:
-            log.debug(f"Invalid URL format: {u}")
+class CachingHttpClient:
+    def __init__(self, timeout: float = 10.0, retries: int = 3, cache_size: int = 500):
+        self.timeout = timeout
+        self.retries = retries
+        self._cache = {}  # URL -> (status, text)
+        self.hits = 0
+        self.misses = 0
+
+    @lru_cache(maxsize=500)  # Cache pr. URL
+    def get(self, u: str) -> tuple[int, str]:
+        """Centraliseret GET med cache, budget, backoff, jitter."""
+        if not u or not isinstance(u, str):
             return 0, ""
-    
-    if not _respect_host_budget(u):
-        return 0, ""
-    
-    host = _host_of(u)
-    # [PATCH] tidlig skip når per-host fejlgrænse er ramt
-    if _HOST_DNS_FAILS.get(host, 0) >= _HOST_FAIL_LIMIT or _HOST_SSL_FAILS.get(host, 0) >= _HOST_FAIL_LIMIT:
-        log.debug(f"Host {host} har nået fejlgrænse (dns={_HOST_DNS_FAILS.get(host,0)}, ssl={_HOST_SSL_FAILS.get(host,0)}) – skipper {u}")
-        return 0, ""
+        u = u.strip()
+        if u.lower() in ("nan", "none", "null", ""):
+            return 0, ""
 
-    # Respektér evt. aktiv backoff-vindue
-    earliest = _RATE_LIMIT_HOSTS.get(host, 0.0)
-    if _now() < earliest:
-        wait = earliest - _now()
-        time.sleep(min(wait, 3.0))
+        # Sørg for protokol
+        if not u.startswith(('http://', 'https://')):
+            if re.match(r'^(www\.)?([a-z0-9\-]+\.)+[a-z]{2,}', u, re.I):
+                u = f"https://{u}"
+            else:
+                log.debug(f"Invalid URL format: {u}")
+                return 0, ""
 
-    
-    last_status, last_text = 0, ""
-    for attempt in range(retries):
-        try:
-            _HOST_REQUESTS[host] += 1
-            ae = _accept_encoding() if callable(_accept_encoding) else _accept_encoding
-            if not isinstance(ae, (str, bytes)) or (isinstance(ae, str) and not ae.strip()):
-                ae = "gzip, deflate, br"
-            headers = {
-                "User-Agent": "VextoContactFinder/1.0 (+https://vexto.io)",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
-                "Accept-Encoding": ae,
-            }
-            
-            # Prøv først med SSL-verifikation
+        # Cache check (hurtig return hvis hit)
+        if u in self._cache:
+            self.hits += 1
+            return self._cache[u]
+        self.misses += 1
+
+        host = urlsplit(u).hostname or ""
+        if not _respect_host_budget(u):
+            return 0, ""
+
+        # [PATCH] tidlig skip når per-host fejlgrænse er ramt
+        if _HOST_DNS_FAILS.get(host, 0) >= _HOST_FAIL_LIMIT or _HOST_SSL_FAILS.get(host, 0) >= _HOST_FAIL_LIMIT:
+            log.debug(f"Host {host} har nået fejlgrænse – skipper {u}")
+            return 0, ""
+
+        # Respektér backoff
+        earliest = _RATE_LIMIT_HOSTS.get(host, 0.0)
+        if time.time() < earliest:
+            wait = earliest - time.time()
+            time.sleep(min(wait, 3.0))
+
+        last_status, last_text = 0, ""
+        for attempt in range(self.retries):
             try:
-                with httpx.Client(http2=True, timeout=timeout, headers=headers, follow_redirects=True) as cli:
-                    r = cli.get(u)
-                    last_status = r.status_code
-                    last_text = r.text or ""
-            except httpx.ConnectError as e:
-                error_str = str(e)
-                
-                # DNS fejl - giv op med det samme (ingen retry)
-                if "getaddrinfo failed" in error_str or "Name or service not known" in error_str:
-                    log.debug(f"DNS resolution failed for {u}: {error_str}")
-                    _HOST_DNS_FAILS[host] += 1
-                    # TILFØJELSE: Cache DNS failure for hele session
-                    _GET_CACHE[u] = (0, "")  # Undgå gentagne forsøg samme URL
-                    return 0, ""
+                _HOST_REQUESTS[host] += 1
+                ae = _accept_encoding() if callable(_accept_encoding) else _accept_encoding or "gzip, deflate, br"
+                headers = {
+                    "User-Agent": "VextoContactFinder/1.0 (+https://vexto.io)",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
+                    "Accept-Encoding": ae,
+                }
 
-                
-                # SSL certifikat fejl - prøv uden verifikation
-                elif "CERTIFICATE_VERIFY_FAILED" in error_str:
-                    _HOST_SSL_FAILS[host] += 1
-                    log.warning(f"SSL certificate error for {u}, retrying without verification")
-                    if _HOST_SSL_FAILS[host] >= _HOST_FAIL_LIMIT:
-                        log.debug(f"SSL fejlgrænse ramt for {host} – skipper yderligere forsøg")
-                        # TILFØJELSE: Cache SSL failure også
-                        _GET_CACHE[u] = (0, "")  # Undgå gentagne forsøg samme URL
+                # Prøv med SSL-verifikation
+                try:
+                    with httpx.Client(http2=True, timeout=self.timeout, headers=headers, follow_redirects=True) as cli:
+                        r = cli.get(u)
+                        last_status = r.status_code
+                        last_text = r.text or ""
+                except httpx.ConnectError as e:
+                    error_str = str(e)
+                    if "getaddrinfo failed" in error_str or "Name or service not known" in error_str:
+                        log.debug(f"DNS resolution failed for {u}: {error_str}")
+                        _HOST_DNS_FAILS[host] += 1
+                        _GET_CACHE[u] = (0, "")  # Cache failure
                         return 0, ""
-                    try:
-                        with httpx.Client(http2=True, timeout=timeout, headers=headers, 
-                                        follow_redirects=True, verify=False) as cli:
-                            import urllib3
-                            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-                            r = cli.get(u)
-                            last_status = r.status_code
-                            last_text = r.text or ""
-                    except Exception as e2:
-                        log.debug(f"Failed even without SSL verification for {u}: {e2}")
-                        # --- NYT: kontrolleret HTTP fallback (bag flag/allowlist) ---
-                        allow_http = os.getenv("VEXTO_ALLOW_HTTP_DOWNGRADE", "").strip().lower() in {"1","true","yes","y"}
-                        allow_list = {h.strip().lower() for h in (os.getenv("VEXTO_HTTP_DOWNGRADE_ALLOW","").split(",")) if h.strip()}
-                        if (allow_http or host in allow_list) and u.startswith("https://"):
-                            try:
-                                http_u = "http://" + u.split("://",1)[1]
-                                with httpx.Client(http2=True, timeout=timeout, headers=headers, follow_redirects=True) as cli2:
-                                    r2 = cli2.get(http_u)
-                                    last_status = r2.status_code
-                                    last_text = r2.text or ""
-                                    if last_status == 200 and last_text:
-                                        log.info(f"HTTP downgrade succeeded for {host}")
-                                        return last_status, last_text
-                            except Exception as e3:
-                                log.debug(f"HTTP downgrade failed for {u}: {e3}")
-                        # fallback til normal retry
-                        raise e
-            
-            # Håndter rate limiting
-            if last_status in (429, 503):
-                # Respect Retry-After hvis sat
-                ra = r.headers.get("Retry-After") if 'r' in locals() else None
-                sleep_for = (2 ** attempt) + random.uniform(0, 1.25)
-                if ra:
-                    try:
-                        sleep_for = max(sleep_for, float(ra))
-                    except Exception:
-                        pass
-                _RL_429_COUNTS[host] += 1
-                # Sæt fremtidigt earliest-ok (circuit breaker)
-                _RATE_LIMIT_HOSTS[host] = _now() + min(60.0, sleep_for * 2.5)
-                log.warning(f"Rate-limit {last_status} on {host} attempt={attempt+1}, backoff={sleep_for:.1f}s")
+                    elif "CERTIFICATE_VERIFY_FAILED" in error_str:
+                        _HOST_SSL_FAILS[host] += 1
+                        log.warning(f"SSL certificate error for {u}, retrying without verification")
+                        if _HOST_SSL_FAILS[host] >= _HOST_FAIL_LIMIT:
+                            log.debug(f"SSL fejlgrænse ramt for {host} – skipper {u}")
+                            _GET_CACHE[u] = (0, "")
+                            return 0, ""
+                        try:
+                            with httpx.Client(http2=True, timeout=self.timeout, headers=headers, follow_redirects=True, verify=False) as cli:
+                                import urllib3
+                                urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+                                r = cli.get(u)
+                                last_status = r.status_code
+                                last_text = r.text or ""
+                        except Exception as e2:
+                            log.debug(f"Failed even without SSL verification for {u}: {e2}")
+                            allow_http = os.getenv("VEXTO_ALLOW_HTTP_DOWNGRADE", "").lower() in {"1","true","yes","y"}
+                            allow_list = {h.lower() for h in os.getenv("VEXTO_HTTP_DOWNGRADE_ALLOW","").split(",") if h}
+                            if (allow_http or host in allow_list) and u.startswith("https://"):
+                                try:
+                                    http_u = "http://" + u.split("://",1)[1]
+                                    with httpx.Client(http2=True, timeout=self.timeout, headers=headers, follow_redirects=True) as cli2:
+                                        r2 = cli2.get(http_u)
+                                        last_status = r2.status_code
+                                        last_text = r2.text or ""
+                                        if last_status == 200 and last_text:
+                                            log.info(f"HTTP downgrade succeeded for {host}")
+                                            self._cache[u] = (last_status, last_text)
+                                            return last_status, last_text
+                                except Exception as e3:
+                                    log.debug(f"HTTP downgrade failed for {u}: {e3}")
+                            raise e
+
+                # Håndter rate limiting
+                if last_status in (429, 503):
+                    ra = r.headers.get("Retry-After") if 'r' in locals() else None
+                    sleep_for = (2 ** attempt) + random.uniform(0, 1.25)
+                    if ra:
+                        try:
+                            sleep_for = max(sleep_for, float(ra))
+                        except:
+                            pass
+                    _RL_429_COUNTS[host] += 1
+                    _RATE_LIMIT_HOSTS[host] = time.time() + min(60.0, sleep_for * 2.5)
+                    log.warning(f"Rate-limit {last_status} on {host} attempt={attempt+1}, backoff={sleep_for:.1f}s")
+                    time.sleep(sleep_for)
+                    continue
+
+                # Success - cache og return
+                self._cache[u] = (last_status, last_text)
+                return last_status, last_text
+
+            except httpx.TimeoutException as e:
+                sleep_for = (1.2 ** attempt) + random.uniform(0, 0.5)
+                log.debug(f"Timeout on {u} – retry in {sleep_for:.1f}s")
                 time.sleep(sleep_for)
-                continue
-                
-            # Success - returner resultat
-            return last_status, last_text
-            
-        except httpx.TimeoutException as e:
-            # Timeout - hurtig retry
-            sleep_for = (1.2 ** attempt) + random.uniform(0, 0.5)
-            log.debug(f"Timeout on {u} – retry in {sleep_for:.1f}s")
-            time.sleep(sleep_for)
-            
-        except Exception as e:
-            # Andre fejl - eksponentiel backoff
-            sleep_for = (1.2 ** attempt) + random.uniform(0, 0.5)
-            log.debug(f"http_get error {e!r} on {u} – retry in {sleep_for:.1f}s")
-            time.sleep(sleep_for)
-    
-    # Alle retries brugt op
-    return last_status, last_text
+
+            except Exception as e:
+                sleep_for = (1.2 ** attempt) + random.uniform(0, 0.5)
+                log.debug(f"http_get error {e!r} on {u} – retry in {sleep_for:.1f}s")
+                time.sleep(sleep_for)
+
+        # Alle retries opbrugt – cache failure
+        self._cache[u] = (last_status, "")
+        return last_status, ""
 
 def _host_of(u: str) -> str:
     try:
