@@ -150,168 +150,85 @@ class CachingHttpClient:
 
     @lru_cache(maxsize=500)  # Cache pr. URL
     def get(self, u: str) -> tuple[int, str]:
-        """Centraliseret GET med cache, budget, backoff, jitter."""
-        
-        # Validering af input
+        """Delegér GET/HTML til fælles http_client.AsyncHtmlClient (SOT).
+        Bevarer lokal cache og input-guarding. Ingen lokal retry/backoff/budget.
+        """
+
+        # --- Input-validering og normalisering (BEHOLDT) ---
         if not u or not isinstance(u, str):
             return 0, ""
-        
-        # Håndter "nan" og andre ugyldige værdier
         u = u.strip()
         if u.lower() in ("nan", "none", "null", ""):
             return 0, ""
-        
-        # Sørg for at URL har protokol
-        if not u.startswith(('http://', 'https://')):
-            # Prøv at rette det hvis det ligner et domæne
-            if re.match(r'^(www\.)?([a-z0-9\-]+\.)+[a-z]{2,}', u, re.I):
+        if not u.startswith(("http://", "https://")):
+            if re.match(r"^(www\.)?([a-z0-9\-]+\.)+[a-z]{2,}", u, re.I):
                 u = f"https://{u}"
             else:
                 log.debug(f"Invalid URL format: {u}")
                 return 0, ""
-        
-        try:
-            import brotli
-            ae = "gzip, deflate, br"
-        except ImportError:
-            ae = "gzip, deflate"
-            log.warning(f"Brotli not installed - using fallback Accept-Encoding: {ae} for {u}")
-        
-        headers = {
-            "User-Agent": "VextoContactFinder/1.0 (+https://vexto.io)",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
-            "Accept-Encoding": ae,
-        }
 
-        # Cache check (hurtig return hvis hit)
+        # --- Lokal cache (BEHOLDT) ---
         if u in self._cache:
             self.hits += 1
             return self._cache[u]
         self.misses += 1
-        
-        host = _host_of(u)
-        if not _respect_host_budget(u):
-            return 0, ""
-        
-        # [PATCH] tidlig skip når per-host fejlgrænse er ramt
-        if _HOST_DNS_FAILS.get(host, 0) >= _HOST_FAIL_LIMIT or _HOST_SSL_FAILS.get(host, 0) >= _HOST_FAIL_LIMIT:
-            log.debug(f"Host {host} har nået fejlgrænse (dns={_HOST_DNS_FAILS.get(host,0)}, ssl={_HOST_SSL_FAILS.get(host,0)}) – skipper {u}")
-            return 0, ""
 
-        # Respektér evt. aktiv backoff-vindue
-        earliest = _RATE_LIMIT_HOSTS.get(host, 0.0)
-        if _now() < earliest:
-            wait = earliest - _now()
-            time.sleep(min(wait, 3.0))
-
-        
-        last_status, last_text = 0, ""
-        for attempt in range(self.retries):
+        # --- Kald fælles netværksklient (AsyncHtmlClient) ---
+        # Vi kører et kortlivet event loop her, så kaldet også virker fra sync-kontekst.
+        def _run_async_get(url: str) -> tuple[int, str]:
+            import asyncio
+            # Tolerer eksisterende loop (fx når kaldt inde fra async kode)
             try:
-                _HOST_REQUESTS[host] += 1
-                ae = _accept_encoding() if callable(_accept_encoding) else _accept_encoding
-                if not isinstance(ae, (str, bytes)) or (isinstance(ae, str) and not ae.strip()):
-                    ae = "gzip, deflate, br"
-                headers = {
-                    "User-Agent": "VextoContactFinder/1.0 (+https://vexto.io)",
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                    "Accept-Language": "da-DK,da;q=0.9,en;q=0.8",
-                    "Accept-Encoding": ae,
-                }
-                
-                # Prøv først med SSL-verifikation
-                try:
-                    with httpx.Client(http2=True, timeout=self.timeout, headers=headers, follow_redirects=True) as cli:
-                        r = cli.get(u)
-                        last_status = r.status_code
-                        last_text = r.text or ""
-                except httpx.ConnectError as e:
-                    error_str = str(e)
-                    
-                    # DNS fejl - giv op med det samme (ingen retry)
-                    if "getaddrinfo failed" in error_str or "Name or service not known" in error_str:
-                        log.debug(f"DNS resolution failed for {u}: {error_str}")
-                        _HOST_DNS_FAILS[host] += 1
-                        # TILFØJELSE: Cache DNS failure for hele session
-                        _GET_CACHE[u] = (0, "")  # Undgå gentagne forsøg samme URL
-                        return 0, ""
+                loop = asyncio.get_running_loop()
+                has_running = True
+            except RuntimeError:
+                loop = None
+                has_running = False
 
-                    
-                    # SSL certifikat fejl - prøv uden verifikation
-                    elif "CERTIFICATE_VERIFY_FAILED" in error_str:
-                        _HOST_SSL_FAILS[host] += 1
-                        log.warning(f"SSL certificate error for {u}, retrying without verification")
-                        if _HOST_SSL_FAILS[host] >= _HOST_FAIL_LIMIT:
-                            log.debug(f"SSL fejlgrænse ramt for {host} – skipper yderligere forsøg")
-                            # TILFØJELSE: Cache SSL failure også
-                            _GET_CACHE[u] = (0, "")  # Undgå gentagne forsøg samme URL
-                            return 0, ""
-                        try:
-                            with httpx.Client(http2=True, timeout=self.timeout, headers=headers,
-                                            follow_redirects=True, verify=False) as cli:
-                                if urllib3 is not None:
-                                    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-                                r = cli.get(u)
-                                last_status = r.status_code
-                                last_text = r.text or ""
-                        except Exception as e2:
-                            log.debug(f"Failed even without SSL verification for {u}: {e2}")
-                            # --- NYT: kontrolleret HTTP fallback (bag flag/allowlist) ---
-                            allow_http = os.getenv("VEXTO_ALLOW_HTTP_DOWNGRADE", "").strip().lower() in {"1","true","yes","y"}
-                            allow_list = {h.strip().lower() for h in (os.getenv("VEXTO_HTTP_DOWNGRADE_ALLOW","").split(",")) if h.strip()}
-                            if (allow_http or host in allow_list) and u.startswith("https://"):
-                                try:
-                                    http_u = "http://" + u.split("://",1)[1]
-                                    with httpx.Client(http2=True, timeout=self.timeout, headers=headers, follow_redirects=True) as cli2:
-                                        r2 = cli2.get(http_u)
-                                        last_status = r2.status_code
-                                        last_text = r2.text or ""
-                                        if last_status == 200 and last_text:
-                                            log.info(f"HTTP downgrade succeeded for {host}")
-                                            self._cache[u] = (last_status, last_text)
-                                            return last_status, last_text
-                                except Exception as e3:
-                                    log.debug(f"HTTP downgrade failed for {u}: {e3}")
-                            # fallback til normal retry
-                            raise e
-                
-                # Håndter rate limiting
-                if last_status in (429, 503):
-                    # Respect Retry-After hvis sat
-                    ra = r.headers.get("Retry-After") if 'r' in locals() else None
-                    sleep_for = (2 ** attempt) + random.uniform(0, 1.25)
-                    if ra:
-                        try:
-                            sleep_for = max(sleep_for, float(ra))
-                        except Exception:
-                            pass
-                    _RL_429_COUNTS[host] += 1
-                    # Sæt fremtidigt earliest-ok (circuit breaker)
-                    _RATE_LIMIT_HOSTS[host] = _now() + min(60.0, sleep_for * 2.5)
-                    log.warning(f"Rate-limit {last_status} on {host} attempt={attempt+1}, backoff={sleep_for:.1f}s")
-                    time.sleep(sleep_for)
-                    continue
-                    
-                # Success - returner resultat
-                self._cache[u] = (last_status, last_text)
-                return last_status, last_text
-                
-            except httpx.TimeoutException as e:
-                # Timeout - hurtig retry
-                sleep_for = (1.2 ** attempt) + random.uniform(0, 0.5)
-                log.debug(f"Timeout on {u} – retry in {sleep_for:.1f}s")
-                time.sleep(sleep_for)
-                
-            except Exception as e:
-                # Andre fejl - eksponentiel backoff
-                sleep_for = (1.2 ** attempt) + random.uniform(0, 0.5)
-                log.debug(f"HTTP client error {e!r} on {u} – retry in {sleep_for:.1f}s")
-                time.sleep(sleep_for)
-        
-        # Alle retries brugt op
-        self._cache[u] = (last_status, last_text)
-        return last_status, last_text
+            async def go(target: str) -> tuple[int, str]:
+                # Import med fleksible stier (afhænger af modul-struktur)
+                try:
+                    from vexto.scoring.http_client import AsyncHtmlClient  # typisk pakkesti
+                except Exception:
+                    try:
+                        from vexto.scoring.http_client import AsyncHtmlClient  # udviklingssti
+                    except Exception:
+                        # sidste forsøg – relativ import hvis vi er i underpakke
+                        from ..http_client import AsyncHtmlClient  # type: ignore
+
+                client = AsyncHtmlClient(stealth=True, timeout=self.timeout)
+                await client.startup()
+                try:
+                    # Lad klienten selv afgøre om der skal renderes (heuristik/autodetect)
+                    res = await client.get_raw_html(target, return_soup=False)
+                    # Nogle versioner returnerer dict, andre ren str – håndter begge.
+                    if isinstance(res, dict):
+                        html = res.get("html") or ""
+                        status = int(res.get("status_code") or (200 if html else 0))
+                    else:
+                        html = res or ""
+                        status = 200 if html else 0
+                    return status, html
+                finally:
+                    await client.shutdown()
+
+            if has_running:
+                # Kør i eksisterende loop (blokkerende indtil færdig)
+                return loop.run_until_complete(go(url))  # type: ignore[arg-type]
+            else:
+                new_loop = asyncio.new_event_loop()
+                try:
+                    asyncio.set_event_loop(new_loop)
+                    return new_loop.run_until_complete(go(url))
+                finally:
+                    new_loop.close()
+                    asyncio.set_event_loop(None)
+
+        status, html = _run_async_get(u)
+
+        # --- Gem i lokal cache og returnér ---
+        self._cache[u] = (status, html or "")
+        return status, html or ""
 
 def _host_of(u: str) -> str:
     try:
@@ -371,112 +288,159 @@ def _fetch_with_playwright_sync(
     pre_status: Optional[int] = None,
     http_client: Optional[CachingHttpClient] = None,
 ) -> str:
-    """Renderer side med delt Playwright-klient (singleton).
-    Indeholder status/_needs_js logging, timeout og circuit-breaker.
-    Accepterer evt. pre_html/pre_status for at undgå ekstra GET.
+    """Render siden via fælles AsyncHtmlClient (force_playwright=True).
+    Bevarer status/_needs_js-gate; ingen lokal PW-singleton eller atexit.
     """
     if AsyncHtmlClient is None:
-        return ""
+        return pre_html or ""
+
     import asyncio
-    client = http_client or CachingHttpClient(timeout=10.0)
+    from urllib.parse import urlsplit as _us
 
-    async def _go(u: str, given_html: Optional[str], given_status: Optional[int]) -> str:
-        global _SHARED_PW_CLIENT, _PW_FAILS_BY_HOST, _PW_FAILS_MAX, _PW_DISABLED_HOSTS
-        # Brug pre_html/pre_status hvis givet; ellers billig GET
-        status = given_status
-        pre_html = given_html
-        if status is None or pre_html is None:
-            s2, h2 = client.get(u)
-            if status is None:
-                status = s2
-            if pre_html is None:
-                pre_html = h2
-        try:
-            needs = _needs_js(pre_html or "")
-        except Exception:
-            needs = False
-        from urllib.parse import urlsplit as _us
-        _host = _us(u).netloc.lower()
-        log.debug(f"PW gate for {u} -> status={status}, needs_js={needs}, pw_disabled_host={_host in _PW_DISABLED_HOSTS}")
-        # 1) Drop PW på ≠200
-        if status != 200:
-            log.debug(f"Springer Playwright over (status {status}) for {u}")
-            return pre_html or ""
-        # 2) Drop PW når siden ikke kræver JS
-        if not needs:
-            log.debug(f"Playwright ikke nødvendig (statisk HTML) for {u}")
-            return pre_html
-        # 3) Circuit-breaker (per host)
-        if _host in _PW_DISABLED_HOSTS:
-            log.debug(f"Playwright er midlertidigt deaktiveret for host={_host} (circuit-breaker). Bruger pre_html.")
-            return pre_html
-        # 4) Kør PW med hård timeout
-        if _SHARED_PW_CLIENT is None:
-            _SHARED_PW_CLIENT = AsyncHtmlClient(stealth=True)
-            await _SHARED_PW_CLIENT.startup()
-            # TILFØJELSE: Registrer cleanup ved program exit (etik: Undgå resource leaks)
-            import atexit
-            def cleanup_pw():
-                if _SHARED_PW_CLIENT:
-                    asyncio.run(_SHARED_PW_CLIENT.shutdown())
-                    log.info("Playwright client cleaned up")
-            atexit.register(cleanup_pw)
-
-        # Unit Test Eksempel (nu wrapped for at undgå 'not accessed'-warning):
-        if __name__ == "__main__":
-            import atexit
-            def test_pw_cleanup():
-                def mock_shutdown():
-                    print("Shutdown called")
-                atexit.register(mock_shutdown)
-                # Simuler exit (i real test: brug subprocess)
-                assert "mock_shutdown" in [f.__name__ for f in atexit._atexit_funcs]  # Check registration
-            test_pw_cleanup()
-        try:
-            # Forsøg med målrettede selector-waits for kontakt/teamsider
-            _wait_selectors = [
-                "a[href^='mailto:']",
-                "a[href^='tel:']",
-                ".__cf_email__",
-                "[data-cfemail]",
-                ".team", ".staff", ".employee", ".elementor-team-member",
-                ".et_pb_team_member", ".vc_row", ".vc_column", ".vc_team"
-            ]
-
-            try:
-                html = await asyncio.wait_for(
-                    _SHARED_PW_CLIENT.get_raw_html(
-                        u,
-                        force_playwright=True,
-                        wait_for_selectors=_wait_selectors # nogle klienter understøtter dette
-                    ),
-                    timeout=12.0
-                )
-            except TypeError:
-                # Fallback hvis klienten ikke kender argumentet
-                html = await asyncio.wait_for(
-                    _SHARED_PW_CLIENT.get_raw_html(u, force_playwright=True),
-                    timeout=12.0
-                )
-            if isinstance(html, dict):
-                html = html.get("html") or ""
-            # reset kun for denne host
-            _PW_FAILS_BY_HOST[_host] = 0
-            return html or (pre_html or "")
-        except Exception as e:
-            _PW_FAILS_BY_HOST[_host] = _PW_FAILS_BY_HOST.get(_host, 0) + 1
-            log.debug(f"Playwright fejl ({_PW_FAILS_BY_HOST[_host]}/{_PW_FAILS_MAX}) for host={_host}, url={u}: {e!r}")
-            if _PW_FAILS_BY_HOST[_host] >= _PW_FAILS_MAX:
-                _PW_DISABLED_HOSTS.add(_host)
-                log.warning(f"Deaktiverer midlertidigt Playwright-eskalering for host={_host} (for mange fejl).")
-            return pre_html
+    # --- Safe-access til evt. modul-globale PW-states (fallback til lokale) ---
     try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    return loop.run_until_complete(_go(url, pre_html, pre_status))
+        _pw_disabled_hosts = _PW_DISABLED_HOSTS  # type: ignore[name-defined]
+    except Exception:
+        _pw_disabled_hosts = set()
+    try:
+        _pw_fails_by_host = _PW_FAILS_BY_HOST  # type: ignore[name-defined]
+    except Exception:
+        _pw_fails_by_host = {}
+    try:
+        _pw_fails_max = int(_PW_FAILS_MAX)  # type: ignore[name-defined]
+    except Exception:
+        _pw_fails_max = 2  # konservativ default
 
+    # --- Hent evt. manglende pre_html/status via (adapter) CachingHttpClient ---
+    client = http_client or CachingHttpClient(timeout=10.0)
+    status = pre_status
+    html0 = pre_html
+    if status is None or html0 is None:
+        s2, h2 = client.get(url)
+        if status is None:
+            status = s2
+        if html0 is None:
+            html0 = h2
+
+    # --- Needs-JS gate + status gate ---
+    try:
+        needs = _needs_js(html0 or "")
+    except Exception:
+        needs = False
+
+    _host = _us(url).netloc.lower()
+    log.debug(
+        f"PW gate for {url} -> status={status}, needs_js={needs}, "
+        f"pw_disabled_host={_host in _pw_disabled_hosts}"
+    )
+
+    # 1) Drop PW på ≠200
+    if status != 200:
+        log.debug(f"Springer Playwright over (status {status}) for {url}")
+        return html0 or ""
+
+    # 2) Drop PW når siden ikke kræver JS
+    if not needs:
+        log.debug(f"Playwright ikke nødvendig (statisk HTML) for {url}")
+        return html0 or ""
+
+    # 3) Circuit-breaker (per host)
+    if _host in _pw_disabled_hosts:
+        log.debug(
+            f"Playwright er midlertidigt deaktiveret for host={_host} (circuit-breaker). Bruger pre_html."
+        )
+        return html0 or ""
+
+    # --- Kør Playwright render via AsyncHtmlClient (ingen lokal singleton) ---
+    def _run():
+        loop = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(loop)
+
+            async def go() -> str:
+                # Robust import (pakke/udviklingssti)
+                try:
+                    from vexto.http_client import AsyncHtmlClient  # type: ignore
+                except Exception:
+                    try:
+                        from src.vexto.http_client import AsyncHtmlClient  # type: ignore
+                    except Exception:
+                        from ..http_client import AsyncHtmlClient  # type: ignore
+
+                client = AsyncHtmlClient(stealth=True)
+                await client.startup()
+                try:
+                    wait_selectors = [
+                        "a[href^='mailto:']",
+                        "a[href^='tel:']",
+                        ".__cf_email__",
+                        "[data-cfemail]",
+                        ".team", ".staff", ".employee", ".elementor-team-member",
+                        ".et_pb_team_member", ".vc_row", ".vc_column", ".vc_team",
+                    ]
+                    try:
+                        res = await asyncio.wait_for(
+                            client.get_raw_html(
+                                url,
+                                force_playwright=True,
+                                wait_for_selectors=wait_selectors,
+                                return_soup=False,
+                            ),
+                            timeout=12.0,
+                        )
+                    except TypeError:
+                        # Hvis klienten ikke kender wait_for_selectors
+                        res = await asyncio.wait_for(
+                            client.get_raw_html(
+                                url,
+                                force_playwright=True,
+                                return_soup=False,
+                            ),
+                            timeout=12.0,
+                        )
+
+                    if isinstance(res, dict):
+                        return res.get("html") or ""
+                    return res or ""
+                finally:
+                    await client.shutdown()
+
+            return loop.run_until_complete(go())
+        finally:
+            try:
+                loop.close()
+            except Exception:
+                pass
+            try:
+                asyncio.set_event_loop(None)
+            except Exception:
+                pass
+
+    try:
+        rendered_html = _run()
+        # reset fail-tæller for denne host (hvis global findes)
+        try:
+            _pw_fails_by_host[_host] = 0  # type: ignore[index]
+        except Exception:
+            pass
+        return rendered_html or (html0 or "")
+    except Exception as e:
+        # inkrementér fails og evtl. disable host
+        try:
+            _pw_fails_by_host[_host] = _pw_fails_by_host.get(_host, 0) + 1  # type: ignore[call-arg]
+            log.debug(
+                f"Playwright fejl ({_pw_fails_by_host[_host]}/{_pw_fails_max}) "
+                f"for host={_host}, url={url}: {e!r}"
+            )
+            if _pw_fails_by_host[_host] >= _pw_fails_max:
+                _pw_disabled_hosts.add(_host)  # type: ignore[attr-defined]
+                log.warning(
+                    f"Deaktiverer midlertidigt Playwright-eskalering for host={_host} (for mange fejl)."
+                )
+        except Exception:
+            log.debug(f"Playwright fejl for host={_host}, url={url}: {e!r}")
+
+        return html0 or ""
 
 
 # -------------------------- Valgfri eksterne libs -----------------------------
@@ -2574,105 +2538,189 @@ def _extract_from_text_emails(url: str, html: str) -> list[ContactCandidate]:
         ))
 
     return out
-
 def _extract_generic_org_contacts(base_url: str, pages_html: list[tuple[str, str]]) -> list[dict]:
-    emails_on_domain: list[str] = []
-    phones: list[str] = []
+    """
+    Minimal, men robust 'org bucket' via fælles contact_fetchers.
+    Bruger allerede-hentet HTML (ingen ekstra crawl) og returnerer ét generisk
+    org-kandidat-objekt (uden personnavn) hvis der findes emails/telefoner.
 
-    seen_emails: set[str] = set()
-    seen_phones: set[str] = set()
-
-    re_email = r"[A-Z0-9._%+\-]{1,64}@[A-Z0-9.\-]{1,255}\.[A-Z]{2,}"
-
-    def _site_tld(url: str) -> str:
+    Bemærk:
+    - deep_contact=False her for at undgå dobbelt-crawl; deep-contact håndteres
+      højere i kæden, hvis du ønsker det.
+    - Vi parser kun den første side (root) for at holde det billigt og deterministisk.
+    """
+    try:
+        from bs4 import BeautifulSoup
+        # robust import ift. dine stier
         try:
-            host = (urlsplit(url).hostname or "").lower()
-            return host.rsplit(".", 1)[-1]
+            from vexto.scoring.contact_fetchers import find_contact_info
         except Exception:
-            return ""
+            try:
+                from src.vexto.scoring.contact_fetchers import find_contact_info
+            except Exception:
+                from ..scoring.contact_fetchers import find_contact_info  # type: ignore
+    except Exception:
+        return []
 
-    def _is_dk_phone(pn: str) -> bool:
-        return bool(re.fullmatch(r"\+45\d{8}", pn))
+    if not base_url or not pages_html:
+        return []
 
-    def _last8(pn: str) -> str:
-        return re.sub(r"\D", "", pn)[-8:]
+    # Brug root-siden hvis muligt (første element i pages_html)
+    # pages_html er af typen List[Tuple[url, html]]
+    root_html = ""
+    try:
+        _, root_html = pages_html[0]
+    except Exception:
+        root_html = ""
 
-    for u, html in pages_html:
-        plain = re.sub(r"<[^>]+>", " ", html)
+    if not root_html:
+        return []
 
-        # E-mails i synlig tekst
-        for m in re.finditer(re_email, plain, flags=re.I):
-            em = _normalize_email(m.group(0))
-            if not em:
-                continue
-            local = em.split("@", 1)[0]
-            if local in {"noreply", "no-reply", "donotreply"}:
-                continue
-            if _email_domain_matches_site(em, base_url) and em not in seen_emails:
-                seen_emails.add(em)
-                emails_on_domain.append(em)
+    # Parse til soup og kør fælles finder (HØJ/LAV sikkerhed)
+    soup = BeautifulSoup(root_html or "", "html.parser")
 
-        # Cloudflare (data-cfemail)
-        for m in re.finditer(r'data-cfemail=["\']([0-9a-fA-F]+)["\']', html):
-            em = _normalize_email(_cf_decode(m.group(1)))
-            if not em:
-                continue
-            local = em.split("@", 1)[0]
-            if local in {"noreply", "no-reply", "donotreply"}:
-                continue
-            if _email_domain_matches_site(em, base_url) and em not in seen_emails:
-                seen_emails.add(em)
-                emails_on_domain.append(em)
+    # Kør uden deep-contact for ikke at trigge en ekstra crawl her
+    # (deep kan kaldes tidligere i pipeline hvis ønsket).
+    import asyncio
 
-        # Telefonnumre i synlig tekst (anti-CVR i nærkontekst)
-        for m in re.finditer(r"(?:\+?\d[\s\-\(\)\.]{0,3}){8,}", plain):
-            sidx, eidx = m.start(), m.end()
-            ctx = plain[max(0, sidx-15):min(len(plain), eidx+15)].lower()
-            if "cvr" in ctx:
-                continue
-            pn = _normalize_phone(m.group(0))
-            if pn and pn not in seen_phones:
-                seen_phones.add(pn)
-                phones.append(pn)
+    def _run():
+        loop = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(loop)
+            async def go():
+                return await find_contact_info(soup, base_url, deep_contact=False)
+            res = loop.run_until_complete(go())
+            return res or {}
+        finally:
+            try:
+                loop.close()
+            except Exception:
+                pass
+            try:
+                asyncio.set_event_loop(None)
+            except Exception:
+                pass
 
-        # Telefonnumre i tel:-links
-        for m in re.finditer(r'href=["\']tel:([^"\']+)["\']', html, flags=re.I):
-            pn = _normalize_phone(m.group(1))
-            if pn and pn not in seen_phones:
-                seen_phones.add(pn)
-                phones.append(pn)
+    data = _run()
+    emails = list(dict.fromkeys((data.get("emails_found") or [])))[:3]
+    phones = list(dict.fromkeys((data.get("phone_numbers_found") or [])))[:3]
 
-    # Dedupliker telefoner på “sidste 8 cifre” (samme nr. m. forskellig formattering)
-    uniq_by_last8 = []
-    seen_last8 = set()
-    for pn in phones:
-        k = _last8(pn)
-        if k and k not in seen_last8:
-            seen_last8.add(k)
-            uniq_by_last8.append(pn)
-    phones = uniq_by_last8
-
-    # Ved .dk-domæner – foretræk danske telefonnumre (+45XXXXXXXX)
-    if _site_tld(base_url) == "dk":
-        dk_only = [p for p in phones if _is_dk_phone(p)]
-        if dk_only:
-            phones = dk_only
-
-    if not emails_on_domain and not phones:
+    if not emails and not phones:
         return []
 
     return [{
         "name": None,
         "title": None,
-        "emails": emails_on_domain[:3],
-        "phones": phones[:3],
+        "emails": emails,
+        "phones": phones,
         "score": -1.0,
         "reasons": ["GENERIC_ORG_CONTACT"],
         "source": "page-generic",
         "url": base_url,
         "dom_distance": None,
-        "hints": {"identity_gate_bypassed": True},
+        "hints": {"origin": "contact_fetchers", "identity_gate_bypassed": True},
     }]
+
+
+
+#def _extract_generic_org_contacts(base_url: str, pages_html: list[tuple[str, str]]) -> list[dict]:
+#    emails_on_domain: list[str] = []
+#    phones: list[str] = []
+
+#    seen_emails: set[str] = set()
+#    seen_phones: set[str] = set()
+
+#    re_email = r"[A-Z0-9._%+\-]{1,64}@[A-Z0-9.\-]{1,255}\.[A-Z]{2,}"
+
+#    def _site_tld(url: str) -> str:
+#        try:
+#            host = (urlsplit(url).hostname or "").lower()
+#            return host.rsplit(".", 1)[-1]
+#        except Exception:
+#            return ""
+
+#    def _is_dk_phone(pn: str) -> bool:
+#        return bool(re.fullmatch(r"\+45\d{8}", pn))
+
+#    def _last8(pn: str) -> str:
+#        return re.sub(r"\D", "", pn)[-8:]
+
+#    for u, html in pages_html:
+#        plain = re.sub(r"<[^>]+>", " ", html)
+
+        # E-mails i synlig tekst
+#        for m in re.finditer(re_email, plain, flags=re.I):
+#            em = _normalize_email(m.group(0))
+#            if not em:
+#                continue
+#            local = em.split("@", 1)[0]
+#            if local in {"noreply", "no-reply", "donotreply"}:
+#                continue
+#            if _email_domain_matches_site(em, base_url) and em not in seen_emails:
+#                seen_emails.add(em)
+#                emails_on_domain.append(em)
+
+        # Cloudflare (data-cfemail)
+#        for m in re.finditer(r'data-cfemail=["\']([0-9a-fA-F]+)["\']', html):
+#            em = _normalize_email(_cf_decode(m.group(1)))
+#            if not em:
+#                continue
+#            local = em.split("@", 1)[0]
+#            if local in {"noreply", "no-reply", "donotreply"}:
+#                continue
+#            if _email_domain_matches_site(em, base_url) and em not in seen_emails:
+#                seen_emails.add(em)
+#                emails_on_domain.append(em)
+
+        # Telefonnumre i synlig tekst (anti-CVR i nærkontekst)
+#        for m in re.finditer(r"(?:\+?\d[\s\-\(\)\.]{0,3}){8,}", plain):
+#            sidx, eidx = m.start(), m.end()
+#            ctx = plain[max(0, sidx-15):min(len(plain), eidx+15)].lower()
+#            if "cvr" in ctx:
+#                continue
+#            pn = _normalize_phone(m.group(0))
+#            if pn and pn not in seen_phones:
+#                seen_phones.add(pn)
+#                phones.append(pn)
+
+        # Telefonnumre i tel:-links
+#        for m in re.finditer(r'href=["\']tel:([^"\']+)["\']', html, flags=re.I):
+#            pn = _normalize_phone(m.group(1))
+#            if pn and pn not in seen_phones:
+#                seen_phones.add(pn)
+#                phones.append(pn)
+
+    # Dedupliker telefoner på “sidste 8 cifre” (samme nr. m. forskellig formattering)
+#    uniq_by_last8 = []
+#    seen_last8 = set()
+#    for pn in phones:
+#        k = _last8(pn)
+#        if k and k not in seen_last8:
+#            seen_last8.add(k)
+#            uniq_by_last8.append(pn)
+#    phones = uniq_by_last8
+
+    # Ved .dk-domæner – foretræk danske telefonnumre (+45XXXXXXXX)
+#    if _site_tld(base_url) == "dk":
+#        dk_only = [p for p in phones if _is_dk_phone(p)]
+#        if dk_only:
+#            phones = dk_only
+
+#   if not emails_on_domain and not phones:
+#        return []
+
+#    return [{
+#        "name": None,
+#        "title": None,
+#        "emails": emails_on_domain[:3],
+#        "phones": phones[:3],
+#        "score": -1.0,
+#        "reasons": ["GENERIC_ORG_CONTACT"],
+#        "source": "page-generic",
+#        "url": base_url,
+#        "dom_distance": None,
+#        "hints": {"identity_gate_bypassed": True},
+#    }]
 
 
 def _extract_from_rdfa(url: str, tree) -> list[ContactCandidate]:
@@ -3500,6 +3548,73 @@ class ContactFinder:
                     )
                 )
 
+        # --- NYT (P4): Fallback til contact_fetchers på allerede hentet HTML ---
+        # Bruges kun hvis ingen kandidater pt. har emails/phones (undgår dobbelt-crawl).
+        try:
+            has_any_contact = any((c.emails or c.phones) for c in out)
+            if not has_any_contact:
+                # Robust import af fælles finder (flere mulige pakkestier)
+                try:
+                    from vexto.scoring.contact_fetchers import find_contact_info  # type: ignore
+                except Exception:
+                    try:
+                        from src.vexto.scoring.contact_fetchers import find_contact_info  # type: ignore
+                    except Exception:
+                        from ..scoring.contact_fetchers import find_contact_info  # type: ignore
+
+                # Brug eksisterende parse-tree hvis muligt; ellers parse her
+                try:
+                    from bs4 import BeautifulSoup
+                except Exception:
+                    BeautifulSoup = None  # type: ignore
+
+                soup = tree
+                if soup is None and BeautifulSoup is not None:
+                    soup = BeautifulSoup(html or "", "html.parser")  # type: ignore
+
+                # Kald uden deep_contact for ikke at starte ny crawl her
+                import asyncio
+
+                def _run_fetchers():
+                    loop = asyncio.new_event_loop()
+                    try:
+                        asyncio.set_event_loop(loop)
+
+                        async def go():
+                            return await find_contact_info(soup, url, deep_contact=False)  # type: ignore[arg-type]
+                        res = loop.run_until_complete(go())
+                        return res or {}
+                    finally:
+                        try:
+                            loop.close()
+                        except Exception:
+                            pass
+                        try:
+                            asyncio.set_event_loop(None)
+                        except Exception:
+                            pass
+
+                data = _run_fetchers()
+                emails = list(dict.fromkeys((data.get("emails_found") or [])))[:3]
+                phones = list(dict.fromkeys((data.get("phone_numbers_found") or [])))[:3]
+
+                if emails or phones:
+                    c = ContactCandidate(
+                        name=None,
+                        title=None,
+                        emails=emails,
+                        phones=phones,
+                        source="contact_fetchers",
+                        url=url,
+                        dom_distance=None,
+                        hints={"origin": "contact_fetchers_fallback"},
+                    )
+                    out.append(c)
+        except Exception:
+            # Bevidst stilhed: primære extractors er stadig authoritative
+            pass
+        # --- SLUT NYT (P4) ---
+
         # Normaliser let
         norm: list[ContactCandidate] = []
         for c in out:
@@ -3508,6 +3623,7 @@ class ContactFinder:
             c.phones = [p for p in (_normalize_phone(p) for p in c.phones) if p]
             norm.append(c)
         return norm
+
 
     def _merge_dedup(self, cands: Iterable[ContactCandidate]) -> list[ContactCandidate]:
         # 1) Primær dedup: (navn + stærk email) ellers (navn + url + source)

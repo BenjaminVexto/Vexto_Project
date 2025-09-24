@@ -4,7 +4,8 @@ import re
 import logging
 from bs4 import BeautifulSoup
 from typing import List, Set, Tuple, Optional
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
+from urllib.parse import urlsplit as _us
 from typing import Dict, Any, List
 
 # src/vexto/scoring/contact_fetchers.py
@@ -56,6 +57,75 @@ CONTACT_SECTION_RX = re.compile(
     re.I,
 )
 
+def _decode_cloudflare_emails_from_html(html: str) -> list[str]:
+    """Find og dekodér emails fra Cloudflare's data-cfemail."""
+    out = []
+    if not html:
+        return out
+    for m in re.finditer(r'data-cfemail="([0-9a-fA-F]+)"', html, flags=re.I):
+        enc = m.group(1)
+        try:
+            key = int(enc[:2], 16)
+            dec = "".join(chr(int(enc[i:i+2], 16) ^ key) for i in range(2, len(enc), 2))
+            if "@" in dec and "." in dec.rsplit("@", 1)[-1]:
+                out.append(dec.lower())
+        except Exception:
+            continue
+    # dedup, bevar rækkefølge
+    return list(dict.fromkeys(out))
+
+def _filter_emails_by_domain(emails: list[str], base_url: str) -> list[str]:
+    """Konservativ domæne-match: behold emails der matcher site-domænet (inkl. subdomæner)."""
+    if not emails or not base_url:
+        return emails or []
+    try:
+        host = (_us(base_url).hostname or "").lower()
+        if not host:
+            return emails
+        apex = host
+        def _ok(e: str) -> bool:
+            try:
+                dom = e.split("@", 1)[1].lower()
+                return dom == apex or dom.endswith("." + apex)
+            except Exception:
+                return True  # hellere beholde end at kaste væk ved fejl
+        return [e for e in emails if _ok(e)]
+    except Exception:
+        return emails
+
+def _filter_phones_anti_cvr(html: str, phones: list[str]) -> list[str]:
+    """Fjern telefontræf hvor 'CVR' optræder tæt omkring nummeret i rå HTML-tekst."""
+    if not phones:
+        return []
+    try:
+        plain = re.sub(r"<[^>]+>", " ", html or "", flags=re.I)
+    except Exception:
+        plain = html or ""
+    out, seen = [], set()
+    for p in phones:
+        last8 = re.sub(r"\D", "", p)[-8:]
+        if not last8:
+            continue
+        # hvis 'CVR' nævnes i ±20 chars omkring nummeret -> drop
+        m = re.search(rf"(.{{0,20}}){re.escape(last8)}(.{{0,20}})", plain)
+        if m and "cvr" in (m.group(1) + m.group(2)).lower():
+            continue
+        # dedup på sidste 8 cifre
+        if last8 in seen:
+            continue
+        seen.add(last8)
+        out.append(p)
+    return out
+
+def _augment_contacts_postprocess(base_url: str, html: str, emails: list[str], phones: list[str]) -> tuple[list[str], list[str]]:
+    """Kør CF-decode + domæne-match + anti-CVR med dedup."""
+    cf = _decode_cloudflare_emails_from_html(html)
+    merged_emails = list(dict.fromkeys((emails or []) + cf))
+    filtered_emails = _filter_emails_by_domain(merged_emails, base_url)
+    filtered_phones = _filter_phones_anti_cvr(html, phones or [])
+    return filtered_emails, filtered_phones
+# === END PATCH: helpers for email/phone augmentation ===
+
 def _collect_contact_section_text(soup: BeautifulSoup) -> str:
     """
     Returnerer samlet tekst fra tydelige kontaktsektioner:
@@ -94,6 +164,7 @@ async def find_contact_info(
     Finder kontaktdata med høj/lav sikkerhed.
     Høj sikkerhed: mailto:/tel:/callto: + tydelige kontaktsektioner.
     Lav sikkerhed: regex i vilkårlig brødtekst uden for kontaktsektioner.
+    + Patch 2: CF-email decode (HIGH), domænefilter (LOW emails), anti-CVR (LOW phones), dedup på sidste 8 cifre.
     """
     if not soup:
         return {
@@ -107,6 +178,52 @@ async def find_contact_info(
     high_phones: Set[str] = set()
     low_emails: Set[str] = set()
     low_phones: Set[str] = set()
+
+    # --- helpers (lokale, minimal invasivt) ---
+    def _html_text(html: str) -> str:
+        try:
+            return re.sub(r"<[^>]+>", " ", html or "", flags=re.I)
+        except Exception:
+            return html or ""
+
+    def _decode_cf_emails_from_html(html: str) -> Set[str]:
+        out: Set[str] = set()
+        if not html:
+            return out
+        for m in re.finditer(r'data-cfemail="([0-9a-fA-F]+)"', html, flags=re.I):
+            enc = m.group(1)
+            try:
+                key = int(enc[:2], 16)
+                dec = "".join(chr(int(enc[i:i+2], 16) ^ key) for i in range(2, len(enc), 2))
+                if "@" in dec and "." in dec.rsplit("@", 1)[-1]:
+                    out.add(dec.lower())
+            except Exception:
+                continue
+        return out
+
+    def _site_host(url: str) -> str:
+        try:
+            return (urlsplit(url).hostname or "").lower()
+        except Exception:
+            return ""
+
+    def _domain_matches_site(email: str, site_host: str) -> bool:
+        try:
+            dom = email.split("@", 1)[1].lower()
+            return dom == site_host or (site_host and dom.endswith("." + site_host))
+        except Exception:
+            return True  # hellere beholde end at kaste ved fejl
+
+    def _dedup_phones_last8(numbers: Set[str]) -> List[str]:
+        seen: Set[str] = set()
+        out: List[str] = []
+        for p in numbers:
+            k = re.sub(r"\D", "", p)[-8:]
+            if not k or k in seen:
+                continue
+            seen.add(k)
+            out.append(p)
+        return out
 
     try:
         # 1) Klikbare links (HØJ sikkerhed)
@@ -136,7 +253,6 @@ async def find_contact_info(
         # 3) Brødtekst uden for kontaktsektioner (LAV sikkerhed)
         main_text = soup.get_text(separator=' ') if soup else ""
         if section_text:
-            # Fjern kontaktsektionstekst groft, så vi ikke dobbelt-tæller
             try:
                 main_text = main_text.replace(section_text, " ")
             except Exception:
@@ -145,6 +261,18 @@ async def find_contact_info(
         # Alt der ikke allerede er i HIGH → LOW
         low_emails.update(text_emails - high_emails)
         low_phones.update(text_phones - high_phones)
+
+        # 3b) Cloudflare-email decode (tilføjes som HIGH)
+        html_current = ""
+        try:
+            html_current = str(soup)
+        except Exception:
+            html_current = ""
+        cf_emails = _decode_cf_emails_from_html(html_current)
+        if cf_emails:
+            high_emails.update(cf_emails)
+            # sørg for at de ikke også ligger i LOW
+            low_emails.difference_update(cf_emails)
 
         # 4) Deep contact (kontakt-/support-undersider) = HØJ sikkerhed
         if deep_contact:
@@ -164,7 +292,6 @@ async def find_contact_info(
                         try:
                             sub_soup = await client.get_raw_html(full_url, return_soup=True)
                             if sub_soup:
-                                # Hele undersiden behandles som HØJ sikkerhed (kontaktkontekst)
                                 sub_text = sub_soup.get_text(separator=' ')
                                 sub_emails, sub_phones = extract_emails_and_phones_from_text(sub_text, exclude_phone=exclude_phone)
                                 # Mailto/tel i undersiden
@@ -192,11 +319,36 @@ async def find_contact_info(
             high_phones.discard(exclude_phone)
             low_phones.discard(exclude_phone)
 
+        # 5) Domænefilter for LOW emails (bevar HIGH urørt)
+        site_host = _site_host(base_url)
+        if site_host:
+            low_emails = {e for e in low_emails if _domain_matches_site(e, site_host)}
+
+        # 6) Anti-CVR for LOW phones (bevar HIGH urørt)
+        if html_current:
+            plain = _html_text(html_current)
+            cleaned_low: Set[str] = set()
+            for p in low_phones:
+                last8 = re.sub(r"\D", "", p)[-8:]
+                if not last8:
+                    continue
+                m = re.search(rf"(.{{0,20}}){re.escape(last8)}(.{{0,20}})", plain)
+                if m and "cvr" in (m.group(1) + m.group(2)).lower():
+                    continue
+                cleaned_low.add(p)
+            low_phones = cleaned_low
+
+        # 7) Dedup og sortering (emails simple; telefoner på sidste 8 cifre)
+        high_emails_out = sorted({e.lower() for e in high_emails})
+        low_emails_out = sorted({e.lower() for e in (low_emails - high_emails)})
+        high_phones_out = sorted(_dedup_phones_last8(high_phones))
+        low_phones_out = sorted(_dedup_phones_last8(low_phones - high_phones))
+
         return {
-            'emails_found': sorted(high_emails),
-            'phone_numbers_found': sorted(high_phones),
-            'emails_low_confidence': sorted(low_emails - high_emails),
-            'phone_numbers_low_confidence': sorted(low_phones - high_phones),
+            'emails_found': high_emails_out,
+            'phone_numbers_found': high_phones_out,
+            'emails_low_confidence': low_emails_out,
+            'phone_numbers_low_confidence': low_phones_out,
         }
 
     except Exception as e:
@@ -207,6 +359,7 @@ async def find_contact_info(
             'emails_low_confidence': [],
             'phone_numbers_low_confidence': [],
         }
+
 
 def detect_forms(html: str) -> Dict[str, Any]:
     """Konsistent formular-udtræk:
