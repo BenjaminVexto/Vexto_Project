@@ -3882,7 +3882,7 @@ class ContactFinder:
         # 4) Kandidat-sider (Home → DOM → Sitemap → WP)
         try:
             from bs4 import BeautifulSoup as _BS4
-            soup_home = _BS4(root_html or "", "html.parser")
+            soup_home = _BS4((htmls.get(url) or root_html) or "", "html.parser")
         except Exception:
             soup_home = None
 
@@ -3925,14 +3925,22 @@ class ContactFinder:
         # --- WP/andre heuristikker via eksisterende discover_candidates ---
         wp_links = discover_candidates(
             url,
-            root_html,
+            (htmls.get(url) or root_html),  
             max_urls=min(5, limit_pages),
             http_client=self.http_client,
         )
 
         # Sammensæt: DOM → sitemap → WP; ensret host → dedup → cap
         seeded = dom_links + site_links + wp_links
-        seeded = _sticky_host_urls(url, root_html, seeded)
+        seeded = _sticky_host_urls(url, (htmls.get(url) or root_html), seeded)
+
+        # Debug: se hvor mange kandidatlinks vi faktisk ender med (øverste få vist)
+        if log.isEnabledFor(logging.DEBUG):
+            try:
+                _dbg_list = ", ".join(seeded[:6])
+            except Exception:
+                _dbg_list = str(len(seeded))
+            log.debug("Candidates discovered: %d → %s", len(seeded), _dbg_list)
 
         _seen = set()
         candidates: list[str] = []
@@ -3940,6 +3948,12 @@ class ContactFinder:
             if cu not in _seen:
                 _seen.add(cu)
                 candidates.append(cu)
+
+        # NYT: fallback hvis vi stadig ingen kandidater har (fx JS-tung forside uden tydelige links)
+        if not candidates:
+            candidates = self._pages_to_try(url, limit_pages=limit_pages)
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug("SEED (fallback): %d candidate urls -> %s", len(candidates), candidates[:5])
 
         # hold det stramt – vi henter alligevel struktureret data per side nedenfor
         candidates = candidates[:min(8, limit_pages)]
@@ -4023,16 +4037,23 @@ class ContactFinder:
                 hints=gb.get("hints") or {"identity_gate_bypassed": True},
             ))
 
+        # 8b) Re-score inkl. generic bucket
+        cands = self._merge_dedup(cands)
+        scored = self._score_sort(cands, directors=directors)
+
         # 9) Final output
         cleaned = []
         seen_keys: set[tuple[str, str]] = set()
         for sc in scored:
-            if sc.score < 0:
-                continue
             reasons = set(sc.reasons or [])
             is_generic = "GENERIC_ORG_CONTACT" in reasons
+
+            # Drop negative kun hvis det IKKE er org-bucket
+            if sc.score < 0 and not is_generic:
+                continue
             if "GATE_FAIL" in reasons and not is_generic:
                 continue
+            # Kræv score/navn for person-kandidater – men skip kravet for org-bucket
             if sc.score < 2.0 and not sc.candidate.name and not is_generic:
                 continue
 
