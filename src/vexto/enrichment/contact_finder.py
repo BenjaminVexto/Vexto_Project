@@ -46,6 +46,7 @@ from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 from typing import Any, Iterable, Optional
 from vexto.scoring.http_client import _accept_encoding
+from bs4 import BeautifulSoup as _BS4
 
 urllib3 = None
 if importlib.util.find_spec("urllib3") is not None:
@@ -196,7 +197,7 @@ class CachingHttpClient:
                         # sidste forsøg – relativ import hvis vi er i underpakke
                         from ..http_client import AsyncHtmlClient  # type: ignore
 
-                client = AsyncHtmlClient(stealth=True, timeout=self.timeout)
+                client = AsyncHtmlClient(stealth=True)
                 await client.startup()
                 try:
                     # Lad klienten selv afgøre om der skal renderes (heuristik/autodetect)
@@ -632,6 +633,103 @@ _PROFILE_PATTERNS = [
     r'/ansat(?:te)?/[\w\-]+',
     r'/personale/[\w\-]+',
 ]
+
+def _cf_fetch_text_simple(self, any_url: str, timeout: float = 15.0) -> str | None:
+    """Let GET med egen http_client hvis tilgængelig; ellers httpx fallback."""
+    try:
+        if hasattr(self, "http_client") and hasattr(self.http_client, "get_text_smart"):
+            status, html = self.http_client.get_text_smart(any_url)
+            if (status or status == 200) and html:
+                return html
+    except Exception:
+        pass
+    try:
+        import httpx
+        with httpx.Client(timeout=timeout, follow_redirects=True) as cli:
+            r = cli.get(any_url)
+            if r.status_code == 200 and r.text:
+                return r.text
+    except Exception:
+        pass
+    return None
+
+def _cf_discover_sitemaps(self, base_url: str) -> list[str]:
+    from urllib.parse import urlsplit, urlunsplit
+    sp = urlsplit(base_url)
+    robots = urlunsplit((sp.scheme, sp.netloc, "/robots.txt", "", ""))
+    txt = _cf_fetch_text_simple(self, robots) or ""
+    maps: list[str] = []
+    for line in txt.splitlines():
+        if line.lower().startswith("sitemap:"):
+            u = line.split(":", 1)[1].strip()
+            if u:
+                maps.append(u)
+    if not maps:
+        guess = urlunsplit((sp.scheme, sp.netloc, "/sitemap.xml", "", ""))
+        maps.append(guess)
+    # dedup
+    seen = set(); out = []
+    for m in maps:
+        if m not in seen:
+            seen.add(m); out.append(m)
+    return out
+
+def _cf_extract_urls_from_sitemap_xml(self, xml_text: str) -> list[str]:
+    import xml.etree.ElementTree as ET
+    urls: list[str] = []
+    try:
+        root = ET.fromstring(xml_text)
+        ns = {"sm": root.tag.split("}")[0].strip("{")} if "}" in root.tag else {}
+        # urlset
+        url_nodes = root.findall(".//sm:url", ns) if ns else root.findall(".//url")
+        for url_el in url_nodes:
+            loc_el = url_el.find("sm:loc", ns) if ns else url_el.find("loc")
+            if loc_el is not None:
+                loc = (loc_el.text or "").strip()
+                if loc:
+                    urls.append(loc)
+        # sitemapindex → følg op til 10 under-sitemaps
+        if not urls:
+            site_nodes = root.findall(".//sm:sitemap", ns) if ns else root.findall(".//sitemap")
+            for s_el in site_nodes[:10]:
+                loc_el = s_el.find("sm:loc", ns) if ns else s_el.find("loc")
+                if loc_el is None:
+                    continue
+                sub = (loc_el.text or "").strip()
+                if not sub:
+                    continue
+                sub_xml = _cf_fetch_text_simple(self, sub)
+                if sub_xml:
+                    urls.extend(_cf_extract_urls_from_sitemap_xml(self, sub_xml))
+    except Exception:
+        pass
+    return urls
+
+def _cf_sitemap_contact_candidates(self, base_url: str) -> list[str]:
+    from urllib.parse import urlsplit
+    pats = ("kontakt", "contact", "kundeservice", "customer-service",
+            "about", "om-os", "team", "staff", "support", "help")
+    try:
+        host = urlsplit(base_url).netloc
+        cands: list[str] = []
+        for sm in _cf_discover_sitemaps(self, base_url)[:5]:
+            xml = _cf_fetch_text_simple(self, sm)
+            if not xml:
+                continue
+            for u in _cf_extract_urls_from_sitemap_xml(self, xml):
+                sp = urlsplit(u)
+                if sp.netloc and sp.netloc != host:
+                    continue  # kun interne
+                if any(p in u.lower() for p in pats):
+                    cands.append(u)
+        # dedup + cap
+        seen = set(); out = []
+        for u in cands:
+            if u not in seen:
+                seen.add(u); out.append(u)
+        return out[:5]
+    except Exception:
+        return []
 
 def _discover_profile_links(base_url: str, html: str, max_links: int = 40) -> list[str]:
     """Find medarbejder-/profil-URLs i HTML – nu med prioritering på anker-tekst og "contactish" hints."""
@@ -2538,6 +2636,7 @@ def _extract_from_text_emails(url: str, html: str) -> list[ContactCandidate]:
         ))
 
     return out
+
 def _extract_generic_org_contacts(base_url: str, pages_html: list[tuple[str, str]]) -> list[dict]:
     """
     Minimal, men robust 'org bucket' via fælles contact_fetchers.
@@ -2577,34 +2676,110 @@ def _extract_generic_org_contacts(base_url: str, pages_html: list[tuple[str, str
         return []
 
     # Parse til soup og kør fælles finder (HØJ/LAV sikkerhed)
-    soup = BeautifulSoup(root_html or "", "html.parser")
+    from bs4 import BeautifulSoup as _BS4
+    import re, json
 
-    # Kør uden deep-contact for ikke at trigge en ekstra crawl her
-    # (deep kan kaldes tidligere i pipeline hvis ønsket).
+    # Byg soups for alle sider vi allerede har (uden ekstra fetch)
+    soups: list[_BS4] = []
+    for _, html in pages_html:
+        if html:
+            soups.append(_BS4(html, "html.parser"))
+
+    high_emails, high_phones = set(), set()
+    low_emails, low_phones = set(), set()
+
+    def _collect_from_soup(s: _BS4):
+        # 1) Klikbare = høj sikkerhed
+        for a in s.select('a[href^="mailto:"]'):
+            addr = (a.get("href", "")[7:] or "").strip()
+            if addr:
+                high_emails.add(addr)
+        for a in s.select('a[href^="tel:"]'):
+            num = (a.get("href", "")[4:] or "").strip()
+            if num:
+                high_phones.add(num)
+
+        # 2) JSON-LD (Organization/LocalBusiness)
+        for sc in s.select('script[type="application/ld+json"]'):
+            try:
+                data = json.loads(sc.string or "")
+                nodes = data if isinstance(data, list) else [data]
+                for node in nodes:
+                    t = node.get("@type")
+                    if isinstance(t, list):
+                        t = " ".join(t)
+                    t_l = (t or "").lower()
+                    if any(k in t_l for k in ("organization", "localbusiness")):
+                        em = (node.get("email") or "").strip()
+                        if em:
+                            high_emails.add(em)
+                        tel = (str(node.get("telephone") or "").strip())
+                        if tel:
+                            high_phones.add(tel)
+            except Exception:
+                pass
+
+        # 3) Let de-obfuscation + regex (lav sikkerhed)
+        text = s.get_text(" ", strip=True)
+        for k, v in {
+            "[at]": "@", "(at)": "@", " (at) ": "@", " [at] ": "@",
+            " snabel-a ": "@", " snabela ": "@",
+            "[dot]": ".", "(dot)": ".", " dot ": ".",
+        }.items():
+            text = text.replace(k, v)
+
+        for m in re.finditer(r"[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}", text, flags=re.I):
+            low_emails.add(m.group(0))
+
+        for m in re.finditer(r"(?:\+?\d[\d\-\s().]{6,}\d)", text):
+            cand = re.sub(r"[^\d+]", "", m.group(0))
+            if len(cand) >= 8:
+                low_phones.add(cand)
+
+    # Scan alle indsamlede sider (root + sekundære)
+    for s in soups:
+        _collect_from_soup(s)
+
+    # Returnér straks hvis vi fandt noget i HTML/JSON-LD
+    if high_emails or high_phones or low_emails or low_phones:
+        emails = list(dict.fromkeys([*high_emails, *low_emails]))[:3]
+        phones = list(dict.fromkeys([*high_phones, *low_phones]))[:3]
+        return [{
+            "name": None,
+            "title": None,
+            "emails": emails,
+            "phones": phones,
+            "score": -1.0,
+            "reasons": ["GENERIC_ORG_CONTACT"],
+            "source": "page-generic",
+            "url": base_url,
+            "dom_distance": None,
+            "hints": {"origin": "html+jsonld", "identity_gate_bypassed": True},
+        }]
+
+    # Fallback: brug contact_fetchers på root-soup (uden deep crawl)
+    root_soup = soups[0] if soups else None
+    if not root_soup:
+        return []
+
     import asyncio
-
-    def _run():
+    def _run_cf():
         loop = asyncio.new_event_loop()
         try:
             asyncio.set_event_loop(loop)
             async def go():
-                return await find_contact_info(soup, base_url, deep_contact=False)
+                return await find_contact_info(root_soup, base_url, deep_contact=False)
             res = loop.run_until_complete(go())
             return res or {}
         finally:
-            try:
-                loop.close()
-            except Exception:
-                pass
-            try:
-                asyncio.set_event_loop(None)
-            except Exception:
-                pass
+            try: loop.close()
+            except Exception: pass
+            try: asyncio.set_event_loop(None)
+            except Exception: pass
 
-    data = _run()
+    data = _run_cf()
     emails = list(dict.fromkeys((data.get("emails_found") or [])))[:3]
     phones = list(dict.fromkeys((data.get("phone_numbers_found") or [])))[:3]
-
     if not emails and not phones:
         return []
 
@@ -2620,107 +2795,6 @@ def _extract_generic_org_contacts(base_url: str, pages_html: list[tuple[str, str
         "dom_distance": None,
         "hints": {"origin": "contact_fetchers", "identity_gate_bypassed": True},
     }]
-
-
-
-#def _extract_generic_org_contacts(base_url: str, pages_html: list[tuple[str, str]]) -> list[dict]:
-#    emails_on_domain: list[str] = []
-#    phones: list[str] = []
-
-#    seen_emails: set[str] = set()
-#    seen_phones: set[str] = set()
-
-#    re_email = r"[A-Z0-9._%+\-]{1,64}@[A-Z0-9.\-]{1,255}\.[A-Z]{2,}"
-
-#    def _site_tld(url: str) -> str:
-#        try:
-#            host = (urlsplit(url).hostname or "").lower()
-#            return host.rsplit(".", 1)[-1]
-#        except Exception:
-#            return ""
-
-#    def _is_dk_phone(pn: str) -> bool:
-#        return bool(re.fullmatch(r"\+45\d{8}", pn))
-
-#    def _last8(pn: str) -> str:
-#        return re.sub(r"\D", "", pn)[-8:]
-
-#    for u, html in pages_html:
-#        plain = re.sub(r"<[^>]+>", " ", html)
-
-        # E-mails i synlig tekst
-#        for m in re.finditer(re_email, plain, flags=re.I):
-#            em = _normalize_email(m.group(0))
-#            if not em:
-#                continue
-#            local = em.split("@", 1)[0]
-#            if local in {"noreply", "no-reply", "donotreply"}:
-#                continue
-#            if _email_domain_matches_site(em, base_url) and em not in seen_emails:
-#                seen_emails.add(em)
-#                emails_on_domain.append(em)
-
-        # Cloudflare (data-cfemail)
-#        for m in re.finditer(r'data-cfemail=["\']([0-9a-fA-F]+)["\']', html):
-#            em = _normalize_email(_cf_decode(m.group(1)))
-#            if not em:
-#                continue
-#            local = em.split("@", 1)[0]
-#            if local in {"noreply", "no-reply", "donotreply"}:
-#                continue
-#            if _email_domain_matches_site(em, base_url) and em not in seen_emails:
-#                seen_emails.add(em)
-#                emails_on_domain.append(em)
-
-        # Telefonnumre i synlig tekst (anti-CVR i nærkontekst)
-#        for m in re.finditer(r"(?:\+?\d[\s\-\(\)\.]{0,3}){8,}", plain):
-#            sidx, eidx = m.start(), m.end()
-#            ctx = plain[max(0, sidx-15):min(len(plain), eidx+15)].lower()
-#            if "cvr" in ctx:
-#                continue
-#            pn = _normalize_phone(m.group(0))
-#            if pn and pn not in seen_phones:
-#                seen_phones.add(pn)
-#                phones.append(pn)
-
-        # Telefonnumre i tel:-links
-#        for m in re.finditer(r'href=["\']tel:([^"\']+)["\']', html, flags=re.I):
-#            pn = _normalize_phone(m.group(1))
-#            if pn and pn not in seen_phones:
-#                seen_phones.add(pn)
-#                phones.append(pn)
-
-    # Dedupliker telefoner på “sidste 8 cifre” (samme nr. m. forskellig formattering)
-#    uniq_by_last8 = []
-#    seen_last8 = set()
-#    for pn in phones:
-#        k = _last8(pn)
-#        if k and k not in seen_last8:
-#            seen_last8.add(k)
-#            uniq_by_last8.append(pn)
-#    phones = uniq_by_last8
-
-    # Ved .dk-domæner – foretræk danske telefonnumre (+45XXXXXXXX)
-#    if _site_tld(base_url) == "dk":
-#        dk_only = [p for p in phones if _is_dk_phone(p)]
-#        if dk_only:
-#            phones = dk_only
-
-#   if not emails_on_domain and not phones:
-#        return []
-
-#    return [{
-#        "name": None,
-#        "title": None,
-#        "emails": emails_on_domain[:3],
-#        "phones": phones[:3],
-#        "score": -1.0,
-#        "reasons": ["GENERIC_ORG_CONTACT"],
-#        "source": "page-generic",
-#        "url": base_url,
-#        "dom_distance": None,
-#        "hints": {"identity_gate_bypassed": True},
-#    }]
 
 
 def _extract_from_rdfa(url: str, tree) -> list[ContactCandidate]:
@@ -3355,6 +3429,14 @@ class ContactFinder:
         # NY: HTTP-client – brug injiceret eller opret ny
         self.http_client = http_client or CachingHttpClient(timeout=timeout)
 
+    def _diag(self, url: str, code: str, extra: dict | None = None) -> None:
+        try:
+            payload = {"url": url, "code": code, **(extra or {})}
+            log.info("CF DIAG %s", payload)
+        except Exception:
+            # fail-silent – diag må aldrig vælte flowet
+            pass
+
     # ------------------------- Browser / rendering -------------------------
 
     def _should_render(self, url: str, html: Optional[str]) -> bool:
@@ -3797,14 +3879,70 @@ class ContactFinder:
                     log.debug("EARLY_EXIT: JSON-LD/Microdata hit (score=%.1f)", scored[0].score)
                     return cleaned
 
-        # 4) Kandidat-sider (Home → Sitemap → WP)
-        candidates = discover_candidates(
+        # 4) Kandidat-sider (Home → DOM → Sitemap → WP)
+        try:
+            from bs4 import BeautifulSoup as _BS4
+            soup_home = _BS4(root_html or "", "html.parser")
+        except Exception:
+            soup_home = None
+
+        def _is_probable_contact(href: str) -> bool:
+            if not href:
+                return False
+            h = href.lower()
+            return any(pat in h for pat in (
+                "/kontakt", "/contact", "/kundeservice", "/customer-service",
+                "/om-os", "/about", "/support", "/help", "/team", "/staff",
+                "/medarbejder", "/medarbejdere", "/ansatte", "/personale", "/ledelse",
+                "/people", "/management", "/board"
+            ))
+
+        dom_links: list[str] = []
+        if soup_home is not None:
+            from urllib.parse import urlsplit as _us, urljoin as _uj
+            base_host = (_us(url).netloc or "").lower()
+            for a in soup_home.select("a[href]"):
+                href = a.get("href", "") or ""
+                if not href or href.startswith(("#", "mailto:", "tel:")):
+                    continue
+                absu = _uj(url, href)
+                sp = _us(absu)
+                # kun interne
+                if (sp.netloc or "").lower() != base_host:
+                    continue
+                if _is_probable_contact(sp.path or absu):
+                    dom_links.append(absu)
+
+        # --- P6: sitemap-seeds (via eksisterende helpers) ---
+        site_links: list[str] = []
+        if os.getenv("CF_USE_SITEMAP", "true").lower() in {"1","true","yes","y"}:
+            try:
+                # bruger dine helpers definéret ovenfor i filen
+                site_links = _cf_sitemap_contact_candidates(self, url) or []
+            except Exception:
+                site_links = []
+
+        # --- WP/andre heuristikker via eksisterende discover_candidates ---
+        wp_links = discover_candidates(
             url,
             root_html,
             max_urls=min(5, limit_pages),
             http_client=self.http_client,
         )
-        candidates = _sticky_host_urls(url, root_html, candidates)
+
+        # Sammensæt: DOM → sitemap → WP; ensret host → dedup → cap
+        seeded = dom_links + site_links + wp_links
+        seeded = _sticky_host_urls(url, root_html, seeded)
+
+        _seen = set()
+        candidates: list[str] = []
+        for cu in seeded:
+            if cu not in _seen:
+                _seen.add(cu)
+                candidates.append(cu)
+
+        # hold det stramt – vi henter alligevel struktureret data per side nedenfor
+        candidates = candidates[:min(8, limit_pages)]
 
         # 5) Hent kandidat-sider
         for cu in candidates:
