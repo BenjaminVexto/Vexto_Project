@@ -3913,7 +3913,7 @@ class ContactFinder:
                 if _is_probable_contact(sp.path or absu):
                     dom_links.append(absu)
 
-        # --- P6: sitemap-seeds (via eksisterende helpers) ---
+        # --- sitemap-seeds (via eksisterende helpers) ---
         site_links: list[str] = []
         if os.getenv("CF_USE_SITEMAP", "true").lower() in {"1","true","yes","y"}:
             try:

@@ -256,20 +256,37 @@ def _ssl_context(verify: bool, ca_bundle: Optional[Path] = None) -> ssl.SSLConte
 ALWAYS_HTTPX = {"www.googleapis.com", "pagespeedonline.googleapis.com", "www.google.com"}
 
 def _looks_like_placeholder(html: Optional[str], url: str = "") -> bool:
-    if url.lower().endswith(('.xml', '.txt')) or 'sitemap' in url.lower() or 'robots' in url.lower():
+    # Spring statiske filer over
+    u = (url or "").lower()
+    if u.endswith(('.xml', '.txt')) or 'sitemap' in u or 'robots' in u:
         log.debug(f"Skipping placeholder check for static file: {url}")
         return False
-    if not html or len(html) < 200:
-        log.debug("Placeholder-tjek [Regel 1]: HTML var None eller meget kort.")
+
+    if not html:
+        log.debug("Placeholder: html is None/empty")
         return True
+
     lowered = html.lower()
-    challenge_patterns = [
-        "cdn-cgi/challenge-platform", "just a moment...", "attention required!",
-        "verifying your browser", "access denied",
-    ]
-    if any(p in lowered for p in challenge_patterns):
-        log.warning("Placeholder-tjek [Regel 2]: Matchede kendt challenge-mønster.")
+
+    # 1) Kort/tynd HTML UDEN åbenlyst kontaktindhold
+    if len(html) < 1200 and ("mailto:" not in lowered and "tel:" not in lowered):
+        log.debug(f"Placeholder: short html len={len(html)} (no mailto/tel)")
         return True
+
+    # 2) Kendte CF/challenge-fraser (udvidet)
+    challenge_patterns = (
+        "cdn-cgi/challenge-platform",
+        "just a moment", "just a moment...",
+        "attention required", "attention required!",
+        "verifying your browser", "checking your browser",
+        "making sure you're not a bot", "not a bot",
+        "enable javascript", "please enable javascript",
+        "access denied",
+    )
+    if any(p in lowered for p in challenge_patterns):
+        log.warning("Placeholder: matched challenge pattern")
+        return True
+
     return False
 
 def is_bot_detected(html: str, url: str = "") -> bool:
@@ -284,7 +301,9 @@ def is_bot_detected(html: str, url: str = "") -> bool:
     challenge_core = any(p in lower for p in (
         "just a moment", "attention required", "verifying your browser",
         "checking your browser", "datadome", "ddom-js", "bot detection",
-        "unusual traffic", "access denied"
+        "unusual traffic", "access denied",
+        "making sure you're not a bot", "not a bot",
+        "enable javascript", "please enable javascript"
     ))
 
     # 'cloudflare' alene er ikke nok — kræv cf + challenge for at dømme
@@ -816,13 +835,23 @@ class _PlaywrightThreadFetcher:
                     headers = _get_headers({"User-Agent": ua})
                     response = self._http_client.get(url, headers=headers)
                     html = response.text
-                    java_script_enabled = needs_rendering(html) or is_pwa_site
+
+                    # NEW: force rendering ved placeholder/CF, og support env override
+                    placeholder = _looks_like_placeholder(html, url)
+                    force_pw = os.getenv("VEXTO_FORCE_PW", "0").lower() in {"1","true","yes","on"}
+
+                    java_script_enabled = force_pw or placeholder or needs_rendering(html) or is_pwa_site
+
                     if not java_script_enabled:
-                        # Hvis det ligner en ren statisk side, returnér HTTPX-resultat uden Playwright
+                        # Stadig statisk → returnér kun hvis vi IKKE ser bot/challenge
                         if is_bot_detected(html, url):
                             log.error(f"❌ Bot detection in static GET for {url}")
                             return {"html": None, "canonical_data": {}}
+                        log.debug(f"Preflight static OK (len={len(html) if html else 0}) → no render: {url}")
                         return {"html": html, "canonical_data": {}}
+                    else:
+                        reason = "force_pw" if force_pw else ("placeholder" if placeholder else ("needs_rendering" if needs_rendering(html) else "pwa"))
+                        log.info(f"Escalating to Playwright for {url}: reason={reason}")
                 except Exception:
                     java_script_enabled = True  # eskaler
 
