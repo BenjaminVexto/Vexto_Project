@@ -112,6 +112,9 @@ basic_seo:
         - min: 40
           max: 70
           points: 5
+        - min: 0
+          max: 200
+          points: 0
       kritikalitet: Medium
     description_length: # punkt 12
       description: "Længden på sidens beskrivelse i søgeresultater."

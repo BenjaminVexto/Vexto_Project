@@ -266,7 +266,7 @@ def evaluate_canonical(data: dict) -> int:
         canonical_url = data.get('value')  # <- håndter payload {"value": "..."}
     if not canonical_url and isinstance(data, dict):
         canonical_url = (data.get('basic_seo', {}) or {}).get('canonical_url')
-    return 10 if canonical_url else 0
+    return 15 if canonical_url else 0
 
 
 def calculate_google_reviews(data: dict) -> int:

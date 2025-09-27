@@ -47,6 +47,7 @@ from urllib.parse import urljoin, urlsplit
 from typing import Any, Iterable, Optional
 from vexto.scoring.http_client import _accept_encoding
 from bs4 import BeautifulSoup as _BS4
+from urllib.parse import urljoin as _uj, urlsplit as _us
 
 urllib3 = None
 if importlib.util.find_spec("urllib3") is not None:
@@ -1693,6 +1694,21 @@ def _passes_identity_gate(
             letters = re.sub(r"[^a-zæøå]", "", (local or "").lower())
             if len(letters) >= 3 and (not _is_generic_local(local)) and _email_domain_matches_site(em, url):
                 return True
+
+    # NYT Rule F: Tilgivende på kontakt-sider - accepter med email eller phone, selv lav role
+    if url and _is_contactish_url(url):
+        if emails:
+            for em in emails:
+                try:
+                    local = em.split("@", 1)[0]
+                except Exception:
+                    continue
+                letters = re.sub(r"[^a-zæøå]", "", (local or "").lower())
+                has_personal_local = (len(letters) >= 3) and (not _is_generic_local(local)) and _email_domain_matches_site(em, url)
+                if has_personal_local:
+                    return True
+        if emails or (emails and title):
+            return True  # Accepter hvis email (domain-match) eller email + title
 
     return False
 
@@ -3547,10 +3563,18 @@ class ContactFinder:
             should_render = True
         elif self.use_browser == "auto":
             lh = (html.lower() if html else "")
-            should_render = _is_contactish_url(url) or (not html) or ("elementor" in lh) or _needs_js(html or "")
+            # NYT: Tjek for tynd/placeholder HTML (kort og ingen kontakt-signaler)
+            placeholderish = bool(html) and len(html) < 1500 and ("mailto:" not in lh) and ("tel:" not in lh)
+            should_render = (
+                _is_contactish_url(url)
+                or not html
+                or placeholderish
+                or ("elementor" in lh)
+                or _needs_js(html or "")
+            )
         
         # 2b) Render aldrig hvis URL svarer 404
-        if should_render and not html:
+        if should_render:
             with contextlib.suppress(Exception):
                 status, _ = self.http_client.get(url)  # NY: Brug self.http_client
                 if status and 400 <= status < 500:
@@ -3886,32 +3910,60 @@ class ContactFinder:
         except Exception:
             soup_home = None
 
-        def _is_probable_contact(href: str) -> bool:
-            if not href:
-                return False
-            h = href.lower()
-            return any(pat in h for pat in (
-                "/kontakt", "/contact", "/kundeservice", "/customer-service",
-                "/om-os", "/about", "/support", "/help", "/team", "/staff",
-                "/medarbejder", "/medarbejdere", "/ansatte", "/personale", "/ledelse",
-                "/people", "/management", "/board"
-            ))
+        def _same_apex(u1: str, u2: str) -> bool:
+            """Tjek om to URLs er samme 'apex' (ignorerer www. og tillader subdomæner)."""
+            n1 = (_us(u1).netloc or "").lower()
+            n2 = (_us(u2).netloc or "").lower()
+            if n1.startswith("www."): n1 = n1[4:]
+            if n2.startswith("www."): n2 = n2[4:]
+            return n1 == n2 or n1.endswith("." + n2) or n2.endswith("." + n1)
 
+        def _is_probable_contact(href: str, text: str = "") -> bool:
+            """Generel heuristik: match kontakt-/support-/team-sider via path eller linktekst."""
+            h = (href or "").lower()
+            t = re.sub(r"\s+", " ", (text or "").lower()).strip()
+
+            # URL-path signaler (generelle – IKKE sitespecifikke)
+            url_keys = (
+                "/kontakt", "/kontaktformular",
+                "/contact", "/contacts",
+                "/kundeservice", "/customer-service",
+                "/support", "/help", "/help-center",
+                "/team", "/staff", "/people", "/management", "/board",
+                "/medarbejder", "/medarbejdere", "/ansatte", "/personale",
+                "/impressum"  # udbredt "kontakt/juridisk" i DACH
+            )
+
+            # Link-tekst signaler (flere sprog, men korte og generiske)
+            text_keys = (
+                "kontakt", "kontakt os", "kontaktformular",
+                "kundeservice",
+                "contact", "contact us", "customer service",
+                "support", "help", "help center",
+                "team", "our team", "staff", "people", "management", "board",
+                "medarbejder", "medarbejdere", "ansatte", "personale",
+                "impressum"
+            )
+
+            return any(k in h for k in url_keys) or any(k in t for k in text_keys)
+
+        # --- DOM-seed fra forside ---
         dom_links: list[str] = []
         if soup_home is not None:
-            from urllib.parse import urlsplit as _us, urljoin as _uj
-            base_host = (_us(url).netloc or "").lower()
+            base_for_apex = final_site_url or url  # brug evt. kanonisk/redirectet base
             for a in soup_home.select("a[href]"):
                 href = a.get("href", "") or ""
                 if not href or href.startswith(("#", "mailto:", "tel:")):
                     continue
-                absu = _uj(url, href)
-                sp = _us(absu)
-                # kun interne
-                if (sp.netloc or "").lower() != base_host:
+                absu = _uj(base_for_apex, href)
+                # kun interne links (samme apex; ignorer www.-forskelle)
+                if not _same_apex(absu, base_for_apex):
                     continue
-                if _is_probable_contact(sp.path or absu):
+                if _is_probable_contact(_us(absu).path or absu, a.get_text(" ", strip=True)):
                     dom_links.append(absu)
+
+            # dedup – bevar rækkefølge
+            dom_links = list(dict.fromkeys(dom_links))
 
         # --- sitemap-seeds (via eksisterende helpers) ---
         site_links: list[str] = []
