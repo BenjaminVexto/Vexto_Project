@@ -226,7 +226,9 @@ class CachingHttpClient:
                     new_loop.close()
                     asyncio.set_event_loop(None)
 
+        # NYT: Kald funktionen og debug
         status, html = _run_async_get(u)
+        log.info(f"DEBUG: Fetched {u} - status={status}, html_len={len(html) if html else 0}, contains_mailto={'mailto:' in (html or '').lower()}")
 
         # --- Gem i lokal cache og returnér ---
         self._cache[u] = (status, html or "")
@@ -2302,10 +2304,19 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
             except Exception:
                 dist = 0 if name_h else 1
 
+            # Gate-bypass for generiske same-domain mails uden navn → org-kontakt
+            hints = {"near": near[:180], "harvested": True}
+            try:
+                local = em.split("@", 1)[0]
+            except Exception:
+                local = ""
+            if url and _email_domain_matches_site(em, url) and _is_generic_local(local) and not _is_plausible_name(name_h):
+                hints["identity_gate_bypassed"] = True
+                hints["org_footer"] = True
+
             out.append(ContactCandidate(
                 name=name_h, title=title_h, emails=[em], phones=phones_h,
-                source="mailto", url=url, dom_distance=dist,
-                hints={"near": near[:180], "harvested": True}
+                source="mailto", url=url, dom_distance=dist, hints=hints
             ))
 
 
@@ -2366,10 +2377,18 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
             except Exception:
                 dist = 0 if name_h else 1
 
+            hints = {"near": near[:180], "harvested": True}
+            try:
+                local = em.split("@", 1)[0]
+            except Exception:
+                local = ""
+            if url and _email_domain_matches_site(em, url) and _is_generic_local(local) and not _is_plausible_name(name_h):
+                hints["identity_gate_bypassed"] = True
+                hints["org_footer"] = True
+
             out.append(ContactCandidate(
                 name=name_h, title=title_h, emails=[em], phones=phones_h or [],
-                source="mailto", url=url, dom_distance=dist,
-                hints={"near": near[:180], "harvested": True}
+                source="mailto", url=url, dom_distance=dist, hints=hints
             ))
 
         # Cloudflare __cf_email__
@@ -3629,7 +3648,7 @@ class ContactFinder:
 
     def _extract_all(self, url: str, html: str) -> list[ContactCandidate]:
         tree = _parse_html(html)
-
+        
         out: list[ContactCandidate] = []
         # Primære extractors
         out.extend(_extract_from_jsonld(url, html))
@@ -3910,6 +3929,15 @@ class ContactFinder:
         except Exception:
             soup_home = None
 
+        # NYT: Tving fallback kontakt-paths hvis seeding er tom
+        candidates = []  # Initialiser hvis nødvendigt (men tjek konteksten)
+
+        if not candidates:
+            base = url.rstrip("/")
+            for p in FALLBACK_PATHS:
+                cand = base + p
+                candidates.append(cand)
+
         def _same_apex(u1: str, u2: str) -> bool:
             """Tjek om to URLs er samme 'apex' (ignorerer www. og tillader subdomæner)."""
             n1 = (_us(u1).netloc or "").lower()
@@ -4001,6 +4029,26 @@ class ContactFinder:
                 _seen.add(cu)
                 candidates.append(cu)
 
+        # Thin-coverage fallback: suppler altid med kendte kontakt-stier, hvis få candidates
+        if len(candidates) < 3:
+            extra = self._pages_to_try(url, limit_pages=limit_pages)
+            added = 0
+            for c in extra:
+                if c not in _seen and c not in candidates:
+                    candidates.append(c)
+                    _seen.add(c)
+                    added += 1
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug("Added fallback paths: %d → %s", added, extra[:6])
+
+        # Debug: vis endelige candidates før cap
+        if log.isEnabledFor(logging.DEBUG):
+            try:
+                _dbg = ", ".join(candidates[:8])
+            except Exception:
+                _dbg = str(len(candidates))
+            log.debug("Final candidates to crawl (cap before slice): %d → %s", len(candidates), _dbg)
+
         # NYT: fallback hvis vi stadig ingen kandidater har (fx JS-tung forside uden tydelige links)
         if not candidates:
             candidates = self._pages_to_try(url, limit_pages=limit_pages)
@@ -4012,8 +4060,10 @@ class ContactFinder:
 
         # 5) Hent kandidat-sider
         for cu in candidates:
-            if len(cands) >= 6:  # Cap på kontakter
+            if len(cands) >= 6:
                 break
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug("Fetching candidate page: %s", cu)
             try:
                 html = self._fetch_text_smart(cu)
                 htmls[cu] = html
