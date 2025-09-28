@@ -48,6 +48,7 @@ from typing import Any, Iterable, Optional
 from vexto.scoring.http_client import _accept_encoding
 from bs4 import BeautifulSoup as _BS4
 from urllib.parse import urljoin as _uj, urlsplit as _us
+from typing import TYPE_CHECKING
 
 urllib3 = None
 if importlib.util.find_spec("urllib3") is not None:
@@ -97,11 +98,13 @@ console.setFormatter(formatter)
 if not any(getattr(h, "name", "") == "cf_console" for h in log.handlers):
     log.addHandler(console)
 
-try:
-    # Kræver at AsyncHtmlClient findes i jeres http_client
-    from vexto.scoring.http_client import AsyncHtmlClient
-except Exception:
-    AsyncHtmlClient = None  # type: ignore
+# Ingen top-level runtime-import; vi importerer ved brug (runtime) i de relevante funktioner.
+# Dette fjerner Pylance-støj og undgår problemer når filen køres direkte.
+if TYPE_CHECKING:
+    # Kun for type hints i editoren, påvirker ikke runtime.
+    from vexto.scoring.http_client import AsyncHtmlClient as _AsyncHtmlClient  # pragma: no cover
+
+AsyncHtmlClient = None  # type: ignore
 
 
 _SHARED_PW_CLIENT = None
@@ -190,13 +193,10 @@ class CachingHttpClient:
             async def go(target: str) -> tuple[int, str]:
                 # Import med fleksible stier (afhænger af modul-struktur)
                 try:
-                    from vexto.scoring.http_client import AsyncHtmlClient  # typisk pakkesti
+                    from vexto.scoring.http_client import AsyncHtmlClient  # korrekt ift. dit repo
                 except Exception:
-                    try:
-                        from vexto.scoring.http_client import AsyncHtmlClient  # udviklingssti
-                    except Exception:
-                        # sidste forsøg – relativ import hvis vi er i underpakke
-                        from ..http_client import AsyncHtmlClient  # type: ignore
+                    # fallback når filen køres direkte som script og relative pakker driller
+                    from ..scoring.http_client import AsyncHtmlClient  # type: ignore
 
                 client = AsyncHtmlClient(stealth=True)
                 await client.startup()
@@ -212,7 +212,19 @@ class CachingHttpClient:
                         status = 200 if html else 0
                     return status, html
                 finally:
-                    await client.shutdown()
+                    # Kompatibel lukning: prøv .close() → .aclose() → .shutdown()
+                    import inspect
+                    for name in ("close", "aclose", "shutdown"):
+                        fn = getattr(client, name, None)
+                        if fn:
+                            try:
+                                res = fn()
+                                if inspect.isawaitable(res):
+                                    await res
+                            except Exception:
+                                pass
+                            break
+                                
 
             if has_running:
                 # Kør i eksisterende loop (blokkerende indtil færdig)
@@ -226,8 +238,48 @@ class CachingHttpClient:
                     new_loop.close()
                     asyncio.set_event_loop(None)
 
-        # NYT: Kald funktionen og debug
-        status, html = _run_async_get(u)
+        # Special-case: API/JSON-URLs (render forvrænger svar) → hent råt uden PW
+        try:
+            from urllib.parse import urlsplit as _split
+            _p = _split(u).path.lower()
+        except Exception:
+            _p = ""
+        if _p.startswith("/wp-json"):
+            try:
+                import httpx
+                with httpx.Client(timeout=12.0, follow_redirects=True) as _c:
+                    r = _c.get(u, headers={"Accept": "application/json,*/*"})
+                    text = r.text
+                    self._cache[u] = (r.status_code, text or "")
+                    log.info(f"DEBUG(API): Fetched {u} - status={r.status_code}, bytes={len(text or '')}")
+                    return self._cache[u]
+            except Exception:
+                try:
+                    import requests
+                    r = requests.get(u, timeout=12.0, allow_redirects=True,
+                                     headers={"Accept": "application/json,*/*"})
+                    text = r.text if getattr(r, "ok", False) else ""
+                    self._cache[u] = (getattr(r, "status_code", 0), text or "")
+                    log.info(f"DEBUG(API): Fetched {u} (requests) - status={getattr(r, 'status_code', 0)}, bytes={len(text or '')}")
+                    return self._cache[u]
+                except Exception:
+                    pass  # falder igennem til normal sti hvis alt fejler
+
+        # NYT: Kald funktionen og debug (med logging + fallback)
+        try:
+            status, html = _run_async_get(u)
+        except Exception as e:
+            log.error(f"_run_async_get crashed for {u}: {e!r}", exc_info=True)
+            # Simpel HTTP-fallback så vi undgår "stum" fejl
+            try:
+                import requests
+                r = requests.get(u, timeout=12.0, allow_redirects=True,
+                                headers={"User-Agent": "Mozilla/5.0"})
+                status, html = r.status_code, (r.text if r.ok else "")
+                log.info(f"Requests fallback: {u} -> status={status}, len={len(html)}")
+            except Exception as fb_e:
+                log.error(f"Requests fallback failed for {u}: {fb_e!r}")
+                status, html = 0, ""
 
         # Fallback #1: prøv med 'www.'-host hvis vi ikke fik HTML
         host = _host_of(u)
@@ -317,8 +369,8 @@ def _fetch_with_playwright_sync(
     """Render siden via fælles AsyncHtmlClient (force_playwright=True).
     Bevarer status/_needs_js-gate; ingen lokal PW-singleton eller atexit.
     """
-    if AsyncHtmlClient is None:
-        return pre_html or ""
+    #if AsyncHtmlClient is None:
+    #    return pre_html or ""
 
     import asyncio
     from urllib.parse import urlsplit as _us
@@ -388,14 +440,14 @@ def _fetch_with_playwright_sync(
             asyncio.set_event_loop(loop)
 
             async def go() -> str:
-                # Robust import (pakke/udviklingssti)
+                # Robust import (pakke/udviklingssti) — passer til src/vexto/scoring/http_client.py
                 try:
-                    from vexto.http_client import AsyncHtmlClient  # type: ignore
+                    from vexto.scoring.http_client import AsyncHtmlClient  # type: ignore
                 except Exception:
                     try:
-                        from src.vexto.http_client import AsyncHtmlClient  # type: ignore
+                        from src.vexto.scoring.http_client import AsyncHtmlClient  # type: ignore
                     except Exception:
-                        from ..http_client import AsyncHtmlClient  # type: ignore
+                        from ..scoring.http_client import AsyncHtmlClient  # type: ignore
 
                 client = AsyncHtmlClient(stealth=True)
                 await client.startup()
@@ -433,7 +485,18 @@ def _fetch_with_playwright_sync(
                         return res.get("html") or ""
                     return res or ""
                 finally:
-                    await client.shutdown()
+                    # Kompatibel lukning: prøv .close() → .aclose() → .shutdown()
+                    import inspect
+                    for name in ("close", "aclose", "shutdown"):
+                        fn = getattr(client, name, None)
+                        if fn:
+                            try:
+                                res = fn()
+                                if inspect.isawaitable(res):
+                                    await res
+                            except Exception:
+                                pass
+                            break
 
             return loop.run_until_complete(go())
         finally:
@@ -974,64 +1037,69 @@ def discover_candidates(
     #    Ensret til trailing slash og undgå dobbelte kald.
     if not _is_disallowed("/wp-json/", disallows):
         wp_root = urljoin(base_url, "/wp-json/")
-        st_wp, _ = client.get(wp_root)
+        st_wp, wp_probe = client.get(wp_root)
         if st_wp != 200:
-            log.debug(f"WP REST not available (status={st_wp}) for host={_host_of(base_url)} – skipping WP searches")
+            log.debug(f"WP REST not available (status {st_wp}) for {base_url}")
         else:
-            # >>> ANKER: CF/WP_REST_SHALLOW (konsolideret strategi)
-            KEYS = ("kontakt", "om", "about", "team", "medarbejdere", "staff", "management")
-            wp_blocked = False
+            # Kun fortsæt hvis svaret LIGNER JSON – ellers er det ikke et WP REST-endpoint.
+            _probe = (wp_probe or "").lstrip()
+            if not (_probe.startswith("{") or _probe.startswith("[")):
+                log.debug("WP REST probe returned non-JSON (likely SPA HTML) – skipping WP REST path")
+            else:
+                # >>> ANKER til WP REST logik (pages/search osv.)
+                KEYS = ("kontakt", "om", "about", "team", "medarbejdere", "staff", "management")
+                wp_blocked = False
 
-            # 1) Liste alle pages én gang og filtrér klient-side
-            api_list = urljoin(base_url, "/wp-json/wp/v2/pages/?_fields=link,title&per_page=100")
-            st_wp, body = client.get(api_list)
-            if st_wp in (401, 403, 404):
-                wp_blocked = True
-            elif st_wp == 200 and body:
-                try:
-                    for item in json.loads(body):
-                        link = (item.get("link") or "").strip()
-                        title = ((item.get("title") or {}).get("rendered") or "")
-                        if not link:
-                            continue
-                        lk = link.rstrip("/")
-                        s = f"{lk} {title}".lower()
+                # 1) Liste alle pages én gang og filtrér klient-side
+                api_list = urljoin(base_url, "/wp-json/wp/v2/pages/?_fields=link,title&per_page=100")
+                st_wp, body = client.get(api_list)
+                if st_wp in (401, 403, 404):
+                    wp_blocked = True
+                elif st_wp == 200 and body:
+                    try:
+                        for item in json.loads(body):
+                            link = (item.get("link") or "").strip()
+                            title = ((item.get("title") or {}).get("rendered") or "")
+                            if not link:
+                                continue
+                            lk = link.rstrip("/")
+                            s = f"{lk} {title}".lower()
 
-                        if _is_private_or_ip(lk):
-                            continue
-                        if _has_negatives(s):
-                            continue
-                        if any(k in s for k in KEYS):
-                            if lk not in seen:
-                                seen.add(lk)
-                                ranked.append((4, lk))
-                except Exception:
-                    pass
-
-            # 2) Minimal fallback: 1–2 søgninger, kun hvis ikke blokeret
-            if not wp_blocked and not any(score == 4 for score, _ in ranked[-8:]):
-                for t in ("kontakt", "om"):
-                    api = urljoin(base_url, f"/wp-json/wp/v2/pages/?search={t}&_fields=link,title&per_page=10")
-                    st_wp, body = client.get(api)
-                    if st_wp in (401, 403, 404):
-                        break
-                    if st_wp == 200 and body:
-                        try:
-                            for item in json.loads(body):
-                                link = (item.get("link") or "").strip()
-                                if not link:
-                                    continue
-                                lk = link.rstrip("/")
-                                if _is_private_or_ip(lk):
-                                    continue
-                                if _has_negatives(lk):
-                                    continue
+                            if _is_private_or_ip(lk):
+                                continue
+                            if _has_negatives(s):
+                                continue
+                            if any(k in s for k in KEYS):
                                 if lk not in seen:
                                     seen.add(lk)
                                     ranked.append((4, lk))
-                        except Exception:
-                            pass
-            # <<< ANKER: CF/WP_REST_SHALLOW
+                    except Exception:
+                        pass
+
+                # 2) Minimal fallback: 1–2 søgninger, kun hvis ikke blokeret
+                if not wp_blocked and not any(score == 4 for score, _ in ranked[-8:]):
+                    for t in ("kontakt", "om"):
+                        api = urljoin(base_url, f"/wp-json/wp/v2/pages/?search={t}&_fields=link,title&per_page=10")
+                        st_wp, body = client.get(api)
+                        if st_wp in (401, 403, 404):
+                            break
+                        if st_wp == 200 and body:
+                            try:
+                                for item in json.loads(body):
+                                    link = (item.get("link") or "").strip()
+                                    if not link:
+                                        continue
+                                    lk = link.rstrip("/")
+                                    if _is_private_or_ip(lk):
+                                        continue
+                                    if _has_negatives(lk):
+                                        continue
+                                    if lk not in seen:
+                                        seen.add(lk)
+                                        ranked.append((4, lk))
+                            except Exception:
+                                pass
+                # <<< ANKER: CF/WP_REST_SHALLOW
 
     ranked.sort(key=lambda x: x[0], reverse=True)
     urls = [u for _, u in ranked[:max_urls]]
@@ -3535,8 +3603,8 @@ class ContactFinder:
 
     def _render_with_async_client(self, url: str) -> Optional[str]:
         """Kør AsyncHtmlClient i separat tråd/loop for sync-kald."""
-        if AsyncHtmlClient is None:
-            return None
+        #if AsyncHtmlClient is None:
+        #    return None
 
         result_holder = {"html": None, "err": None}
 
@@ -3555,7 +3623,18 @@ class ContactFinder:
                             return res.get("html", "")
                         return res or ""
                     finally:
-                        await client.shutdown()
+                        # Kompatibel lukning
+                        import inspect
+                        for name in ("close", "aclose", "shutdown"):
+                            fn = getattr(client, name, None)
+                            if fn:
+                                try:
+                                    res = fn()
+                                    if inspect.isawaitable(res):
+                                        await res
+                                except Exception:
+                                    pass
+                                break
 
                 result_holder["html"] = loop.run_until_complete(go())
                 loop.close()
@@ -3596,10 +3675,14 @@ class ContactFinder:
         
         html = ""
         # 1) Prøv hurtig HTTP
-        with contextlib.suppress(Exception):
+        try:
             status, html = self.http_client.get(url)  # NY: Brug self.http_client i stedet for _fetch_text
             if status < 200 or status >= 400:
+                log.warning(f"HTTP fetch bad status {status} for {url}")
                 html = ""
+        except Exception as e:
+            log.error(f"http_client.get failed for {url}: {e!r}", exc_info=True)
+            html = ""
 
         html = html or ""
         stripped_html = html.strip()
@@ -3667,15 +3750,27 @@ class ContactFinder:
                 return m.group(1) + path
         return base.rstrip("/") + "/" + path.lstrip("/")
 
-    def _pages_to_try(self, url: str, limit_pages: int = 4) -> list[str]:
-        pages = [url] + [self._abs(url, p) for p in FALLBACK_PATHS]
-        # dedup bevar rækkefølge
-        seen = set()
-        ordered = []
+    def _pages_to_try(self, url: str, limit_pages: int = 4, home_html: str | None = None) -> list[str]:
+        """
+        Byg fallback-URL'er baseret på sprogdetektion/TLD via _localized_fallback_paths.
+        Falder tilbage til globale FALLBACK_PATHS hvis intet kan detekteres.
+        """
+        try:
+            localized = _localized_fallback_paths(url, home_html=home_html)  # relative paths
+        except Exception:
+            localized = []
+
+        paths = localized or list(FALLBACK_PATHS)  # fallback til global liste hvis nødvendigt
+        pages = [url] + [self._abs(url, p) for p in paths]
+
+        # dedup – bevar rækkefølge
+        seen: set[str] = set()
+        ordered: list[str] = []
         for u in pages:
             if u not in seen:
                 ordered.append(u)
                 seen.add(u)
+
         return ordered[:max(1, limit_pages)]
 
     # ---------------------------- Extract & score ----------------------------
@@ -3854,9 +3949,10 @@ class ContactFinder:
         try:
             root_html = self._fetch_text_smart(url)
             htmls[url] = root_html
-        except Exception:
+        except Exception as e:
             root_html = ""
-            self._diag(url, "NO_HTML_FETCHED", {"status": 0})
+            log.exception(f"find_all: root fetch failed for {url}")
+            self._diag(url, "NO_HTML_FETCHED", {"status": 0, "exc": repr(e)})
             return []
 
         # >>> ANKER: CF/DOMAIN_MISMATCH_GUARD
@@ -3986,14 +4082,6 @@ class ContactFinder:
                 cand = base + p
                 candidates.append(cand)
 
-        def _same_apex(u1: str, u2: str) -> bool:
-            """Tjek om to URLs er samme 'apex' (ignorerer www. og tillader subdomæner)."""
-            n1 = (_us(u1).netloc or "").lower()
-            n2 = (_us(u2).netloc or "").lower()
-            if n1.startswith("www."): n1 = n1[4:]
-            if n2.startswith("www."): n2 = n2[4:]
-            return n1 == n2 or n1.endswith("." + n2) or n2.endswith("." + n1)
-
         def _is_probable_contact(href: str, text: str = "") -> bool:
             """Generel heuristik: match kontakt-/support-/team-sider via path eller linktekst."""
             h = (href or "").lower()
@@ -4079,7 +4167,7 @@ class ContactFinder:
 
         # Thin-coverage fallback: suppler altid med kendte kontakt-stier, hvis få candidates
         if len(candidates) < 3:
-            extra = self._pages_to_try(url, limit_pages=limit_pages)
+            extra = self._pages_to_try(url, limit_pages=limit_pages, home_html=(htmls.get(url) or root_html))
             added = 0
             for c in extra:
                 if c not in _seen and c not in candidates:
@@ -4099,9 +4187,10 @@ class ContactFinder:
 
         # NYT: fallback hvis vi stadig ingen kandidater har (fx JS-tung forside uden tydelige links)
         if not candidates:
-            candidates = self._pages_to_try(url, limit_pages=limit_pages)
+            candidates = self._pages_to_try(url, limit_pages=limit_pages, home_html=(htmls.get(url) or root_html))
             if log.isEnabledFor(logging.DEBUG):
                 log.debug("SEED (fallback): %d candidate urls -> %s", len(candidates), candidates[:5])
+
 
         # hold det stramt – vi henter alligevel struktureret data per side nedenfor
         candidates = candidates[:min(8, limit_pages)]
