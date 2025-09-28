@@ -228,6 +228,28 @@ class CachingHttpClient:
 
         # NYT: Kald funktionen og debug
         status, html = _run_async_get(u)
+
+        # Fallback #1: prøv med 'www.'-host hvis vi ikke fik HTML
+        host = _host_of(u)
+        if (status == 0 or not html) and host and not host.startswith("www."):
+            alt = _force_host(u, "www." + host)
+            s2, h2 = _run_async_get(alt)
+            if h2:
+                log.debug(f"WWW fallback success: {alt} (len={len(h2)})")
+                u, status, html = alt, s2, h2
+
+        # Fallback #2: prøv http:// hvis https:// ikke gav HTML
+        if (status == 0 or not html) and u.startswith("https://"):
+            try:
+                parts = urlsplit(u)
+                alt = f"http://{parts.netloc}{parts.path or '/'}" + (f"?{parts.query}" if parts.query else "")
+                s3, h3 = _run_async_get(alt)
+                if h3:
+                    log.debug(f"HTTP fallback success: {alt} (len={len(h3)})")
+                    u, status, html = alt, s3, h3
+            except Exception:
+                pass
+
         log.info(f"DEBUG: Fetched {u} - status={status}, html_len={len(html) if html else 0}, contains_mailto={'mailto:' in (html or '').lower()}")
 
         # --- Gem i lokal cache og returnér ---
@@ -338,13 +360,17 @@ def _fetch_with_playwright_sync(
         f"pw_disabled_host={_host in _pw_disabled_hosts}"
     )
 
-    # 1) Drop PW på ≠200
-    if status != 200:
-        log.debug(f"Springer Playwright over (status {status}) for {url}")
-        return html0 or ""
+    # 1) Hvis status ≠ 200 men vi ingen HTML har, så PRØV Playwright alligevel
+    redirect_codes = {301, 302, 303, 307, 308}
+    if status not in (200, None):
+        if (not html0) or (status in redirect_codes):
+            log.debug(f"PW escalate despite status {status} for {url} (html0={len(html0 or '')})")
+        else:
+            log.debug(f"Springer Playwright over (status {status}, html_len={len(html0 or '')}) for {url}")
+            return html0 or ""
 
-    # 2) Drop PW når siden ikke kræver JS
-    if not needs:
+    # 2) JS-gate: kun skip PW hvis vi allerede HAR brugbar HTML og siden ikke kræver JS
+    if html0 and not needs and status == 200:
         log.debug(f"Playwright ikke nødvendig (statisk HTML) for {url}")
         return html0 or ""
 
@@ -3898,6 +3924,20 @@ class ContactFinder:
         final_site_url = resolved_root or url
         # <<< ANKER: CF/DOMAIN_MISMATCH_GUARD
 
+        if _needs_js(root_html) and AsyncHtmlClient is not None and self._pw_budget > 0:
+            try:
+                rendered = _fetch_with_playwright_sync(
+                    url,
+                    pre_html=root_html,
+                    pre_status=200 if root_html else None,
+                    http_client=self.http_client,
+                )
+                if rendered and not _looks_404(rendered):
+                    htmls[url] = rendered
+                    root_html = rendered
+            except Exception:
+                pass
+
         # 3) Structured data (JSON-LD/Microdata) først
         cands: list[ContactCandidate] = []
         sd = _extract_from_jsonld(url, root_html) + _extract_from_microformats(url, _parse_html(root_html))
@@ -4543,6 +4583,10 @@ if __name__ == "__main__":
 
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
+        # Hæv niveauet på vores egen konsol-handler så DEBUG faktisk vises
+        for h in logging.getLogger("vexto.contact_finder").handlers:
+            if getattr(h, "name", "") == "cf_console":
+                h.setLevel(logging.DEBUG)
 
     cf = ContactFinder(gdpr_minimize=bool(args.gdpr_minimize))
     if args.all:
