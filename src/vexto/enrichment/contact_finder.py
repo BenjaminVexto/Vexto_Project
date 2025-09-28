@@ -601,7 +601,11 @@ _JS_MARKERS_RE    = re.compile(
 
 def __needs_js_primary(html: str) -> bool:
     if not html:
-        return False
+        return True
+
+    if not html.strip():
+        return True
+
     lower = html.lower()
     # --- NYT: Cloudflare e-mail-obfuscation kræver JS-render ---
     if "__cf_email__" in lower or "data-cfemail" in lower:
@@ -624,8 +628,8 @@ def _is_initials_like(local: str) -> bool:
     return 2 <= len(letters) <= 4
 
 # [PATCH] alias → brug den primære heuristik
-def _needs_js(html: str) -> bool:
-    return __needs_js_primary(html)
+def _needs_js(html: str | None) -> bool:
+    return __needs_js_primary(html or "")
 
 _PROFILE_PATTERNS = [
     r'/medarbejder(?:e)?/[\w\-]+',
@@ -3570,26 +3574,30 @@ class ContactFinder:
             status, html = self.http_client.get(url)  # NY: Brug self.http_client i stedet for _fetch_text
             if status < 200 or status >= 400:
                 html = ""
-        
+
+        html = html or ""
+        stripped_html = html.strip()
+
         # 1b) Hvis vi kan se 404 i HTML, så drop Playwright og returnér
-        if html and _looks_404(html):
+        if stripped_html and _looks_404(html):
             self._html_cache_local[key] = html or ""
             return html or ""
-        
+
         # 2) Vurdér om vi bør render'e
         should_render = False
         if self.use_browser == "always":
             should_render = True
         elif self.use_browser == "auto":
-            lh = (html.lower() if html else "")
+            lh = html.lower()
+            stripped = stripped_html
             # NYT: Tjek for tynd/placeholder HTML (kort og ingen kontakt-signaler)
-            placeholderish = bool(html) and len(html) < 1500 and ("mailto:" not in lh) and ("tel:" not in lh)
+            placeholderish = bool(stripped) and len(html) < 1500 and ("mailto:" not in lh) and ("tel:" not in lh)
             should_render = (
                 _is_contactish_url(url)
-                or not html
+                or not stripped
                 or placeholderish
                 or ("elementor" in lh)
-                or _needs_js(html or "")
+                or _needs_js(html)
             )
         
         # 2b) Render aldrig hvis URL svarer 404
@@ -3606,7 +3614,7 @@ class ContactFinder:
                 return html or ""
             self._pw_attempted.add(key)
             self._pw_budget -= 1
-            pre_status = 200 if html and not _looks_404(html) else None
+            pre_status = 200 if stripped_html and not _looks_404(html) else None
             rendered = _fetch_with_playwright_sync(
                 url,
                 pre_html=html or None,
@@ -4106,7 +4114,8 @@ class ContactFinder:
                 continue
 
         # 6) Playwright kun hvis nødvendig
-        if _needs_js(root_html) and AsyncHtmlClient is not None and self._pw_budget > 0:
+        root_blank = not (root_html or "").strip()
+        if (root_blank or _needs_js(root_html)) and AsyncHtmlClient is not None and self._pw_budget > 0:
             try:
                 rendered = _fetch_with_playwright_sync(
                     url,
