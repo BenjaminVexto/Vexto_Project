@@ -36,8 +36,18 @@ class TitleMatcher:
 
     @classmethod
     def load(cls) -> "TitleMatcher":
-        exact = json.loads((DATA_DIR / "titles_exact_index.json").read_text(encoding="utf-8"))
-        token = json.loads((DATA_DIR / "titles_token_index.json").read_text(encoding="utf-8"))
+        def _read_json_any(path: Path):
+            try:
+                return json.loads(path.read_text(encoding="utf-8"))
+            except UnicodeDecodeError:
+                # håndter evt. BOM eller tidligere cp1252-skrivninger
+                try:
+                    return json.loads(path.read_text(encoding="utf-8-sig"))
+                except UnicodeDecodeError:
+                    return json.loads(path.read_text(encoding="cp1252"))
+
+        exact = _read_json_any(DATA_DIR / "titles_exact_index.json")
+        token = _read_json_any(DATA_DIR / "titles_token_index.json")
         return cls(exact, token, DATA_DIR / "title_catalog.csv")
 
     def match(self, raw: Optional[str]) -> Optional[Tuple[str, str, str, float]]:

@@ -44,7 +44,7 @@ def main():
     # Skriv katalog CSV
     out_csv = OUT_DIR / "title_catalog.csv"
     cols = ["title_id","da_name","isco_code","isco_name","hotjob","aliases_da"]
-    df.to_csv(out_csv, index=False)
+    df.to_csv(out_csv, index=False, encoding="utf-8")
 
     # Byg exact-index: canonical og alle alias → title_id
     exact = {}
@@ -70,8 +70,12 @@ def main():
             token_index.setdefault(tok, {}).setdefault(tid, 0)
             token_index[tok][tid] += 1
 
-    (OUT_DIR / "titles_exact_index.json").write_text(json.dumps(exact, ensure_ascii=False))
-    (OUT_DIR / "titles_token_index.json").write_text(json.dumps(token_index, ensure_ascii=False))
+    (OUT_DIR / "titles_exact_index.json").write_text(
+        json.dumps(exact, ensure_ascii=False), encoding="utf-8"
+    )
+    (OUT_DIR / "titles_token_index.json").write_text(
+        json.dumps(token_index, ensure_ascii=False), encoding="utf-8"
+    )
     print(f"OK → {out_csv}\nOK → titles_exact_index.json\nOK → titles_token_index.json")
 
 if __name__ == "__main__":
