@@ -588,7 +588,7 @@ CONTACTISH_SLUGS = (
     # DA/EN
     "kontakt", "contact", "kontakt-os", "contact-us",
     "team", "teams", "medarbejder", "medarbejdere",
-    "people", "staff", "ledelse", "about", "om", "om-os",
+    "people", "staff", "ledelse", "about", "om-os",
     # SV/NO/DE
     "kontakt-oss", "kontakta", "om-oss", "om-oss/", "om-oss",
     "medarbetare", "personal", "mitarbeiter", "ueber-uns", "uber-uns"
@@ -597,6 +597,7 @@ CONTACTISH_SLUGS = (
 # >>> ANKER START: DEDUP_AND_NORM_HELPERS
 _EMAIL_RE = re.compile(r"[A-Z0-9._%+\-]{1,64}@[A-Z0-9.\-]{1,255}\.[A-Z]{2,}", re.I)
 _PHONE_RE = re.compile(r"(?:\+?\d[\s\-\(\)\.]{0,3}){8,15}", re.I)
+
 def _dedup_list(items: list[str]) -> list[str]:
     """Dedupliker en liste og bevarer rækkefølgen."""
     seen = set()
@@ -1226,7 +1227,7 @@ def _localized_fallback_paths(base_url: str, home_html: str) -> tuple[str, ...]:
 # Link-discovery (ankertekst/URL indeholder disse)
 DISCOVERY_KEYWORDS = {
     "kontakt", "contact", "kontakt os", "contact us",
-    "om", "om os", "about", "about us",
+    "om os", "about", "about us",   # fjernet enkeltordet "om"
     "team", "teams", "vores team", "vores-hold", "holdet",
     "medarbejder", "medarbejdere", "ansatte", "personale",
     "people", "staff",
@@ -1303,6 +1304,39 @@ def _confidence_from(sc: ScoredContact) -> float:
     return round(conf, 3)
 # === ANKER: CONFIDENCE_HELPER ===
 
+# === ANKER: TITLE_MATCH_VALIDATION ===
+_TITLE_MATCHER = None  # lazy-loaded singleton
+
+def _load_title_matcher():
+    global _TITLE_MATCHER
+    if _TITLE_MATCHER is None:
+        try:
+            from vexto.enrichment.title_matcher import TitleMatcher
+        except Exception:
+            # fallback til relativ import når filen køres direkte
+            from .title_matcher import TitleMatcher  # type: ignore
+        _TITLE_MATCHER = TitleMatcher.load()
+    return _TITLE_MATCHER
+
+def _canonicalize_title_or_none(raw_title: str | None):
+    """
+    Brug TitelKatalog som facit:
+    Returnér (canonical_title, meta) eller None hvis ikke godkendt.
+    meta = {'title_id':..., 'match_type':..., 'score':...}
+    """
+    if not raw_title:
+        return None
+    try:
+        matcher = _load_title_matcher()
+        hit = matcher.match(raw_title)
+        if not hit:
+            return None
+        title_id, canonical, match_type, score = hit
+        return canonical, {'title_id': title_id, 'match_type': match_type, 'score': float(score)}
+    except Exception:
+        return None
+
+
 # ------------------------------- Utils ----------------------------------------
 
 def _collapse_ws(s: str | None) -> str | None:
@@ -1311,8 +1345,10 @@ def _collapse_ws(s: str | None) -> str | None:
     return re.sub(r"\s+", " ", str(s)).strip()
 
 def _is_plausible_name(s: str | None) -> bool:
-    """1–4 tokens, kapitaliserede, ingen tal/@/breadcrumb-tegn, ikke ALL CAPS.
-    Afviser CTA/sektionstitler (kontakt, om os, osv.).
+    """Vurder om tekst ligner et personnavn.
+    - 2–4 tokens hvor mindst 2 starter med stort
+    - ingen cifre/@
+    - frasortér UI-tekst, adresseord og kendte ikke-navne
     # ANKER: NAME_VALIDATION_RELAXED
     """
     if not s:
@@ -1320,23 +1356,103 @@ def _is_plausible_name(s: str | None) -> bool:
     s = _collapse_ws(s) or ""
     if not s:
         return False
+
     low = s.lower()
-    # CTA/sektion-blacklist for at undgå falske navne
-    _NAME_BLACKLIST = {
+
+    UI_BLACKLIST = {
+        # UI/CTA/sektioner
         "kontakt","kontakt os","contact","contact us","om","om os","about","about us",
         "ring til os","skriv til os","book","bestil","vores team","team","har du spørgsmål",
-        "find medarbejder","læs mere","kundeservice","personale","medarbejdere"
+        "find medarbejder","læs mere","kundeservice","personale","medarbejdere",
+        "menu","trustpilot","cookie"
     }
-    if low in _NAME_BLACKLIST:
+    if low in UI_BLACKLIST:
         return False
-    if re.search(r"[,/|>@]|\d", s):
+
+    # hurtige hard-stops
+    if re.search(r"[@\d]", s):
         return False
     if s.upper() == s:
         return False
-    parts = s.split(" ")
-    if not (1 <= len(parts) <= 4):
+
+    # adressemønstre (DK/EN)
+    ADDR_TOKENS = {
+        "vej","gade","allé","alle","boulevard","plads","torv","center","centret",
+        "trafikcenter","road","street","ave","avenue","blvd","square","plaza","centre"
+    }
+    # split til ord, bevar danske bogstaver
+    tokens = [t for t in re.split(r"[^\wÆØÅæøå\-]+", s) if t]
+    if not (2 <= len(tokens) <= 4):
         return False
-    return all(re.fullmatch(NAME_TOKEN, p) for p in parts)
+    if any(t.lower() in ADDR_TOKENS for t in tokens):
+        return False
+
+    # mindst to kapitaliserede “navneord” – tillad småord som af/de/van/von
+    SMALL_CONNECTORS = {"af","de","del","der","van","von","da","di"}
+    cap_tokens = [t for t in tokens if t[:1].isupper() and t.lower() not in SMALL_CONNECTORS]
+    if len(cap_tokens) < 2:
+        return False
+
+    return True
+
+# --- Smartere titel-udtræk fra tekstvindue omkring navn (DK/EN) ---
+_ROLE_LEXICON_DA = {
+    "adm. direktør","administrerende direktør","direktør","salgsdirektør","salgschef","kundeservice",
+    "kundechef","marketingchef","marketing","økonomi","bogholder","regnskab","indkøb","indkøber",
+    "produktchef","lagerchef","driftschef","logistik","support","salg","key account manager",
+    "konsulent","projektleder","butikschef","webshop","hr","personalechef","service"
+}
+_ROLE_LEXICON_EN = {
+    "chief executive officer","ceo","managing director","director","sales director","sales manager",
+    "customer service","account manager","marketing manager","marketing","finance","bookkeeper",
+    "purchasing","procurement","product manager","operations manager","logistics","support","sales",
+    "consultant","project manager","store manager","hr","human resources","service"
+}
+# prioriter længere matches
+_ROLE_ALL = sorted(_ROLE_LEXICON_DA | _ROLE_LEXICON_EN, key=len, reverse=True)
+
+def _title_from_text_window(text: str, name: str | None = None) -> str | None:
+    text = _collapse_ws(text or "") or ""
+    if not text:
+        return None
+    low = text.lower()
+
+    # hvis vi kender navnet, kig i et vindue ±120 tegn
+    if name:
+        nlow = name.lower()
+        i = low.find(nlow)
+        if i != -1:
+            start = max(0, i - 120); end = min(len(low), i + len(nlow) + 160)
+            low = low[start:end]
+
+    # prøv “Navn – Titel” / “Navn, Titel”
+    if name:
+        safe = re.escape(name)
+        m = re.search(rf"{safe}\s*[:,\-–—]\s*([A-Za-zÆØÅæøå/ &\-]{{3,80}})", text, flags=re.IGNORECASE)
+        if m:
+            cand = _sanitize_title(m.group(1))
+            if cand:
+                # [NYT] Facit-validering
+                canon = _canonicalize_title_or_none(cand)
+                if canon:
+                    return canon[0]
+                return None  # falder igennem hvis ikke i katalog
+
+    # prøv rolle-leksikon
+    for role in _ROLE_ALL:
+        if role in low:
+            m = re.search(re.escape(role), text, flags=re.IGNORECASE)
+            if m:
+                cand = _sanitize_title(m.group(0))
+                if cand:
+                    # [NYT] Facit-validering
+                    canon = _canonicalize_title_or_none(cand)
+                    if canon:
+                        return canon[0]
+                    return None
+
+    return None
+
 
 def _maybe_promote_name_case(s: str | None) -> Optional[str]:
     """
@@ -2626,9 +2742,7 @@ def _extract_from_dom(url: str, html_or_tree) -> list[ContactCandidate]:
 
         # Fallback: nærtekst → titel
         if not _sanitize_title(title_h):
-            m2 = re.search(r"(?i)\b([A-Za-zÆØÅæøå/\- ]{3,80})\b", text_blob)
-            if m2:
-                title_h = _sanitize_title(m2.group(1))
+            title_h = _title_from_text_window(text_blob, name_h)
 
         dist = _dom_distance(a, container) or (0 if name_h else 1)
         out.append(ContactCandidate(
@@ -3108,7 +3222,10 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
                     ".wp-block-column, .wp-block-media-text, .team-member, .wp-block-group > div, .is-layout-flow > div, "
                     ".elementor-column, .elementor-widget, .elementor-widget-container, .elementor-image-box, .elementor-team-member, "
                     ".staff-card, .employee, .employee-card, .profile-card, .bio-card, "
-                    ".member, .person, .staff-item, .team-item, .member-card, .people__item, .team-member__card, .card, .card-body"
+                    ".member, .person, .staff-item, .team-item, .member-card, .people__item, .team-member__card, .card, .card-body, "
+                    # Nye generiske kontakt-person varianter (Vue/Nuxt/e-comm) 
+                    ".contact-card, .contactperson, .kontaktperson, .kontakt-card, .contact__person, [class*='kontakt'] [class*='person'], "
+                    "[class*='contact'] [class*='person'], [class*='staff'] [class*='card']"
                 )
     # === ANKER: STAFF_GRID_CARD_SELECTORS_EXTENDED ===
             elif hasattr(cont, "select"):
@@ -3116,7 +3233,11 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
                     "figure, article, "
                     ".wp-block-column, .wp-block-media-text, .team-member, .wp-block-group > div, .is-layout-flow > div, "
                     ".elementor-column, .elementor-widget, .elementor-widget-container, .elementor-image-box, .elementor-team-member, "
-                    ".staff-card, .employee, .employee-card, .profile-card, .bio-card"
+                    ".staff-card, .employee, .employee-card, .profile-card, .bio-card, "
+                    ".member, .person, .staff-item, .team-item, .member-card, .people__item, .team-member__card, .card, .card-body, "
+                    # Nye generiske kontakt-person varianter (Vue/Nuxt/e-comm) 
+                    ".contact-card, .contactperson, .kontaktperson, .kontakt-card, .contact__person, [class*='kontakt'] [class*='person'], "
+                    "[class*='contact'] [class*='person'], [class*='staff'] [class*='card']"
                 ) or cont.select("div, figure, article")
         except Exception:
             cards = []
@@ -3140,17 +3261,33 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
             direct_title = None
             try:
                 if hasattr(card, "css"):
-                    dn = card.css_first(".person-name,.staff-name,.member-name,.employee-name,.bio-name,.team-member__name,.name")
-                    dr = card.css_first(".job-title,.role,.position,.position-title,.team-member__role,.bio-title,.title")
+                    dn = card.css_first(
+                        ".person-name, .staff-name, .member-name, .employee-name, .bio-name, .team-member__name, .name, "
+                        ".contact-name, .kontakt-navn, .kontaktperson__name, [class*='name'], [class*='navn']"
+                    )
+                    dr = card.css_first(
+                        ".job-title, .role, .position, .position-title, .team-member__role, .bio-title, .title, "
+                        ".contact-title, .kontakt-title, [class*='title'], [class*='rolle'], [class*='stilling'], [class*='position']"
+                    )
                     if dn: direct_name = _collapse_ws(dn.text())
                     if dr: direct_title = _sanitize_title(_collapse_ws(dr.text()))
                 elif hasattr(card, "select"):
-                    dn = card.select_one(".person-name,.staff-name,.member-name,.employee-name,.bio-name,.team-member__name,.name")
-                    dr = card.select_one(".job-title,.role,.position,.position-title,.team-member__role,.bio-title,.title")
+                    dn = card.select_one(".person-name, .staff-name, .member-name, .employee-name, .bio-name, .team-member__name, .name, "
+                        ".contact-name, .kontakt-navn, .kontaktperson__name, [class*='name'], [class*='navn']"
+                    )
+                    dr = card.select_one(
+                        ".job-title, .role, .position, .position-title, .team-member__role, .bio-title, .title, "
+                        ".contact-title, .kontakt-title, [class*='title'], [class*='rolle'], [class*='stilling'], [class*='position']"
+                    )
                     if dn: direct_name = _collapse_ws(dn.get_text(" ", strip=True))
                     if dr: direct_title = _sanitize_title(_collapse_ws(dr.get_text(" ", strip=True)))
             except Exception:
                 pass
+            
+            if direct_name and not direct_title:
+                guess = _title_from_text_window(text_multiline, direct_name)
+                if guess:
+                    direct_title = guess
 
             name, title = None, None
             if _is_plausible_name(direct_name):
@@ -3417,6 +3554,27 @@ def _score_candidate(c: ContactCandidate, directors: Optional[list[str]] = None)
                 why.append("DIRECTOR_HINT")
     except Exception:
         pass
+
+    # [NYT] Titel-facit: valider og kanonificér før vi returnerer ScoredContact
+    try:
+        cand_title = getattr(c, "title", None)
+        canon = _canonicalize_title_or_none(cand_title)
+        if canon:
+            canonical_title, meta = canon
+            # skriv kanonisk titel tilbage
+            setattr(c, "title", canonical_title)
+            # gem metadata i hints
+            hints = getattr(c, "hints", {}) or {}
+            hints["title_validation"] = meta  # {'title_id','match_type','score'}
+            setattr(c, "hints", hints)
+            why.append("TITLE_FACIT_OK")
+        else:
+            why.append("TITLE_FACIT_REJECT")
+            # konservativ straf – kan tunes (0.25–1.0)
+            s = max(0.0, s - 0.5)
+    except Exception:
+        # fail-safe: påvirk ikke flowet hvis noget går galt
+        why.append("TITLE_FACIT_SKIPPED")
 
     return ScoredContact(candidate=c, score=s, reasons=why)
     # === ANKER: DIRECTOR_SCORE_BOOST ===
@@ -4165,9 +4323,10 @@ class ContactFinder:
                 _seen.add(cu)
                 candidates.append(cu)
 
-        # Thin-coverage fallback: suppler altid med kendte kontakt-stier, hvis få candidates
-        if len(candidates) < 3:
-            extra = self._pages_to_try(url, limit_pages=limit_pages, home_html=(htmls.get(url) or root_html))
+        # Thin-coverage fallback: suppler med kendte kontakt-stier ved lav dækning
+        if len(candidates) < 5:  # hævet fra 3 → 5
+            extra = self._pages_to_try(url, limit_pages=limit_pages,
+                                    home_html=(htmls.get(url) or root_html))
             added = 0
             for c in extra:
                 if c not in _seen and c not in candidates:
@@ -4177,13 +4336,24 @@ class ContactFinder:
             if log.isEnabledFor(logging.DEBUG):
                 log.debug("Added fallback paths: %d → %s", added, extra[:6])
 
+        # Uanset antal kandidater: sikr at de vigtigste lokaliserede kontaktstier er med
+        core_rel = _localized_fallback_paths(url, home_html=(htmls.get(url) or root_html))
+        core_abs = [self._abs(url, r) for r in core_rel]
+        added_core = 0
+        for c in core_abs:
+            if c not in _seen and c not in candidates:
+                candidates.append(c)
+                _seen.add(c)
+                added_core += 1
+        if log.isEnabledFor(logging.DEBUG) and added_core:
+            log.debug("Ensure core fallbacks: +%d → %s", added_core, core_rel[:6])
+
         # Debug: vis endelige candidates før cap
         if log.isEnabledFor(logging.DEBUG):
-            try:
-                _dbg = ", ".join(candidates[:8])
-            except Exception:
-                _dbg = str(len(candidates))
-            log.debug("Final candidates to crawl (cap before slice): %d → %s", len(candidates), _dbg)
+            _cap = min(len(candidates), (limit_pages or 50))
+            log.debug("Final candidates to crawl (cap before slice): %d → %s",
+                    len(candidates), ", ".join(candidates[:_cap]))
+
 
         # NYT: fallback hvis vi stadig ingen kandidater har (fx JS-tung forside uden tydelige links)
         if not candidates:
@@ -4197,7 +4367,7 @@ class ContactFinder:
 
         # 5) Hent kandidat-sider
         for cu in candidates:
-            if len(cands) >= 6:
+            if len(cands) >= 10:
                 break
             if log.isEnabledFor(logging.DEBUG):
                 log.debug("Fetching candidate page: %s", cu)
