@@ -106,12 +106,23 @@ if TYPE_CHECKING:
 
 AsyncHtmlClient = None  # type: ignore
 
-
 _SHARED_PW_CLIENT = None
 
 _HOST_CRAWL_DELAYS = {}
 
-# -------------------- P1: Per-host caches + sticky host helpers ----------------
+TELEMETRY_CF = os.environ.get("VEXTO_CF_TELEMETRY") == "1"
+
+def _fp_from_text(s: str, prefix: str = "", n: int = 12) -> str:
+    """Stabilt kort-fingerprint fra lille tekst-blob (sha1, 12 hexdigits)."""
+    try:
+        h = hashlib.sha1((prefix + (s or "")[:512]).encode("utf-8", "ignore")).hexdigest()
+        return h[:n]
+    except Exception:
+        return ""
+
+
+
+# -------------------- Per-host caches + sticky host helpers ----------------
 _PW_FAILS_BY_HOST: dict[str, int] = {}
 _PW_FAILS_MAX = 3  # efter 3 fejl i træk for en host stopper vi midlertidigt PW for DEN host
 _PW_DISABLED_HOSTS: set[str] = set()
@@ -137,6 +148,8 @@ def _now() -> float:
     return time.time()
 
 def _respect_host_budget(u: str) -> bool:
+    if TELEMETRY_CF:
+            log.debug(f"Loaded from: {__file__}")    
     host = _host_of(u)
     if not host:
         return True
@@ -203,14 +216,71 @@ class CachingHttpClient:
                 try:
                     # Lad klienten selv afgøre om der skal renderes (heuristik/autodetect)
                     res = await client.get_raw_html(target, return_soup=False)
-                    # Nogle versioner returnerer dict, andre ren str – håndter begge.
+                    # Nogle versioner returnerer dict, andre ren str – håndter begge. (udvidet)
                     if isinstance(res, dict):
-                        html = res.get("html") or ""
-                        status = int(res.get("status_code") or (200 if html else 0))
+                        html = (
+                            res.get("html")
+                            or res.get("rendered_html")
+                            or res.get("page_html")
+                            or res.get("content")
+                            or res.get("text")
+                            or ""
+                        )
+                        status = int(res.get("status_code") or res.get("status") or (200 if html else 0))
                     else:
                         html = res or ""
                         status = 200 if html else 0
+
+                    # Kontakt-fallback: hvis en kontakt-lignende URL ikke indeholder mailto, så prøv Playwright med målrettet vent
+                    if (
+                        status == 200
+                        and "mailto:" not in (html or "").lower()
+                        and any(kw in target.lower() for kw in ("/kontakt", "/contact", "/kontakt-os", "/om"))
+                    ):
+                        try:
+                            # Vent eksplicit på email-links eller typiske person-containere
+                            wait_selectors = [
+                                "a[href^='mailto:'][class='email']",  # Præcis fra crawl: class="email"
+                                "div.employee-card, .staff-member, .contact-person",#  Container fra crawl
+                                "h3.name, .person-name",  # Name i h3.class="name"
+                                "p.title, .role",  # Title i p.class="title"
+                                "p.phone, .phone-number"   # Phone i p.class="phone"
+                            ]
+                            try:
+                                res2 = await client.get_raw_html(
+                                    target,
+                                    force_playwright=True,
+                                    wait_for_selectors=wait_selectors,
+                                    return_soup=False,
+                                    timeout=25.0,
+                                )
+                            except TypeError:
+                                # Fald tilbage hvis klienten ikke kender ovenstående kwargs
+                                try:
+                                    res2 = await client.get_raw_html(
+                                        target,
+                                        force_playwright=True,
+                                        return_soup=False,
+                                    )
+                                except TypeError:
+                                    res2 = await client.get_raw_html(target, return_soup=False)
+
+                            html2 = (
+                                (res2.get("html")
+                                or res2.get("rendered_html")
+                                or res2.get("page_html")
+                                or res2.get("content")
+                                or res2.get("text"))
+                                if isinstance(res2, dict) else (res2 or "")
+                            )
+                            if html2 and "mailto:" in html2.lower():
+                                html = html2
+                                log.info(f"PW fallback success for {target}: mailto found")
+                        except Exception as e:
+                            log.debug(f"PW fallback ignored for {target}: {e}")
+
                     return status, html
+
                 finally:
                     # Kompatibel lukning: prøv .close() → .aclose() → .shutdown()
                     import inspect
@@ -360,99 +430,84 @@ def _norm_url_for_fetch(u: str) -> str:
     except Exception:
         return u
 
-def _fetch_with_playwright_sync(
-    url: str,
-    pre_html: Optional[str] = None,
-    pre_status: Optional[int] = None,
-    http_client: Optional[CachingHttpClient] = None,
-) -> str:
-    """Render siden via fælles AsyncHtmlClient (force_playwright=True).
-    Bevarer status/_needs_js-gate; ingen lokal PW-singleton eller atexit.
+def _fetch_with_playwright_sync(url: str, html0: str | None = None) -> str:
     """
-    #if AsyncHtmlClient is None:
-    #    return pre_html or ""
-
+    Render-side via AsyncHtmlClient/Playwright med:
+    - Tvungen scroll (trigger lazy-load)
+    - Udvidet venteliste af kontakt-/medarbejder-selectors
+    - Fallback til oprindelige generiske selectors
+    - UDEN afhængighed af modul-globals (_pw_fails_by_host/_pw_fails_max)
+    """
     import asyncio
-    from urllib.parse import urlsplit as _us
+    import inspect
+    from urllib.parse import urlsplit
 
-    # --- Safe-access til evt. modul-globale PW-states (fallback til lokale) ---
+    # Brug globale data hvis de findes – ellers sikre defaults
+    _g = globals()
+    _pw_fails_by_host = _g.setdefault("_pw_fails_by_host", {})
+    _pw_fails_max = _g.get("_pw_fails_max", 2)
+    _pw_disabled_hosts = _g.setdefault("_pw_disabled_hosts", set())
+
+    _host = (urlsplit(url).netloc or "").lower()
     try:
-        _pw_disabled_hosts = _PW_DISABLED_HOSTS  # type: ignore[name-defined]
-    except Exception:
-        _pw_disabled_hosts = set()
-    try:
-        _pw_fails_by_host = _PW_FAILS_BY_HOST  # type: ignore[name-defined]
-    except Exception:
-        _pw_fails_by_host = {}
-    try:
-        _pw_fails_max = int(_PW_FAILS_MAX)  # type: ignore[name-defined]
-    except Exception:
-        _pw_fails_max = 2  # konservativ default
-
-    # --- Hent evt. manglende pre_html/status via (adapter) CachingHttpClient ---
-    client = http_client or CachingHttpClient(timeout=10.0)
-    status = pre_status
-    html0 = pre_html
-    if status is None or html0 is None:
-        s2, h2 = client.get(url)
-        if status is None:
-            status = s2
-        if html0 is None:
-            html0 = h2
-
-    # --- Needs-JS gate + status gate ---
-    try:
-        needs = _needs_js(html0 or "")
-    except Exception:
-        needs = False
-
-    _host = _us(url).netloc.lower()
-    log.debug(
-        f"PW gate for {url} -> status={status}, needs_js={needs}, "
-        f"pw_disabled_host={_host in _pw_disabled_hosts}"
-    )
-
-    # 1) Hvis status ≠ 200 men vi ingen HTML har, så PRØV Playwright alligevel
-    redirect_codes = {301, 302, 303, 307, 308}
-    if status not in (200, None):
-        if (not html0) or (status in redirect_codes):
-            log.debug(f"PW escalate despite status {status} for {url} (html0={len(html0 or '')})")
-        else:
-            log.debug(f"Springer Playwright over (status {status}, html_len={len(html0 or '')}) for {url}")
+        if _host in _pw_disabled_hosts:
             return html0 or ""
+    except Exception:
+        pass
 
-    # 2) JS-gate: kun skip PW hvis vi allerede HAR brugbar HTML og siden ikke kræver JS
-    if html0 and not needs and status == 200:
-        log.debug(f"Playwright ikke nødvendig (statisk HTML) for {url}")
-        return html0 or ""
+    try:
+        fails = _pw_fails_by_host.get(_host, 0)
+        if fails >= _pw_fails_max:
+            return html0 or ""
+    except Exception:
+        pass
 
-    # 3) Circuit-breaker (per host)
-    if _host in _pw_disabled_hosts:
-        log.debug(
-            f"Playwright er midlertidigt deaktiveret for host={_host} (circuit-breaker). Bruger pre_html."
-        )
-        return html0 or ""
-
-    # --- Kør Playwright render via AsyncHtmlClient (ingen lokal singleton) ---
-    def _run():
+    def _run() -> str:
         loop = asyncio.new_event_loop()
         try:
             asyncio.set_event_loop(loop)
 
             async def go() -> str:
-                # Robust import (pakke/udviklingssti) — passer til src/vexto/scoring/http_client.py
+                # Robust import mod forskellige projektstrukturer
                 try:
                     from vexto.scoring.http_client import AsyncHtmlClient  # type: ignore
                 except Exception:
                     try:
                         from src.vexto.scoring.http_client import AsyncHtmlClient  # type: ignore
                     except Exception:
-                        from ..scoring.http_client import AsyncHtmlClient  # type: ignore
+                        from .scoring.http_client import AsyncHtmlClient  # type: ignore
 
                 client = AsyncHtmlClient(stealth=True)
                 await client.startup()
                 try:
-                    wait_selectors = [
+                    # A) Kontakt-/medarbejder-specifik venteliste
+                    wait_contact = [
+                        # primære signaler
+                        "a[href^='mailto:']",
+                        "a[href^='tel:']",
+                        ".__cf_email__",
+                        "[data-cfemail]",
+
+                        # person-/team-kort
+                        ".employee-card", ".person-card", ".contact-card",
+                        ".contact-person", ".staff-member", ".team-member",
+                        ".team__member", ".member", ".medarbejder", ".medarbejdere",
+
+                        # headings/navn
+                        "h1", "h2", "h3", "h4", "h5", "h6",
+                        "[itemprop='name']", ".employee-name", ".person-name",
+
+                        # titler
+                        "[itemprop='jobTitle']", ".job-title", ".employee-title",
+                        ".title", ".role", ".position", ".position-title",
+
+                        # generiske layoutelementer som ofte indeholder kort
+                        ".team", ".staff", ".employee", ".elementor-team-member",
+                        ".et_pb_team_member", ".vc_row", ".vc_column", ".vc_team",
+                    ]
+
+                    # B) Oprindelige generiske (fallback)
+                    wait_generic = [
                         "a[href^='mailto:']",
                         "a[href^='tel:']",
                         ".__cf_email__",
@@ -460,18 +515,26 @@ def _fetch_with_playwright_sync(
                         ".team", ".staff", ".employee", ".elementor-team-member",
                         ".et_pb_team_member", ".vc_row", ".vc_column", ".vc_team",
                     ]
+
+                    # 1) Første forsøg: scroll + brede kontakt-selectors
                     try:
                         res = await asyncio.wait_for(
                             client.get_raw_html(
                                 url,
                                 force_playwright=True,
-                                wait_for_selectors=wait_selectors,
+                                # Tvungen scroll – ignoreres hvis klient ikke kender kwargs
+                                scroll_to_bottom=True,
+                                scroll_pause_ms=900,
+                                scroll_repeat=2,
+                                wait_after_scroll_ms=900,
+                                # Vent på kontakt/medarbejder-selectors
+                                wait_for_selectors=wait_contact,
                                 return_soup=False,
                             ),
-                            timeout=12.0,
+                            timeout=18.0,
                         )
                     except TypeError:
-                        # Hvis klienten ikke kender wait_for_selectors
+                        # Klienten kender ikke nye kwargs → prøv “simpelt” kald
                         res = await asyncio.wait_for(
                             client.get_raw_html(
                                 url,
@@ -480,20 +543,49 @@ def _fetch_with_playwright_sync(
                             ),
                             timeout=12.0,
                         )
+                    except Exception:
+                        # 2) Fallback: generiske selectors
+                        try:
+                            res = await asyncio.wait_for(
+                                client.get_raw_html(
+                                    url,
+                                    force_playwright=True,
+                                    wait_for_selectors=wait_generic,
+                                    return_soup=False,
+                                ),
+                                timeout=14.0,
+                            )
+                        except TypeError:
+                            res = await asyncio.wait_for(
+                                client.get_raw_html(
+                                    url,
+                                    force_playwright=True,
+                                    return_soup=False,
+                                ),
+                                timeout=12.0,
+                            )
 
+                    # Normalisér svar → html
                     if isinstance(res, dict):
-                        return res.get("html") or ""
+                        html = (
+                            res.get("html")
+                            or res.get("rendered_html")
+                            or res.get("page_html")
+                            or res.get("content")
+                            or res.get("text")
+                            or ""
+                        )
+                        return html
                     return res or ""
                 finally:
-                    # Kompatibel lukning: prøv .close() → .aclose() → .shutdown()
-                    import inspect
+                    # Venlig lukning: .close() → .aclose() → .shutdown()
                     for name in ("close", "aclose", "shutdown"):
                         fn = getattr(client, name, None)
                         if fn:
                             try:
-                                res = fn()
-                                if inspect.isawaitable(res):
-                                    await res
+                                ret = fn()
+                                if inspect.isawaitable(ret):
+                                    await ret
                             except Exception:
                                 pass
                             break
@@ -511,30 +603,25 @@ def _fetch_with_playwright_sync(
 
     try:
         rendered_html = _run()
-        # reset fail-tæller for denne host (hvis global findes)
+        # Reset fail-counter ved succes
         try:
-            _pw_fails_by_host[_host] = 0  # type: ignore[index]
+            _pw_fails_by_host[_host] = 0
         except Exception:
             pass
         return rendered_html or (html0 or "")
     except Exception as e:
-        # inkrementér fails og evtl. disable host
+        # Opdater fail-counter og evt. disable host midlertidigt
         try:
-            _pw_fails_by_host[_host] = _pw_fails_by_host.get(_host, 0) + 1  # type: ignore[call-arg]
-            log.debug(
-                f"Playwright fejl ({_pw_fails_by_host[_host]}/{_pw_fails_max}) "
-                f"for host={_host}, url={url}: {e!r}"
-            )
+            _pw_fails_by_host[_host] = _pw_fails_by_host.get(_host, 0) + 1
             if _pw_fails_by_host[_host] >= _pw_fails_max:
-                _pw_disabled_hosts.add(_host)  # type: ignore[attr-defined]
-                log.warning(
-                    f"Deaktiverer midlertidigt Playwright-eskalering for host={_host} (for mange fejl)."
-                )
+                _pw_disabled_hosts.add(_host)
         except Exception:
+            pass
+        try:
             log.debug(f"Playwright fejl for host={_host}, url={url}: {e!r}")
-
+        except Exception:
+            pass
         return html0 or ""
-
 
 # -------------------------- Valgfri eksterne libs -----------------------------
 
@@ -1305,6 +1392,14 @@ def _confidence_from(sc: ScoredContact) -> float:
 # === ANKER: CONFIDENCE_HELPER ===
 
 # === ANKER: TITLE_MATCH_VALIDATION ===
+# [NYT] Debug-flag + tællere
+import os, logging
+log = logging.getLogger(__name__)
+_TITLES_DEBUG = os.getenv("VEXTO_TITLES_DEBUG", "0") == "1"
+_TITLE_FACIT_OK = 0
+_TITLE_FACIT_REJECT = 0
+_TITLE_FACIT_SKIPPED = 0
+
 _TITLE_MATCHER = None  # lazy-loaded singleton
 
 def _load_title_matcher():
@@ -1320,21 +1415,43 @@ def _load_title_matcher():
 
 def _canonicalize_title_or_none(raw_title: str | None):
     """
-    Brug TitelKatalog som facit:
-    Returnér (canonical_title, meta) eller None hvis ikke godkendt.
-    meta = {'title_id':..., 'match_type':..., 'score':...}
+    Forsøg facitliste (TitleMatcher). Hvis ingen match,
+    returnér rå titel når den ligner en rolle (loosened).
+    Returnerer tuple (canonical_title, meta) eller None.
     """
     if not raw_title:
         return None
+
     try:
-        matcher = _load_title_matcher()
+        # Din TitleMatcher – kompatibel med tidligere kald.
+        # Import indlejres for at undgå top-level afhængigheder.
+        from vexto.enrichment.title_matcher import TitleMatcher  # type: ignore
+        matcher = TitleMatcher.load()
         hit = matcher.match(raw_title)
-        if not hit:
-            return None
-        title_id, canonical, match_type, score = hit
-        return canonical, {'title_id': title_id, 'match_type': match_type, 'score': float(score)}
+        if hit:
+            title_id, canonical, match_type, score = hit
+            return canonical, {
+                "title_id": title_id,
+                "match_type": match_type,
+                "score": float(score),
+            }
+    except Exception as e:
+        try:
+            # _TITLES_DEBUG og log findes i din fil
+            if _TITLES_DEBUG:
+                log.debug(f"[TitleFacit] ERROR raw={raw_title!r} err={e}")
+        except Exception:
+            pass
+
+    # ← Loosen: brug rå titel hvis den ligner en rolle
+    try:
+        if _looks_like_role(raw_title):
+            return raw_title, {"match_type": "raw", "score": 0.5}
     except Exception:
-        return None
+        # Hvis helper ikke findes/kaster, vær konservativ
+        pass
+
+    return None
 
 
 # ------------------------------- Utils ----------------------------------------
@@ -1361,12 +1478,13 @@ def _is_plausible_name(s: str | None) -> bool:
 
     UI_BLACKLIST = {
         # UI/CTA/sektioner
-        "kontakt","kontakt os","contact","contact us","om","om os","about","about us",
+        "kontakt","kontakt os","kontakt os på","contact","contact us","om","om os","about","about us",
         "ring til os","skriv til os","book","bestil","vores team","team","har du spørgsmål",
         "find medarbejder","læs mere","kundeservice","personale","medarbejdere",
         "menu","trustpilot","cookie"
     }
-    if low in UI_BLACKLIST:
+    # Tillad både eksakt match og indeholdt phrases (fx "Kontakt Os På Trafikcenter...")
+    if low in UI_BLACKLIST or any(p in low for p in ("kontakt os", "kontakt os på", "trafikcenter", "dk-4200", "slagelse")):
         return False
 
     # hurtige hard-stops
@@ -1374,6 +1492,25 @@ def _is_plausible_name(s: str | None) -> bool:
         return False
     if s.upper() == s:
         return False
+
+    # NYT: kassér typiske rolle/titel-strenge forklædt som navn
+    #  - “Kundeservice / Salg” (slash) er næsten aldrig et personnavn
+    if "/" in s:
+        return False
+
+    #  - Hvis facit kanoniserer strengen til en kendt titel, er det ikke et navn
+    try:
+        facit = _canonicalize_title_or_none(s)
+        if facit:
+            return False
+    except Exception:
+        pass
+
+    #  - Ekstra sikkerhed: indeholder strengen generiske rolle-ord (da/en)?
+    low2 = s.lower()
+    for role in _ROLE_ALL:
+        if role in low2:
+            return False
 
     # adressemønstre (DK/EN)
     ADDR_TOKENS = {
@@ -1474,14 +1611,46 @@ def _maybe_promote_name_case(s: str | None) -> Optional[str]:
 def _sanitize_title(title: str | None) -> str | None:
     if not title:
         return None
-    # Bevar original case i output
+
+    # Bevar original case i output, men normalisér whitespace
     t = _collapse_ws(title) or ""
-    t = t.strip(",;:-—")
-    # Fjern UI-ord (case-insensitive)
+    # Rens ender for typiske separatorer
+    t = t.strip().strip(",;:–—-·|/\\ ")
+
+    # 1) Fjern UI-ord (din blacklist)
     pat = r"\b(" + "|".join(map(re.escape, UI_TITLE_BLACKLIST)) + r")\b"
-    t2 = re.sub(pat, "", t, flags=re.I)
-    t2 = re.sub(r"\s{2,}", " ", t2).strip(",;:-— ").strip()
-    return t2 or None
+    t = re.sub(pat, "", t, flags=re.I)
+    t = re.sub(r"\s{2,}", " ", t).strip(",;:–—-·|/\\ ").strip()
+
+    # 2) Drop åbenlys støj: emails/URL'er
+    if "@" in t or re.search(r"https?://", t, flags=re.I):
+        return None
+
+    # 3) Telefonnumre: fjern trailing/leading phone-snippets eller kasser hele strengen
+    if re.search(r"\b\d{2}\s?\d{2}\s?\d{2}\s?\d{2}\b", t):  # dansk 8-cifret mønster
+        # hvis det ligner "… 58 55 07 15" i enden eller starten -> fjern
+        t = re.sub(r"(^|\s)[+\d][\d\s\-\(\)]{6,}($|\s)", " ", t).strip()
+    # Internationalt format (+45 …)
+    t = re.sub(r"(^|\s)\+\d[\d\s\-\(\)]{6,}($|\s)", " ", t).strip()
+
+    # 4) Hvis for mange cifre i resten -> drop
+    digits = sum(ch.isdigit() for ch in t)
+    if t and digits / max(1, len(t)) > 0.20:
+        return None
+
+    # 5) Drop typiske CTA-/kampagne-linjer (meget sikre signaler)
+    if re.search(r"%|\b(spar|tilbud|udsalg|klik|shop|lager|rab[aæ]t)\b", t, flags=re.I):
+        return None
+
+    # 6) Ryd resterende støj-tegn
+    t = re.sub(r"[|•·]+", " ", t)
+    t = re.sub(r"\s{2,}", " ", t).strip(" -–—·|")
+
+    # 7) Længde- og sundhedstjek
+    if len(t) < 3 or len(t) > 80:
+        return None
+
+    return t or None
 
 def _role_strength(title: str | None) -> int:
     if not title:
@@ -1857,80 +2026,66 @@ def _passes_identity_gate(
     title: str | None,
     url: str | None = None,
     dom_distance: Optional[int] = None,
+    *,
+    source: str | None = None,
+    phones: list[str] | None = None,
 ) -> bool:
-    """A: (plausibelt navn + email-match>=2) ELLER
-       B: (plausibelt navn + rolle-titel) ELLER
-       C: (plausibelt navn + e-mail med samme domæne som sitet + ikke-generisk local + tæt DOM)
-       D: (kontakt/om/team-side + e-mail på eget domæne + ikke-generisk local + DOM-afstand ≤ 1) — navn/titel kan mangle"""
-    has_plausible_name = _is_plausible_name(name)
+    """
+    Hybrid v3:
+    1) Baseline: plausibelt navn + (email eller rolle-lignende titel)
+    2) Staff-grid: plausibelt navn + telefon (kortet er stærkt kontekst-signal)
+    3) Kontakt/om/team + tæt DOM (≤1): plausibelt navn + same-domain, ikke-generisk email
+       (Konservativ – vi tillader ikke 'kun email' uden navn som generel regel.)
+    """
+    # 0) Kræv altid plausibelt navn som udgangspunkt
+    if not _is_plausible_name(name):
+        # KONTAKT-FALLBACK (meget konservativ): tillad kun hvis kontaktish + tæt DOM + stærk email
+        if url and _is_contactish_url(url) and dom_distance is not None and dom_distance <= 1:
+            for em in (emails or []):
+                try:
+                    local = em.split("@", 1)[0]
+                except Exception:
+                    continue
+                if _email_domain_matches_site(em, url) and not _is_generic_local(local):
+                    # ekstra sikkerhed: kræv at local har nok bogstaver (personlig)
+                    letters = re.sub(r"[^a-zæøå]", "", local.lower())
+                    if len(letters) >= 3:
+                        return True
+        return False
 
-    # A
-    if has_plausible_name and _best_email_score(emails or [], name) >= 2:
-        return True
-    # B
+    # 1) Baseline: navn + (email eller rolle-lignende titel)
+    has_email = bool(emails and any(emails))
     t = _sanitize_title(title)
-    if has_plausible_name and t and _looks_like_role(t):
+    has_role_like = bool(t and _looks_like_role(t))
+    if has_email or has_role_like:
+        # hvis dom_distance er kendt og stor, kan du (valgfrit) kræve begge signaler:
+        # if dom_distance is not None and dom_distance > 1:
+        #     return has_email and has_role_like
         return True
-    # C
-    if has_plausible_name and url and dom_distance is not None and dom_distance <= 1:
-        for em in (emails or []):
-            try:
-                local = em.split("@", 1)[0]
-            except Exception:
-                continue
-            if not _is_generic_local(local) and _email_domain_matches_site(em, url):
-                return True
 
-    # D (kontakt-/om-/team-sider – kræv 2 stærke signaler når domæne matcher)
-    if url and _is_contactish_url(url) and dom_distance is not None and dom_distance <= 2:
-        for em in (emails or []):
-            try:
-                local = em.split("@", 1)[0]
-            except Exception:
-                continue
-            if not _email_domain_matches_site(em, url):
-                continue
-            letters = re.sub(r"[^a-zæøå]", "", local.lower())
-            has_personal_local = (len(letters) >= 3) and (not _is_generic_local(local))
-            has_role = _looks_like_role(title)
-            has_name_email_match = _is_plausible_name(name) and (_email_name_score(em, name) >= 1)
-            # Kræv (personlig local) + (rolle ELLER navn↔email match)
-            if has_personal_local and (has_role or has_name_email_match):
-                return True
-   # === ANKER: GATE_CONTACT_TWO_SIGNALS ===
+    # 2) Staff-grid kort uden mailto, men med telefon → OK
+    if source in {"dom-staff-grid", "staff-grid"} and phones and len(phones) > 0:
+        return True
 
-    # E: kontakt/om/team-side + dom_distance tæt + same-domain ikke-generisk email
-    #    → tillad selv hvis navn/titel mangler (små virksomheder)
+    # 3) Kontaktish + tæt DOM + same-domain email med personlig local → OK
     if url and _is_contactish_url(url) and dom_distance is not None and dom_distance <= 1:
         for em in (emails or []):
             try:
                 local = em.split("@", 1)[0]
             except Exception:
                 continue
-            letters = re.sub(r"[^a-zæøå]", "", (local or "").lower())
-            if len(letters) >= 3 and (not _is_generic_local(local)) and _email_domain_matches_site(em, url):
-                return True
-
-    # NYT Rule F: Tilgivende på kontakt-sider - accepter med email eller phone, selv lav role
-    if url and _is_contactish_url(url):
-        if emails:
-            for em in emails:
-                try:
-                    local = em.split("@", 1)[0]
-                except Exception:
-                    continue
-                letters = re.sub(r"[^a-zæøå]", "", (local or "").lower())
-                has_personal_local = (len(letters) >= 3) and (not _is_generic_local(local)) and _email_domain_matches_site(em, url)
-                if has_personal_local:
+            if _email_domain_matches_site(em, url) and not _is_generic_local(local):
+                letters = re.sub(r"[^a-zæøå]", "", local.lower())
+                if len(letters) >= 3:
                     return True
-        if emails or (emails and title):
-            return True  # Accepter hvis email (domain-match) eller email + title
 
     return False
 
 def _dedup_key(c: ContactCandidate) -> tuple:
-    """Sammenflet-nøgle: (navn, stærk email) ellers (navn, url, source)."""
+    """Sammenflet-nøgle: (navn, stærk email) → (navn, fingerprint) → (navn, url, source)."""
     name = (c.name or "").strip().lower()
+
+    # 1) stærk email (uændret)
     for em in c.emails:
         try:
             local, dom = em.split("@", 1)
@@ -1938,7 +2093,14 @@ def _dedup_key(c: ContactCandidate) -> tuple:
             continue
         if not _is_generic_local(local):
             return (name, f"{local}@{dom}")
-    return (name, c.url.strip().lower(), c.source)
+
+    # 2) fingerprint fra hints (anti-blanding på tværs af kort)
+    fp = (c.hints or {}).get("fingerprint") or ""
+    if fp:
+        return (name, f"fp:{fp}")
+
+    # 3) fallback
+    return (name, (c.url or "").strip().lower(), c.source)
 
 def _merge(a: ContactCandidate, b: ContactCandidate) -> ContactCandidate:
     """Flet b ind i a (bevar bedste/rigeste værdier)."""
@@ -2291,200 +2453,330 @@ def _find_heading_name(node) -> Optional[str]:
     return None
 
 
-def _harvest_identity_from_container(node, max_depth: int = 7) -> tuple[Optional[str], Optional[str], list[str]]:
+def _harvest_identity_from_container(node, max_depth: int = 8) -> tuple[Optional[str], Optional[str], list[str]]:
     """
-    Find nærmeste 'kort/sektion' omkring node, og ekstrahér (name, title, phones).
-    - Navn findes før titel (så navne ikke ender som titler).
-    - Understøtter Elementor-kort/overskrifter.
-    - Case-promotion for helt lowercase navne i kort.
+    Find nærmeste 'person-kort' omkring node og ekstrahér (name, title, phones).
+
+    Design:
+    - Trin A: Gå opad og vælg den mindste fornuftige container (employee/person/team/contact mm.)
+      uden at "hæfte" på mega-sektioner (row/section/container/elementor-section).
+    - Trin B: Find NAME fra rene headings (h1–h6) og udbredte name-klasser; skip hvis teksten ligner en titel.
+              Brug case-promotion hvis overskriften er HELT UPPERCASE.
+    - Trin C: Find TITLE: brug facit via _canonicalize_title_or_none først; ellers role-heuristik.
+    - Trin D: Saml PHONES fra tel: + fri tekst (ignorér CVR/reg-kontekst).
     """
+
     if not node:
         return None, None, []
 
-    def _is_container(n) -> bool:
+    # ---------- helpers ----------
+    def _cls_id(n) -> str:
+        # class + id som én lavere-case streng
         try:
-            if hasattr(n, "attributes"):
-                cls = (n.attributes.get("class", "") + " " + n.attributes.get("id", "")).lower()
-            elif hasattr(n, "get"):
-                cls = (" ".join(n.get("class", []) or []) + " " + (n.get("id") or "")).lower()
-            else:
-                return False
-            keys = ("team","staff","employee","person","card","profile","grid","column","section",
-                    "administration","tilbud","entreprise",
-                    "elementor-team-member","elementor-widget","elementor-column","elementor-section","elementor-container")
-            return any(k in cls for k in keys)
+            if hasattr(n, "attributes"):  # selectolax
+                return ((n.attributes.get("class", "") or "") + " " + (n.attributes.get("id", "") or "")).lower()
+            elif hasattr(n, "get"):       # bs4
+                cls = n.get("class") or []
+                cls = " ".join(cls) if isinstance(cls, (list, tuple)) else str(cls or "")
+                return (cls + " " + (n.get("id") or "")).lower()
         except Exception:
-            return False
+            pass
+        return ""
 
-    container = node
-    depth = 0
-    while depth < max_depth and getattr(container, "parent", None):
-        if _is_container(container):
-            break
-        container = getattr(container, "parent", None)
-        depth += 1
-    if not container:
-        container = getattr(node, "parent", None) or node
+    TIGHT_KEYS = (
+        "employee", "employee-card", "employee_item", "employee__item",
+        "staff", "staff-member", "staff__item",
+        "person", "person-card", "person__item",
+        "member", "team-member", "team__member", "team-card", "team__card",
+        "contact", "kontakt", "contact-card", "contact-person", "contact__item",
+        "medarbejder", "profile", "card", "tile", "item", "box", "column-item", "grid-item"
+    )
+    # grove layout-sektioner vi helst ikke ender på
+    COARSE_KEYS = (
+        "section", "container", "row", "grid", "columns", "column", "wrapper",
+        "elementor-section", "elementor-container", "elementor-row", "elementor-column",
+        "wp-block", "blocks"
+    )
 
-    name = None
-    title = None
-    phones: list[str] = []
+    def _looks_coarse(n) -> bool:
+        s = _cls_id(n)
+        return any(k in s for k in COARSE_KEYS)
+
+    def _looks_tight(n) -> bool:
+        s = _cls_id(n)
+        return any(k in s for k in TIGHT_KEYS)
+
+    def _iter_css(n, sel: str):
+        if hasattr(n, "css"):
+            return n.css(sel)  # selectolax
+        if hasattr(n, "select"):
+            return n.select(sel)  # bs4
+        return []
+
+    def _el_text(e) -> str:
+        try:
+            if hasattr(e, "text"):  # selectolax node
+                return _collapse_ws(e.text())
+        except Exception:
+            pass
+        try:
+            if hasattr(e, "get_text"):  # bs4 tag
+                return _collapse_ws(e.get_text(" ", strip=True))
+        except Exception:
+            pass
+        return ""
+
+    def _get_attr(e, key: str) -> str:
+        try:
+            if hasattr(e, "attributes"):  # selectolax
+                return e.attributes.get(key, "") or ""
+        except Exception:
+            pass
+        try:
+            if hasattr(e, "get"):  # bs4
+                return e.get(key, "") or ""
+        except Exception:
+            pass
+        return ""
 
     def _node_text(n) -> str:
-        try:
+        try:  # selectolax
             if hasattr(n, "itertext"):
                 return " ".join(t.strip() for t in n.itertext() if t and t.strip())
         except Exception:
             pass
-        try:
+        try:  # bs4
             if hasattr(n, "stripped_strings"):
                 return " ".join(list(n.stripped_strings))
         except Exception:
             pass
         return ""
 
-    # 1) NAVN (headings + semantiske + Elementor + udbredte klasser)
+    # En lille UI/sektion-blacklist for *navne* (typiske støjoverskrifter)
+    UI_NAME_BLACK = {
+        "kontakt", "kontakt os", "kontakt os på", "kundeservice", "kundeservice / salg",
+        "små og store projekter", "projekter", "storkunder", "trafikcenter", "slagelse",
+        "om", "om os", "about", "book", "læs mere", "find medarbejder"
+    }
+
+    def _ui_noise_name(s: str) -> bool:
+        low = s.lower()
+        if low in UI_NAME_BLACK:
+            return True
+        # også hvis frasen indeholder disse substrings
+        for p in ("trafikcenter allé", "dk-4200", "kontakt os"):
+            if p in low:
+                return True
+        return False
+
+    # rolige heuristikker hvis facit ikke siger ja/nej
+    ROLE_HINTS = (
+        "chef", "leder", "manager", "director", "konsulent", "rådgiver",
+        "account", "aftersales", "salg", "marketing", "logistik", "drift",
+        "projekter", "kundeservice", "økonomi", "controller", "specialist",
+        "koordinator", "assistent", "indkøb", "support", "tekniker"
+    )
+
+    def _looks_role_like(txt: str) -> bool:
+        t = (_sanitize_title(txt) or "").lower()
+        if not t:
+            return False
+        # facit?
+        try:
+            facit = _canonicalize_title_or_none(t)
+            if facit:
+                return True
+        except Exception:
+            pass
+        # ellers simple hints + form
+        if any(h in t for h in ROLE_HINTS):
+            return True
+        if "/" in t or " - " in t:
+            return True
+        # undgå adresser
+        if any(ch.isdigit() for ch in t):
+            return False
+        return False
+
+    # ---------- A) find nærmeste "tætte" container ----------
+    container = node
+    best = None
+    depth = 0
+    while depth < max_depth and getattr(container, "parent", None):
+        if _looks_tight(container):
+            best = container
+            break
+        parent = getattr(container, "parent", None)
+        if not parent:
+            break
+        # gem "mindste ikke-grove" som fallback
+        if best is None and not _looks_coarse(parent):
+            best = parent
+        container = parent
+        depth += 1
+
+    if best is None:
+        best = getattr(node, "parent", None) or node
+    container = best
+
+    # ---------- B) NAME: headings først (h1–h6), skip værdier der ligner titler ----------
+    name: Optional[str] = None
+
+    heading_sel = "h1,h2,h3,h4,h5,h6," \
+                  ".name,.person-name,.staff-name,.member-name,.employee-name," \
+                  "[itemprop='name'],[role='heading']," \
+                  ".elementor-heading-title,.elementor-widget-heading"
+
     try:
-        selectors = (
-            "h1,h2,h3,h4,"
-            ".name,.person-name,.staff-name,.member-name,.employee-name,.bio-name,.team-member__name,"
-            "[itemprop='name'],[role='heading'],.elementor-heading-title,.elementor-widget-heading"
-        )
-        if hasattr(container, "css"):
-            for el in container.css(selectors):
-                raw = _collapse_ws(el.text())
-                if _is_plausible_name(raw):
-                    name = raw
+        for el in _iter_css(container, heading_sel):
+            raw = _el_text(el)
+            if not raw:
+                continue
+            # tydelig UI-støj? → skip
+            if _ui_noise_name(raw):
+                continue
+            # hvis teksten ligner en titel, ikke et navn → skip
+            try:
+                st = _sanitize_title(raw) or ""
+                if st and (_canonicalize_title_or_none(st) or _looks_role_like(st)):
+                    continue
+            except Exception:
+                # hvis facit ikke er tilgængelig, brug kun heuristik:
+                if _looks_role_like(raw):
+                    continue
+
+            # plausibelt navn?
+            if _is_plausible_name(raw):
+                name = raw
+                break
+
+            # case-promotion hvis HELT UPPERCASE
+            promo = _maybe_promote_name_case(raw)
+            if not name and promo and _is_plausible_name(promo):
+                name = promo
+                break
+
+            if not name and raw.isupper():
+                cap = " ".join(w[:1].upper() + w[1:].lower() for w in raw.split())
+                if _is_plausible_name(cap):
+                    name = cap
                     break
-                if not name:
-                    promo = _maybe_promote_name_case(raw)
-                    if promo and _is_plausible_name(promo):
-                        name = promo
-                        break
-                    if raw and raw.isupper():
-                        cap = " ".join(w[:1].upper() + w[1:].lower() for w in raw.split())
-                        if _is_plausible_name(cap):
-                            name = cap
-                            break
-        elif hasattr(container, "select"):
-            for el in container.select(selectors):
-                raw = _collapse_ws(el.get_text(" ", strip=True))
-                if _is_plausible_name(raw):
-                    name = raw
-                    break
-                if not name:
-                    promo = _maybe_promote_name_case(raw)
-                    if promo and _is_plausible_name(promo):
-                        name = promo
-                        break
-                    if raw and raw.isupper():
-                        cap = " ".join(w[:1].upper() + w[1:].lower() for w in raw.split())
-                        if _is_plausible_name(cap):
-                            name = cap
-                            break
     except Exception:
         pass
-    # === ANKER: NAME_SELECTORS_EXTENDED ===
 
-    # 2) TITEL (først stærke selectorer; undgå at tage navne som titler)
+    # [NYT] Hvis vi stadig ikke har et navn: prøv img[alt] og semibold/strong
+    if not name:
+        try:
+            img = None
+            if hasattr(container, "css"):
+                img = container.css_first("img[alt]")
+            elif hasattr(container, "select"):
+                img = container.select_one("img[alt]")
+            if img:
+                alt = _get_attr(img, "alt").strip()
+                if alt and _is_plausible_name(alt):
+                    name = alt
+        except Exception:
+            pass
+
+    if not name:
+        try:
+            node = None
+            if hasattr(container, "css"):
+                node = container.css_first("p.font-semibold, .font-semibold, strong, b")
+            elif hasattr(container, "select"):
+                node = container.select_one("p.font-semibold, .font-semibold, strong, b")
+            txt = _el_text(node) if node else ""
+            if txt and _is_plausible_name(txt):
+                name = txt
+        except Exception:
+            pass
+
+    # ---------- C) TITLE: facit først; ellers “role-like” ----------
+    title: Optional[str] = None
+
+    title_sel = (
+        "[itemprop='jobTitle'],"
+        ".job-title,.title,.role,.position,.position-title,"
+        ".team-member__role,.bio-title,"
+        ".employee-title,[class*='title']"
+    )
+
     try:
-        title_selectors = "[itemprop='jobTitle'], .job-title, .title, .role, .position, .position-title, .team-member__role, .bio-title"
-        if hasattr(container, "css"):
-            for el in container.css(title_selectors):
-                tt_raw = _collapse_ws(el.text())
-                if _is_plausible_name(tt_raw):
-                    if not name:
-                        name = tt_raw
+        # stærke titel-felter
+        for el in _iter_css(container, title_sel):
+            tt_raw = _el_text(el)
+            if not tt_raw:
+                continue
+            # undgå at tage navne som titel
+            if _is_plausible_name(tt_raw):
+                continue
+            tt = _sanitize_title(tt_raw) or ""
+            if not tt:
+                continue
+            facit = None
+            try:
+                facit = _canonicalize_title_or_none(tt)
+            except Exception:
+                facit = None
+            if facit:
+                title = facit[0]
+                break
+            # fallback: acceptér "role-like"
+            if _looks_role_like(tt):
+                title = tt
+                break
+
+        # svag fallback: scann p/span-linjer i kortet
+        if not title:
+            for el in _iter_css(container, "p,span,div"):
+                txt = _el_text(el)
+                if not txt:
                     continue
-                if not name:
-                    promo = _maybe_promote_name_case(tt_raw)
-                    if promo and _is_plausible_name(promo):
-                        name = promo
-                        continue
-                tt = _sanitize_title(tt_raw)
-                if tt and not _is_plausible_name(tt):
+                # hvis vi mangler name og linjen ligner et navn, så tag navnet men lad titlen være tom endnu
+                if not name and _is_plausible_name(txt):
+                    name = txt
+                    continue
+                tt = _sanitize_title(txt) or ""
+                if not tt:
+                    continue
+                try:
+                    facit = _canonicalize_title_or_none(tt)
+                except Exception:
+                    facit = None
+                if facit:
+                    title = facit[0]
+                    break
+                if _looks_role_like(tt):
                     title = tt
                     break
-            if not title:
-                for el in container.css("p,span"):
-                    txt_raw = _collapse_ws(el.text())
-                    if _is_plausible_name(txt_raw):
-                        if not name:
-                            name = txt_raw
-                        continue
-                    if not name:
-                        promo = _maybe_promote_name_case(txt_raw)
-                        if promo and _is_plausible_name(promo):
-                            name = promo
-                            continue
-                    tt = _sanitize_title(txt_raw)
-                    if tt and not _is_plausible_name(tt):
-                        title = tt
-                        break
-        elif hasattr(container, "select"):
-            for el in container.select(title_selectors):
-                tt_raw = _collapse_ws(el.get_text(" ", strip=True))
-                if _is_plausible_name(tt_raw):
-                    if not name:
-                        name = tt_raw
-                    continue
-                if not name:
-                    promo = _maybe_promote_name_case(tt_raw)
-                    if promo and _is_plausible_name(promo):
-                        name = promo
-                        continue
-                tt = _sanitize_title(tt_raw)
-                if tt and not _is_plausible_name(tt):
-                    title = tt
-                    break
-            if not title:
-                for el in container.select("p,span"):
-                    txt_raw = _collapse_ws(el.get_text(" ", strip=True))
-                    if _is_plausible_name(txt_raw):
-                        if not name:
-                            name = txt_raw
-                        continue
-                    if not name:
-                        promo = _maybe_promote_name_case(txt_raw)
-                        if promo and _is_plausible_name(promo):
-                            name = promo
-                            continue
-                    tt = _sanitize_title(txt_raw)
-                    if tt and not _is_plausible_name(tt):
-                        title = tt
-                        break
     except Exception:
         pass
-    # === ANKER: TITLE_SELECTORS_EXTENDED ===
 
-
-    # 3) PHONES (tel: + tekstnumre m. anti-CVR)
+    # ---------- D) PHONES: tel: + fri tekst (anti-CVR) ----------
+    phones: list[str] = []
     try:
-        if hasattr(container, "css"):
-            for t in container.css("a[href^='tel:']"):
-                pn = _normalize_phone(t.attributes.get("href",""))
-                if pn: phones.append(pn)
-        elif hasattr(container, "select"):
-            for t in container.select("a[href^='tel:']"):
-                pn = _normalize_phone(t.get("href",""))
-                if pn: phones.append(pn)
+        for t in _iter_css(container, "a[href^='tel:']"):
+            href = _get_attr(t, "href")
+            pn = _normalize_phone(href)
+            if pn:
+                phones.append(pn)
     except Exception:
         pass
 
     blob = _node_text(container)
     for m in re.finditer(r"(?:\+?\d[\s\-\(\)\.]{0,3}){8,}", blob):
-        sidx,eidx = m.start(), m.end()
-        ctx = blob[max(0, sidx-20):min(len(blob), eidx+20)].lower()
-        if "cvr" in ctx:
+        sidx, eidx = m.start(), m.end()
+        ctx = blob[max(0, sidx - 24):min(len(blob), eidx + 24)].lower()
+        if "cvr" in ctx or "reg" in ctx:
             continue
         pn = _normalize_phone(m.group(0))
         if pn:
             phones.append(pn)
 
     phones = sorted(set(p for p in phones if p))
+
     return name, title, phones
-
-
 
 
 def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
@@ -2539,8 +2831,8 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
             em = _normalize_email(_cf_decode(cf.attributes.get("data-cfemail")))
             if not em:
                 continue
-            container = cf.parent or cf
             text_blob = _near_text(container, 260)
+            fp = _fp_from_text(text_blob, prefix="near:")
 
             name = None
             m = re.search(rf"({_NAME_WINDOW_REGEX()})", text_blob)
@@ -2558,12 +2850,41 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
             out.append(ContactCandidate(
                 name=name, title=title, emails=[em], phones=[],
                 source="dom", url=url, dom_distance=dist,
-                hints={"near": text_blob[:180], "cfemail": True}
+                hints={"near": text_blob[:180], "fingerprint": fp}
             ))
         return out
 
     # ---------------- BeautifulSoup ----------------
     if BeautifulSoup is not None and hasattr(html_or_tree, "select"):
+
+        def _bs4_card_fingerprint(node) -> str:
+            """Find nærmeste staff-card ancestor og lav stabilt fingerprint (data-v + img[alt])."""
+            try:
+                target_classes = {
+                    "employee", "employee-card", "staff-member", "contact-person",
+                    "kontaktperson", "team-member", "person-card", "person",
+                    "staff", "staff-card"
+                }
+                p = node
+                card = None
+                for _ in range(8):  # gå et par niveauer op
+                    if not getattr(p, "parent", None):
+                        break
+                    classes = set(p.get("class", [])) if hasattr(p, "get") else set()
+                    if classes & target_classes:
+                        card = p
+                        break
+                    p = p.parent
+
+                data_v = (card.get("data-v", "") or "").strip() if (card and hasattr(card, "get")) else ""
+                img = card.select_one("img[alt]") if (card and hasattr(card, "select_one")) else None
+                alt = (img.get("alt", "") or "").strip() if img else ""
+                if data_v or alt:
+                    return _fp_from_text(f"{data_v}::{alt}", prefix="card:")
+                return ""
+            except Exception:
+                return ""
+
         for a in html_or_tree.select("a[href^='mailto:']"):
             href = a.get("href", "")
             em = _normalize_email(href)
@@ -2571,7 +2892,14 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
                 continue
 
             name_h, title_h, phones_h = _harvest_identity_from_container(a)
+
+            # near-fingerprint som fallback
             near = " ".join(list(a.parent.stripped_strings))[:260] if a.parent else ""
+            fp_near = _fp_from_text(near, prefix="near:")
+
+            # kort-fingerprint har prioritet, ellers brug near
+            fp_card = _bs4_card_fingerprint(a)
+            fp = fp_card or fp_near
 
             if not _is_plausible_name(name_h):
                 m_name = re.search(rf"({_NAME_WINDOW_REGEX()})", near)
@@ -2591,7 +2919,7 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
             except Exception:
                 dist = 0 if name_h else 1
 
-            hints = {"near": near[:180], "harvested": True}
+            hints = {"near": near[:180], "harvested": True, "fingerprint": fp}
             try:
                 local = em.split("@", 1)[0]
             except Exception:
@@ -2601,17 +2929,28 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
                 hints["org_footer"] = True
 
             out.append(ContactCandidate(
-                name=name_h, title=title_h, emails=[em], phones=phones_h or [],
-                source="mailto", url=url, dom_distance=dist, hints=hints
+                name=name_h,
+                title=title_h,
+                emails=[em],
+                phones=phones_h or [],   # sikre liste
+                source="mailto",
+                url=url,
+                dom_distance=dist,
+                hints=hints
             ))
 
-        # Cloudflare __cf_email__
+
+        # ---------------- Cloudflare __cf_email__ (BS4) ----------------
         for cf in html_or_tree.select(".__cf_email__"):
             em = _normalize_email(_cf_decode(cf.get("data-cfemail")))
             if not em:
                 continue
+
             container = cf.parent or cf
             near = " ".join(list(container.stripped_strings))[:260] if container else ""
+            fp_near = _fp_from_text(near, prefix="near:")
+            fp_card = _bs4_card_fingerprint(container)
+            fp = fp_card or fp_near
 
             name = None
             m_name = re.search(rf"({_NAME_WINDOW_REGEX()})", near)
@@ -2626,19 +2965,28 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
                 title = _sanitize_title(m_title.group(1))
 
             out.append(ContactCandidate(
-                name=name, title=title, emails=[em], phones=[],
-                source="dom", url=url, dom_distance=0,
-                hints={"near": near[:180], "cfemail": True}
+                name=name,
+                title=title,
+                emails=[em],
+                phones=[],
+                source="dom",
+                url=url,
+                dom_distance=0,
+                hints={"near": near[:180], "cfemail": True, "fingerprint": fp}
             ))
 
-        # tel: links (BS4)
+        # ---------------- tel: links (BS4) ----------------
         for t in html_or_tree.select("a[href^='tel:']"):
             href = t.get("href", "")
             pn = _normalize_phone(href)
             if not pn:
                 continue
+
             container = t.parent or t
             near = " ".join(list(container.stripped_strings))[:260] if container else ""
+            fp_near = _fp_from_text(near, prefix="near:")
+            fp_card = _bs4_card_fingerprint(container)
+            fp = fp_card or fp_near
 
             name = None
             m_name = re.search(rf"({_NAME_WINDOW_REGEX()})", near)
@@ -2653,9 +3001,14 @@ def _extract_from_mailtos(url: str, html_or_tree) -> list[ContactCandidate]:
                 title = _sanitize_title(m_title.group(1))
 
             out.append(ContactCandidate(
-                name=name, title=title, emails=[], phones=[pn],
-                source="dom", url=url, dom_distance=0,
-                hints={"near": near[:180], "tel": True}
+                name=name,
+                title=title,
+                emails=[],
+                phones=[pn],
+                source="dom",
+                url=url,
+                dom_distance=0,
+                hints={"near": near[:180], "tel": True, "fingerprint": fp}
             ))
         return out
 
@@ -2886,190 +3239,144 @@ def _extract_from_text_emails(url: str, html: str) -> list[ContactCandidate]:
 
 def _extract_generic_org_contacts(base_url: str, pages_html: list[tuple[str, str]]) -> list[dict]:
     """
-    Minimal, men robust 'org bucket' via fælles contact_fetchers.
-    Bruger allerede-hentet HTML (ingen ekstra crawl) og returnerer ét generisk
-    org-kandidat-objekt (uden personnavn) hvis der findes emails/telefoner.
-
-    Bemærk:
-    - deep_contact=False her for at undgå dobbelt-crawl; deep-contact håndteres
-      højere i kæden, hvis du ønsker det.
-    - Vi parser kun den første side (root) for at holde det billigt og deterministisk.
+    Balanceret 'org bucket':
+    - KUN generiske org-emails (med domæne-match hvis muligt)
+    - Håndterer obfuskering i rå tekst ([at]/(at), [dot]/(dot))
+    - Læser JSON-LD (Organization/LocalBusiness) for email/telephone
+    - Telefon medtages konservativt: JSON-LD først; ellers tydeligt DK '70 xx xx xx'
+    - Returnerer maks 1 kandidat, maks 3 emails og maks 1 phone
     """
-    try:
-        from bs4 import BeautifulSoup
-        # robust import ift. dine stier
-        try:
-            from vexto.scoring.contact_fetchers import find_contact_info
-        except Exception:
-            try:
-                from src.vexto.scoring.contact_fetchers import find_contact_info
-            except Exception:
-                from ..scoring.contact_fetchers import find_contact_info  # type: ignore
-    except Exception:
-        return []
-
     if not base_url or not pages_html:
         return []
 
-    # Brug root-siden hvis muligt (første element i pages_html)
-    # pages_html er af typen List[Tuple[url, html]]
-    root_html = ""
-    try:
-        _, root_html = pages_html[0]
-    except Exception:
-        root_html = ""
-
-    if not root_html:
-        return []
-
-    # Parse til soup og kør fælles finder (HØJ/LAV sikkerhed)
-    from bs4 import BeautifulSoup as _BS4
     import re, json
+    from urllib.parse import urlparse
+    try:
+        from bs4 import BeautifulSoup as _BS4
+    except Exception:
+        _BS4 = None
 
-    # Byg soups for alle sider vi allerede har (uden ekstra fetch)
-    soups: list[_BS4] = []
-    for _, html in pages_html:
-        if html:
-            soups.append(_BS4(html, "html.parser"))
+    # --- Hjælpere ---
+    def _site_domain(url: str) -> str:
+        try:
+            return urlparse(url).netloc.lower()
+        except Exception:
+            return ""
 
-    high_emails, high_phones = set(), set()
-    low_emails, low_phones = set(), set()
+    def _email_site_match(em: str, site: str) -> bool:
+        # Hvis vi ikke kan afgøre domænet, tillad (hellere inkluder end ekskluder)
+        if not em or not site:
+            return True
+        try:
+            dom = em.split("@", 1)[1].lower()
+            # eks. 'www.example.dk' vs 'example.dk' → endswith
+            return dom == site or dom.endswith("." + site) or site.endswith("." + dom)
+        except Exception:
+            return True
 
-    def _collect_from_soup(s: _BS4):
-        # 1) Klikbare = høj sikkerhed
-        for a in s.select('a[href^="mailto:"]'):
-            addr = (a.get("href", "")[7:] or "").strip()
-            if addr:
-                high_emails.add(addr)
-        for a in s.select('a[href^="tel:"]'):
-            num = (a.get("href", "")[4:] or "").strip()
-            if num:
-                high_phones.add(num)
-
-        # 2) JSON-LD (Organization/LocalBusiness)
-        for sc in s.select('script[type="application/ld+json"]'):
-            try:
-                data = json.loads(sc.string or "")
-                nodes = data if isinstance(data, list) else [data]
-                for node in nodes:
-                    t = node.get("@type")
-                    if isinstance(t, list):
-                        t = " ".join(t)
-                    t_l = (t or "").lower()
-                    if any(k in t_l for k in ("organization", "localbusiness")):
-                        em = (node.get("email") or "").strip()
-                        if em:
-                            high_emails.add(em)
-                        tel = (str(node.get("telephone") or "").strip())
-                        if tel:
-                            high_phones.add(tel)
-            except Exception:
-                pass
-
-        # 3) Let de-obfuscation + regex (lav sikkerhed)
-        text = s.get_text(" ", strip=True)
-        for k, v in {
-            "[at]": "@", "(at)": "@", " (at) ": "@", " [at] ": "@",
+    def _deobfuscate(text: str) -> str:
+        repl = {
+            "[at]": "@", "(at)": "@", " (at) ": "@", " [at] ": "@", " at ": "@",
             " snabel-a ": "@", " snabela ": "@",
             "[dot]": ".", "(dot)": ".", " dot ": ".",
-        }.items():
-            text = text.replace(k, v)
+        }
+        # lav-case + exact
+        out = text
+        for k, v in repl.items():
+            out = out.replace(k, v).replace(k.upper(), v).replace(k.capitalize(), v)
+        return out
 
-        for m in re.finditer(r"[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}", text, flags=re.I):
-            low_emails.add(m.group(0))
+    def _looks_like_dk_70(phone: str) -> bool:
+        # +45 70 xx xx xx eller 70xxxxxx (med/uden separatorer)
+        digits = re.sub(r"\D", "", phone or "")
+        return bool(re.match(r"^(45)?70\d{6}$", digits))
 
-        for m in re.finditer(r"(?:\+?\d[\d\-\s().]{6,}\d)", text):
-            cand = re.sub(r"[^\d+]", "", m.group(0))
-            if len(cand) >= 8:
-                low_phones.add(cand)
+    site = _site_domain(base_url)
 
-    # Scan alle indsamlede sider (root + sekundære)
-    for s in soups:
-        _collect_from_soup(s)
+    # Saml al HTML og deobfusker
+    full_html = " ".join((html or "") for _, html in pages_html)
+    full_html_deob = _deobfuscate(full_html)
 
-    # Returnér straks hvis vi fandt noget i HTML/JSON-LD
-    if high_emails or high_phones or low_emails or low_phones:
-        emails = list(dict.fromkeys([*high_emails, *low_emails]))[:3]
-        phones = list(dict.fromkeys([*high_phones, *low_phones]))[:3]
-        return [{
-            "name": None,
-            "title": None,
-            "emails": emails,
-            "phones": phones,
-            "score": -1.0,
-            "reasons": ["GENERIC_ORG_CONTACT"],
-            "source": "page-generic",
-            "url": base_url,
-            "dom_distance": None,
-            "hints": {"origin": "html+jsonld", "identity_gate_bypassed": True},
-        }]
-
-    # Fallback: brug contact_fetchers på root-soup (uden deep crawl)
-    root_soup = soups[0] if soups else None
-    if not root_soup:
-        return []
-
-    import asyncio
-    def _run_cf():
-        loop = asyncio.new_event_loop()
+    # --- 1) Emails fra regex (kun generiske + domæne-match) ---
+    all_emails = set(re.findall(r"[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}", full_html_deob, flags=re.I))
+    generic_emails = []
+    for raw in all_emails:
+        em = _normalize_email(raw)
+        if not em:
+            continue
         try:
-            asyncio.set_event_loop(loop)
-            async def go():
-                return await find_contact_info(root_soup, base_url, deep_contact=False)
-            res = loop.run_until_complete(go())
-            return res or {}
-        finally:
-            try: loop.close()
-            except Exception: pass
-            try: asyncio.set_event_loop(None)
-            except Exception: pass
+            local = em.split("@", 1)[0].lower()
+        except Exception:
+            continue
+        if _is_generic_local(local) and _email_site_match(em, site):
+            generic_emails.append(em)
 
-    data = _run_cf()
-    emails = list(dict.fromkeys((data.get("emails_found") or [])))[:3]
-    phones = list(dict.fromkeys((data.get("phone_numbers_found") or [])))[:3]
-    if not emails and not phones:
+    # --- 2) JSON-LD (Organization/LocalBusiness) for email/telephone ---
+    jsonld_emails, jsonld_phones = [], []
+    if _BS4 is not None:
+        for _, html in pages_html:
+            if not html:
+                continue
+            try:
+                soup = _BS4(html, "lxml")
+            except Exception:
+                continue
+            for sc in soup.select('script[type="application/ld+json"]'):
+                try:
+                    data = json.loads(sc.string or "")
+                    nodes = data if isinstance(data, list) else [data]
+                    for node in nodes:
+                        t = node.get("@type")
+                        if isinstance(t, list):
+                            t = " ".join(t)
+                        t_l = (t or "").lower()
+                        if not any(k in t_l for k in ("organization", "localbusiness")):
+                            continue
+                        # Email (kun generiske + domæne-match)
+                        em = _normalize_email(node.get("email") or "")
+                        if em:
+                            loc = em.split("@", 1)[0].lower()
+                            if _is_generic_local(loc) and _email_site_match(em, site):
+                                jsonld_emails.append(em)
+                        # Telefon (gem – vurderes konservativt nedenfor)
+                        tel = _normalize_phone(str(node.get("telephone") or ""))
+                        if tel:
+                            jsonld_phones.append(tel)
+                except Exception:
+                    continue
+
+    # --- 3) Konservativ phone-udvælgelse ---
+    phone_final = None
+    # (a) JSON-LD telefon prioriteres hvis tilgængelig
+    if jsonld_phones:
+        phone_final = jsonld_phones[0]
+    # (b) ellers forsøg at spotte et klart DK '70'-hovednummer i rå HTML
+    if not phone_final:
+        m = re.search(r"(?:\+45\s*)?70\s*\d{2}\s*\d{2}\s*\d{2}", full_html_deob)
+        if m:
+            phone_final = _normalize_phone(m.group(0))
+
+    emails_final = list(dict.fromkeys(generic_emails + jsonld_emails))[:3]
+    phones_final = [phone_final] if phone_final else []
+
+    if not emails_final and not phones_final:
         return []
 
     return [{
         "name": None,
         "title": None,
-        "emails": emails,
-        "phones": phones,
-        "score": -1.0,
+        "emails": emails_final,
+        "phones": phones_final,   # maks 1 org-nummer
+        "score": 0.15,            # lav prioritet ift. personlige kontakter
         "reasons": ["GENERIC_ORG_CONTACT"],
         "source": "page-generic",
         "url": base_url,
         "dom_distance": None,
-        "hints": {"origin": "contact_fetchers", "identity_gate_bypassed": True},
+        "hints": {
+            "origin": "regex+jsonld+deobfus",
+            "identity_gate_bypassed": True
+        },
     }]
-
-
-def _extract_from_rdfa(url: str, tree) -> list[ContactCandidate]:
-    out: list[ContactCandidate] = []
-    if not tree or not hasattr(tree, "css"):
-        return out
-    for el in tree.css('[typeof*="Person" i], [typeof*="schema:Person" i]'):
-        name = None; email = None; tel = None; title = None
-        for prop in el.css('[property]'):
-            p = (prop.attributes.get('property') or '').lower()
-            txt = _collapse_ws(prop.text()) if hasattr(prop, "text") else None
-            if not p:
-                continue
-            if 'name' in p and txt:
-                name = txt
-            elif 'email' in p and txt:
-                email = _normalize_email(txt)
-            elif 'tel' in p or 'phone' in p or 'telephone' in p:
-                tel = _normalize_phone(txt)
-            elif 'jobtitle' in p or 'role' in p:
-                title = txt
-        out.append(ContactCandidate(
-            name=name, title=title,
-            emails=[e for e in [email] if e],
-            phones=[p for p in [tel] if p],
-            source="rdfa", url=url, dom_distance=0, hints={"selector": "RDFa"}
-        ))
-    return out
 
 def _extract_from_microformats(url: str, tree) -> list[ContactCandidate]:
     """Minimal h-card (p-name, u-email, p-tel, p-job-title)."""
@@ -3159,8 +3466,205 @@ def _extract_lines_from_block_txt(txt: str) -> tuple[Optional[str], Optional[str
             break
     return name, title
 
-
 def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
+    """
+    Finder team/medarbejder-kort (særligt WP: wp-block-*, columns/grids).
+    Virker både med selectolax (css) og BeautifulSoup (select).
+    """
+    out: list[ContactCandidate] = []
+    if not tree:
+        return out
+
+    def _get_text(node) -> str:
+        try:
+            if hasattr(node, "text"):
+                return _collapse_ws(node.text(deep=True)) or ""
+        except Exception:
+            pass
+        try:
+            return _collapse_ws(node.get_text(separator="\n")) or ""
+        except Exception:
+            return ""
+
+    def _node_text_shallow(n) -> str:
+        try:
+            if hasattr(n, "text") and callable(getattr(n, "text")):
+                return n.text()
+        except Exception:
+            pass
+        try:
+            if hasattr(n, "get_text"):
+                return n.get_text(" ", strip=True)
+        except Exception:
+            pass
+        try:
+            t = getattr(n, "text", "")
+            if isinstance(t, str):
+                return t
+        except Exception:
+            pass
+        return ""
+
+    containers = []
+    css_roots = [
+        ".wp-block-columns", ".wp-block-group", ".team", ".team-grid",
+        ".is-layout-grid", ".is-layout-flow", ".is-layout-flex",
+        ".elementor-section", ".elementor-container", ".elementor-row",
+        ".elementor-column", ".elementor-widget", ".elementor-widget-container",
+        ".elementor-image-box", ".elementor-team-member",
+        ".team-container", ".staff-list", ".employee-grid", ".profile-card", ".bio-card",
+        ".team-members", ".our-team", ".people", ".staff", ".person-list", ".members", ".employees",
+        ".team-member__list", "section", "main", "article"
+    ]
+    try:
+        if hasattr(tree, "css"):
+            for sel in css_roots:
+                containers.extend(tree.css(sel))
+        elif hasattr(tree, "select"):
+            for sel in css_roots:
+                containers.extend(tree.select(sel))
+    except Exception:
+        pass
+    if not containers:
+        containers = [tree]
+    if tree and tree not in containers:
+        containers = [tree] + containers
+
+    seen: set[tuple[str, str, str]] = set()
+    for cont in containers:
+        cards = []
+        try:
+            card_selectors = (
+                "figure, article, .wp-block-column, .wp-block-media-text, .team-member, "
+                ".wp-block-group > div, .is-layout-flow > div, .elementor-column, .elementor-widget, "
+                ".elementor-widget-container, .elementor-image-box, .elementor-team-member, "
+                ".staff-card, .employee, .employee-card, .profile-card, .bio-card, "
+                ".member, .person, .staff-item, .team-item, .member-card, .people__item, "
+                ".team-member__card, .card, .card-body, .contact-card, .contactperson, "
+                ".kontaktperson, .kontakt-card, .contact__person, [class*='kontakt'] [class*='person'], "
+                "[class*='contact'] [class*='person'], [class*='staff'] [class*='card']"
+            )
+            if hasattr(cont, "css"):
+                cards = cont.css(card_selectors)
+            elif hasattr(cont, "select"):
+                cards = cont.select(card_selectors)
+        except Exception:
+            cards = []
+
+        for card in cards or []:
+            raw = _get_text(card)
+            if not raw or len(raw) < 5:
+                continue
+
+            name, title = None, None
+            
+            # ---------------- START PÅ MINIMAL PATCH ----------------
+            # Vi tilføjer den manglende logik her, FØR den gamle logik og FØR "if not name: continue"
+            # Dette er en sikker, kirurgisk tilføjelse i stedet for en fuld erstatning.
+            
+            # Prioritet 1: Prøv at finde navn fra img[alt]
+            try:
+                img_tag = card.select_one("img[alt]") if hasattr(card, "select_one") else (card.css_first("img[alt]") if hasattr(card, "css_first") else None)
+                if img_tag:
+                    alt_text = (img_tag.get("alt", "") if hasattr(img_tag, "get") else img_tag.attributes.get("alt", "")).strip()
+                    if _is_plausible_name(alt_text):
+                        name = alt_text
+            except Exception:
+                pass
+            
+            # Prioritet 2: Prøv at finde navn fra p.font-semibold (specifikt for inventarland.dk, men generisk nok)
+            if not name:
+                try:
+                    p_tag = card.select_one("p.font-semibold") if hasattr(card, "select_one") else (card.css_first("p.font-semibold") if hasattr(card, "css_first") else None)
+                    if p_tag:
+                        p_text = _node_text_shallow(p_tag)
+                        if _is_plausible_name(p_text):
+                            name = p_text
+                except Exception:
+                    pass
+            
+            # ---------------- SLUT PÅ MINIMAL PATCH ----------------
+
+            if hasattr(card, "get_text"):
+                text_multiline = card.get_text(separator="\n")
+            else:
+                try:
+                    text_multiline = "\n".join([n.text().strip() for n in card.iter() if n.text() and n.text().strip()])
+                except Exception:
+                    text_multiline = raw
+            
+            # Den eksisterende logik fungerer nu som fallback
+            if not name:
+                direct_name = None
+                try:
+                    if hasattr(card, "css"):
+                        dn = card.css_first(".person-name, .staff-name, .name, [class*='name']")
+                        if dn: direct_name = _collapse_ws(dn.text())
+                    elif hasattr(card, "select"):
+                        dn = card.select_one(".person-name, .staff-name, .name, [class*='name']")
+                        if dn: direct_name = _collapse_ws(dn.get_text(" ", strip=True))
+                except Exception:
+                    pass
+                if _is_plausible_name(direct_name):
+                    name = direct_name
+
+            if not title:
+                direct_title = None
+                try:
+                    if hasattr(card, "css"):
+                        dr = card.css_first(".job-title, .role, .title, [class*='rolle'], [class*='stilling']")
+                        if dr: direct_title = _sanitize_title(_collapse_ws(dr.text()))
+                    elif hasattr(card, "select"):
+                        dr = card.select_one(".job-title, .role, .title, [class*='rolle'], [class*='stilling']")
+                        if dr: direct_title = _sanitize_title(_collapse_ws(dr.get_text(" ", strip=True)))
+                except Exception:
+                    pass
+                title = direct_title or None
+
+            if not name:
+                n2, t2 = _extract_lines_from_block_txt(text_multiline)
+                if n2 and _is_plausible_name(n2):
+                    name = n2
+                if not title and t2:
+                    title = t2
+
+            emails, phones = [], []
+            try:
+                if hasattr(card, "css"):
+                    for a in card.css("a[href^='mailto:']"):
+                        em = _normalize_email(a.attributes.get("href", ""))
+                        if em and "undefined" not in em.lower(): emails.append(em)
+                elif hasattr(card, "select"):
+                    for a in card.select("a[href^='mailto:']"):
+                        em = _normalize_email(a.get("href", ""))
+                        if em and "undefined" not in em.lower(): emails.append(em)
+                
+                text_all = _get_text(card)
+                dk_phones = re.findall(r'\b(?:\+45\s*)?(\d{2}\s?\d{2}\s?\d{2}\s?\d{2})\b', text_all)
+                for p in dk_phones:
+                    norm_p = _normalize_phone(p)
+                    if norm_p: phones.append(norm_p)
+            except Exception:
+                pass
+
+            if not name:
+                continue
+
+            fingerprint = _fp_from_text(raw or "", prefix="card:")
+            key = (name.lower(), (title or "").lower(), fingerprint)
+            if key in seen:
+                continue
+            seen.add(key)
+
+            rs = _role_strength(title)
+            out.append(ContactCandidate(
+                name=name, title=title, emails=sorted(list(set(emails))), phones=sorted(list(set(phones))),
+                source="dom-staff-grid", url=url, dom_distance=0,
+                hints={"card": (raw or "")[:160], "role_strength": rs, "fingerprint": fingerprint}
+            ))
+    return out
+
+def _extract_from_staff_grid_OLD(url: str, tree) -> list[ContactCandidate]:
     """
     Finder team/medarbejder-kort (særligt WP: wp-block-*, columns/grids).
     Virker både med selectolax (css) og BeautifulSoup (select).
@@ -3181,6 +3685,29 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
             return _collapse_ws(node.get_text(separator="\n")) or ""
         except Exception:
             return ""
+
+    def _node_text_shallow(n) -> str:
+        """Sikker tekst for n (BS4 eller selectolax)."""
+        try:
+            # selectolax Node.text() er callable
+            if hasattr(n, "text") and callable(getattr(n, "text")):
+                return n.text()
+        except Exception:
+            pass
+        try:
+            # bs4 Tag.get_text()
+            if hasattr(n, "get_text"):
+                return n.get_text(" ", strip=True)
+        except Exception:
+            pass
+        try:
+            # bs4 Tag.text property (fallback)
+            t = getattr(n, "text", "")
+            if isinstance(t, str):
+                return t
+        except Exception:
+            pass
+        return ""
 
     # Vælg containere der ofte rummer kort
     containers = []
@@ -3211,8 +3738,12 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
     if not containers:
         containers = [tree]
 
+    # Sørg for, at roden ALTID søges først (for top-level grids som .employee)
+    if tree and tree not in containers:
+        containers = [tree] + containers
+
     # Udtræk "kort" pr. container
-    seen: set[tuple[str, str]] = set()
+    seen: set[tuple[str, str, str]] = set()
     for cont in containers:
         cards = []
         try:
@@ -3223,24 +3754,34 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
                     ".elementor-column, .elementor-widget, .elementor-widget-container, .elementor-image-box, .elementor-team-member, "
                     ".staff-card, .employee, .employee-card, .profile-card, .bio-card, "
                     ".member, .person, .staff-item, .team-item, .member-card, .people__item, .team-member__card, .card, .card-body, "
-                    # Nye generiske kontakt-person varianter (Vue/Nuxt/e-comm) 
+                    # Nye generiske kontakt-person varianter (Vue/Nuxt/e-comm)
                     ".contact-card, .contactperson, .kontaktperson, .kontakt-card, .contact__person, [class*='kontakt'] [class*='person'], "
                     "[class*='contact'] [class*='person'], [class*='staff'] [class*='card']"
                 )
-    # === ANKER: STAFF_GRID_CARD_SELECTORS_EXTENDED ===
+                # === ANKER: STAFF_GRID_CARD_SELECTORS_EXTENDED ===
             elif hasattr(cont, "select"):
+                # Kuraterede selectors – ingen grådig fallback for performance/paritet
                 cards = cont.select(
                     "figure, article, "
                     ".wp-block-column, .wp-block-media-text, .team-member, .wp-block-group > div, .is-layout-flow > div, "
                     ".elementor-column, .elementor-widget, .elementor-widget-container, .elementor-image-box, .elementor-team-member, "
                     ".staff-card, .employee, .employee-card, .profile-card, .bio-card, "
                     ".member, .person, .staff-item, .team-item, .member-card, .people__item, .team-member__card, .card, .card-body, "
-                    # Nye generiske kontakt-person varianter (Vue/Nuxt/e-comm) 
                     ".contact-card, .contactperson, .kontaktperson, .kontakt-card, .contact__person, [class*='kontakt'] [class*='person'], "
                     "[class*='contact'] [class*='person'], [class*='staff'] [class*='card']"
-                ) or cont.select("div, figure, article")
+                )
+                # Smal fallback til personkort hvis ingen – sikrer .employee rammer i BS4
+                if not cards:
+                    cards = cont.select(".employee, .employee-card, .staff-member, .contact-person, .kontaktperson, .team-member")
+
         except Exception:
             cards = []
+
+        if not cards:
+            try:
+                cards = cont.css(".employee") if hasattr(cont, "css") else cont.select(".employee")
+            except Exception:
+                cards = []
 
         for card in cards or []:
             raw = _get_text(card)
@@ -3256,7 +3797,7 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
                 except Exception:
                     text_multiline = raw
 
-            # Prøv direkte name/role klasser før heuristik
+            # Prøv direkte name/role selectors (som før)
             direct_name = None
             direct_title = None
             try:
@@ -3267,56 +3808,139 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
                     )
                     dr = card.css_first(
                         ".job-title, .role, .position, .position-title, .team-member__role, .bio-title, .title, "
-                        ".contact-title, .kontakt-title, [class*='title'], [class*='rolle'], [class*='stilling'], [class*='position']"
+                        ".contact-title, .kontakt-title, [class*='rolle'], [class*='stilling'], [class*='position']"
                     )
                     if dn: direct_name = _collapse_ws(dn.text())
                     if dr: direct_title = _sanitize_title(_collapse_ws(dr.text()))
                 elif hasattr(card, "select"):
-                    dn = card.select_one(".person-name, .staff-name, .member-name, .employee-name, .bio-name, .team-member__name, .name, "
+                    dn = card.select_one(
+                        ".person-name, .staff-name, .member-name, .employee-name, .bio-name, .team-member__name, .name, "
                         ".contact-name, .kontakt-navn, .kontaktperson__name, [class*='name'], [class*='navn']"
                     )
                     dr = card.select_one(
                         ".job-title, .role, .position, .position-title, .team-member__role, .bio-title, .title, "
-                        ".contact-title, .kontakt-title, [class*='title'], [class*='rolle'], [class*='stilling'], [class*='position']"
+                        ".contact-title, .kontakt-title, [class*='rolle'], [class*='stilling'], [class*='position']"
                     )
                     if dn: direct_name = _collapse_ws(dn.get_text(" ", strip=True))
                     if dr: direct_title = _sanitize_title(_collapse_ws(dr.get_text(" ", strip=True)))
             except Exception:
                 pass
-            
-            if direct_name and not direct_title:
-                guess = _title_from_text_window(text_multiline, direct_name)
-                if guess:
-                    direct_title = guess
 
-            name, title = None, None
-            if _is_plausible_name(direct_name):
-                name = direct_name
-                title = direct_title or None
-            else:
-                name, title = _extract_lines_from_block_txt(text_multiline)
+            name = direct_name if _is_plausible_name(direct_name) else None
+            title = direct_title or None
+
+            # Hvis ingen name endnu: brug img[alt] som primær kilde
+            if not name:
+                try:
+                    if hasattr(card, "css"):
+                        img = card.css_first("img[alt]")
+                        alt = (img.attributes.get("alt", "") if img and hasattr(img, "attributes") else "") if img else ""
+                    else:
+                        img = card.select_one("img[alt]") if hasattr(card, "select") else None
+                        alt = (img.get("alt", "") if img else "")
+                    alt = (alt or "").strip()
+                    if alt and _is_plausible_name(alt):
+                        name = alt
+                except Exception:
+                    pass
+
+            # Fallback: linje-heuristik
+            if not name:
+                n2, t2 = _extract_lines_from_block_txt(text_multiline)
+                if n2 and _is_plausible_name(n2):
+                    name = n2
+                if not title and t2:
+                    title = t2
+
+            # Saml emails inde i kortet (filtreret) + phones
+            emails = []
+            phones = []
+            try:
+                # Emails
+                if hasattr(card, "css"):
+                    mail_a = card.css("a[href^='mailto:']")
+                    for a in mail_a:
+                        href = a.attributes.get("href", "") if hasattr(a, "attributes") else ""
+                        em = _normalize_email(href)
+                        if em and "undefined" not in (em.lower()):
+                            if em not in emails:
+                                emails.append(em)
+                elif hasattr(card, "select"):
+                    mail_a = card.select("a[href^='mailto:']")
+                    for a in mail_a:
+                        href = a.get("href", "")
+                        em = _normalize_email(href)
+                        if em and "undefined" not in (em.lower()):
+                            if em not in emails:
+                                emails.append(em)
+
+                # Phones fra fritekst (DK-regex)
+                text_all = _get_text(card)
+                dk_phones = re.findall(r'\b(?:\+45\s*)?(\d{2}\s?\d{2}\s?\d{2}\s?\d{2})\b', text_all)
+                for p in dk_phones:
+                    norm_p = _normalize_phone(p)
+                    if norm_p and norm_p not in phones:
+                        phones.append(norm_p)
+
+                # Phones fra p.mb-2
+                mb_p = card.css("p.mb-2") if hasattr(card, "css") else card.select("p.mb-2") if hasattr(card, "select") else []
+                for p in mb_p:
+                    norm_p = _normalize_phone(_node_text_shallow(p))
+                    if norm_p and norm_p not in phones:
+                        phones.append(norm_p)
+            except Exception:
+                pass
+
+            # Gate: kræv navn (emails/titel kontrolleres i gate)
             if not name:
                 continue
 
-            key = (name.lower(), (title or "").lower())
+            # Fingerprint: prioriter data-v + img[alt], fallback til kortets tekst
+            try:
+                if hasattr(card, "attributes"):
+                    data_v = (card.attributes.get("data-v", "") or "").strip()
+                elif hasattr(card, "get"):
+                    data_v = (card.get("data-v", "") or "").strip()
+                else:
+                    data_v = ""
+                if hasattr(card, "css"):
+                    i2 = card.css_first("img[alt]")
+                    alt2 = (i2.attributes.get("alt", "") if i2 and hasattr(i2, "attributes") else "") if i2 else ""
+                else:
+                    i2 = card.select_one("img[alt]") if hasattr(card, "select") else None
+                    alt2 = (i2.get("alt", "") if i2 else "")
+                alt2 = (alt2 or "").strip()
+                if data_v or alt2:
+                    fingerprint = _fp_from_text(f"{data_v}::{alt2}", prefix="card:")
+                else:
+                    fingerprint = _fp_from_text(raw or "", prefix="card:")
+            except Exception:
+                fingerprint = _fp_from_text(raw or "", prefix="card:")
+
+            # Dedup inden for denne extractor: medtag fingerprint i nøgle
+            key = (name.lower(), (title or "").lower(), fingerprint)
             if key in seen:
                 continue
             seen.add(key)
 
             rs = _role_strength(title)
-            # fjernet ubrugt 'base'-variabel; gem rolle-styrke i hints i stedet
+
             out.append(ContactCandidate(
                 name=name,
                 title=title,
-                emails=[],
-                phones=[],
+                emails=emails or [],
+                phones=phones or [],
                 source="dom-staff-grid",
                 url=url,
-                dom_distance=None,
-                hints={"card": raw[:160], "role_strength": rs}
+                dom_distance=0,
+                hints={
+                    "card": (raw or "")[:160],
+                    "role_strength": rs,
+                    "name_source": "img.alt/direct/fallback",
+                    "fingerprint": fingerprint,
+                }
             ))
     return out
-
 
 def _wp_json_enrich(
     page_url: str,
@@ -3555,26 +4179,51 @@ def _score_candidate(c: ContactCandidate, directors: Optional[list[str]] = None)
     except Exception:
         pass
 
-    # [NYT] Titel-facit: valider og kanonificér før vi returnerer ScoredContact
+    # [NYT] Promotion: hvis ingen titel, men name ligner en rolle → brug facit på name
     try:
-        cand_title = getattr(c, "title", None)
-        canon = _canonicalize_title_or_none(cand_title)
-        if canon:
-            canonical_title, meta = canon
-            # skriv kanonisk titel tilbage
-            setattr(c, "title", canonical_title)
-            # gem metadata i hints
-            hints = getattr(c, "hints", {}) or {}
-            hints["title_validation"] = meta  # {'title_id','match_type','score'}
-            setattr(c, "hints", hints)
-            why.append("TITLE_FACIT_OK")
-        else:
-            why.append("TITLE_FACIT_REJECT")
-            # konservativ straf – kan tunes (0.25–1.0)
-            s = max(0.0, s - 0.5)
+        if not getattr(c, "title", None):
+            raw_name = getattr(c, "name", None)
+            role_like = _sanitize_title(raw_name)  # fjerner CTA/telefon/URL-støj
+            if role_like:
+                canon2 = _canonicalize_title_or_none(role_like)
+                if canon2:
+                    canonical_title2, meta2 = canon2
+                    setattr(c, "title", canonical_title2)
+                    # name var en rolle/afdeling → ryd, så tabellen ikke viser rollens tekst som navn
+                    setattr(c, "name", None)
+                    hints = getattr(c, "hints", {}) or {}
+                    hints["title_from_name"] = True
+                    hints["title_validation"] = meta2
+                    setattr(c, "hints", hints)
+                    why.append("TITLE_FROM_NAME")
+                    globals()["_TITLE_FACIT_OK"] += 1  # tæl som “ok”, da vi fik en valid titel
+                    if _TITLES_DEBUG:
+                        log.info(f"[TitleFacit] FROM_NAME raw={raw_name!r} -> canonical={canonical_title2!r} meta={meta2}")
+    except Exception as e:
+        if _TITLES_DEBUG:
+            log.debug(f"[TitleFacit] FROM_NAME error err={e}")
+
+    # [NYT] Drop “kontakter” hvor name er CTA/adresse (typisk “Kontakt os på … Trafikcenter Allé …”)
+    try:
+        nm = (getattr(c, "name", "") or "")
+        nm_l = nm.strip().lower()
+        CTA_NAME_BLACKLIST = {
+            "kontakt", "kontakt os", "kontakt os på",
+            "kundeservice", "customer service",
+            "kontakt os på trafikcenter allé 12, dk-4200 slagelse"
+        }
+        looks_like_address = bool(
+            re.search(r"\b\d{4}\b", nm_l) or
+            re.search(r"\b(all[eé]|vej|gade|boulevard|plads)\b", nm_l, flags=re.I)
+        )
+
+        if ("TITLE_FACIT_OK" not in why and "TITLE_FROM_NAME" not in why) and (nm_l in CTA_NAME_BLACKLIST or looks_like_address):
+            why.append("DROP_UI_OR_ADDRESS")
+            s = 0.0  # gør kandidaten inaktiv i output (støjer ikke i top-N)
+            if _TITLES_DEBUG:
+                log.info(f"[TitleFacit] DROP nm={nm!r}")
     except Exception:
-        # fail-safe: påvirk ikke flowet hvis noget går galt
-        why.append("TITLE_FACIT_SKIPPED")
+        pass
 
     return ScoredContact(candidate=c, score=s, reasons=why)
     # === ANKER: DIRECTOR_SCORE_BOOST ===
@@ -4520,8 +5169,13 @@ class ContactFinder:
             pw_renders = len(self._rendered_once)
             emails_any = sum(1 for r in cleaned if r.get("emails"))
             persons_any = sum(1 for r in cleaned if r.get("name"))
-            log.info("CF SUMMARY host=%s final=%s items=%d emails=%d persons=%d pw=%d time=%.3fs",
-                     host, final_host, len(cleaned), emails_any, persons_any, pw_renders, time.time()-t0)
+            if _TITLES_DEBUG:
+                log.info("[TitleFacit] summary ok=%d reject=%d skipped=%d",
+                        _TITLE_FACIT_OK, _TITLE_FACIT_REJECT, _TITLE_FACIT_SKIPPED)
+
+            log.info("CF SUMMARY host=%s final=%s items=%d emails=%d persons=%d pw=%d time=%.3fs | titles=%d ok, %d reject, %d skipped",
+                    host, final_host, len(cleaned), emails_any, persons_any, pw_renders, time.time()-t0,
+                    _TITLE_FACIT_OK, _TITLE_FACIT_REJECT, _TITLE_FACIT_SKIPPED)
         except Exception:
             pass
 

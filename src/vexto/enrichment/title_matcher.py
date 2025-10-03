@@ -48,18 +48,36 @@ class TitleMatcher:
 
         exact = _read_json_any(DATA_DIR / "titles_exact_index.json")
         token = _read_json_any(DATA_DIR / "titles_token_index.json")
-        return cls(exact, token, DATA_DIR / "title_catalog.csv")
+
+        # byg objektet først
+        obj = cls(exact, token, DATA_DIR / "title_catalog.csv")
+
+        # [NYT] valgfri overrides (data/title_catalog/overrides.json)
+        ovr_path = DATA_DIR / "overrides.json"
+        obj.overrides = {}
+        if ovr_path.exists():
+            try:
+                obj.overrides = _read_json_any(ovr_path)
+            except Exception:
+                obj.overrides = {}
+
+        return obj
 
     def match(self, raw: Optional[str]) -> Optional[Tuple[str, str, str, float]]:
-        """
-        Returner (title_id, canonical_da_name, match_type, score) eller None.
-        match_type: 'exact'|'alias'|'fuzzy'
-        """
         if not raw:
             return None
         key = _norm(raw)
         if not key:
             return None
+
+        # 0) [NYT] Overrides (hurtig mapping uden at røre Excel)
+        ovr = getattr(self, "overrides", {}) or {}
+        if key in ovr:
+            canonical = ovr[key]               # fx "Kundeservicemedarbejder"
+            tid = self.exact.get(_norm(canonical))
+            if tid:
+                return (tid, self._id2name.get(tid, canonical), "override", 1.0)
+            # hvis canonical ikke findes i exact-index, falder vi bare videre til normal logik
 
         # 1) Exact/alias
         tid = self.exact.get(key)
