@@ -1,8 +1,11 @@
 # src/vexto/enrichment/title_matcher.py
 from __future__ import annotations
 import json, re, unicodedata
+import logging
 from pathlib import Path
 from typing import Optional, Tuple, Dict
+
+log = logging.getLogger(__name__)
 
 DATA_DIR = Path(__file__).resolve().parents[3] / "data" / "title_catalog"
 
@@ -34,8 +37,15 @@ class TitleMatcher:
         except Exception:
             pass
 
+    # Singleton cache + "log kun én gang"
+    _instance: "TitleMatcher | None" = None
+    _overrides_logged_once: bool = False
+
     @classmethod
     def load(cls) -> "TitleMatcher":
+        if cls._instance is not None:
+            return cls._instance
+
         def _read_json_any(path: Path):
             try:
                 return json.loads(path.read_text(encoding="utf-8"))
@@ -49,20 +59,25 @@ class TitleMatcher:
         exact = _read_json_any(DATA_DIR / "titles_exact_index.json")
         token = _read_json_any(DATA_DIR / "titles_token_index.json")
 
-        # byg objektet først
         obj = cls(exact, token, DATA_DIR / "title_catalog.csv")
 
-        # [NYT] valgfri overrides (data/title_catalog/overrides.json)
         ovr_path = DATA_DIR / "overrides.json"
         obj.overrides = {}
         if ovr_path.exists():
             try:
-                raw_ovr = _read_json_any(ovr_path)
-                # [CHANGE] normalisér nøgler, så opslag matcher _norm()
-                obj.overrides = { _norm(k): v for k, v in (raw_ovr or {}).items() }
+                obj.overrides = _read_json_any(ovr_path)
             except Exception:
                 obj.overrides = {}
 
+        # Gem én gang – logger højst én gang
+        try:
+            import os, logging
+            if os.getenv("VEXTO_TITLES_DEBUG", "0") == "1":
+                logging.getLogger(__name__).info(f"Loaded overrides: {len(obj.overrides)} entries")
+        except Exception:
+            pass
+
+        cls._instance = obj
         return obj
 
     def match(self, raw: Optional[str]) -> Optional[Tuple[str, str, str, float]]:
@@ -77,9 +92,12 @@ class TitleMatcher:
         if key in ovr:
             canonical = ovr[key]  # visningslabel vi vil fastholde
             tid = self.exact.get(_norm(canonical))
-            # Returnér altid override; brug "custom" som fallback id
-            return (tid or "custom", self._id2name.get(tid, canonical) if tid else canonical, "override", 1.0)
-            # hvis canonical ikke findes i exact-index, falder vi bare videre til normal logik
+            if tid:  # Log blocked morph for transparency
+                katalog_name = self._id2name.get(tid)
+                if katalog_name != canonical:
+                    logging.debug(f"Override blocked morph for {raw!r}: would be {katalog_name!r}")
+            # Returnér ALTID din override-label som canonical
+            return (tid or "custom", canonical, "override", 1.0)
 
         # 1) Exact/alias
         tid = self.exact.get(key)
@@ -103,6 +121,14 @@ class TitleMatcher:
         max_possible = sum(sorted(cand_scores.values(), reverse=True)[:3]) or 1
         ratio = min(1.0, best_score / max_possible)
 
-        if ratio >= 0.95:
-            return (best_tid, self._id2name.get(best_tid, raw), "fuzzy", round(ratio, 3))
+        if ratio >= 0.98:
+            # Ekstra værn: kræv høj dækning af canonical-tokens i rå-teksten
+            cand_name = self._id2name.get(best_tid, raw)
+            cand_toks = set(_tokens(cand_name))
+            raw_toks  = set(toks)
+            coverage = len(cand_toks & raw_toks) / max(1, len(cand_toks))
+            if coverage < 0.75:
+                # For konservativ adfærd: hellere ingen morph end en “smart” udvidelse
+                return None
+            return (best_tid, cand_name, "fuzzy", round(ratio, 3))
         return None

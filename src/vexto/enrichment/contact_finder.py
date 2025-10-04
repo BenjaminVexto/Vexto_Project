@@ -668,7 +668,7 @@ UI_TITLE_BLACKLIST = {
     "faq", "privacy", "cookies", "cookie", "policy",
     # udvidede DK/EN fraser der ofte lander som “titel”-støj
     "vi værner gennemsigtighed", "har du spørgsmål", "ring til os", "skriv til os",
-    "kundeservice", "kundecenter", "find medarbejder", "læs mere",
+    "kundecenter", "find medarbejder", "læs mere",
     "vi hjælper", "mød os", "vores team", "find os", "se mere", "book møde",
     "kontaktformular", "send besked", "send os en mail", "chat med os",
 }
@@ -894,7 +894,8 @@ def _cf_extract_urls_from_sitemap_xml(self, xml_text: str) -> list[str]:
 def _cf_sitemap_contact_candidates(self, base_url: str) -> list[str]:
     from urllib.parse import urlsplit
     pats = ("kontakt", "contact", "kundeservice", "customer-service",
-            "about", "om-os", "team", "staff", "support", "help")
+            "about", "om-os", "om-inventarland", "team", "staff", "support", "help",
+            "ledelse", "bogholderi", "kørende-konsulenter", "medarbejdere")
     try:
         host = urlsplit(base_url).netloc
         cands: list[str] = []
@@ -1231,6 +1232,7 @@ MANAGER_ROLES = {
 SPECIALIST_ROLES = {
     "konsulent","specialist","coordinator","koordinator","analyst","analytiker",
     "engineer","developer","udvikler","designer","rådgiver","architect"
+    "aftersales","support","service"
 }
 
 ROLE_LIKE = EXEC_ROLES | MANAGER_ROLES | SPECIALIST_ROLES
@@ -1427,8 +1429,7 @@ def _canonicalize_title_or_none(raw_title: str | None):
         return None
 
     try:
-        from vexto.enrichment.title_matcher import TitleMatcher  # type: ignore
-        matcher = TitleMatcher.load()
+        matcher = _load_title_matcher()
         hit = matcher.match(raw_title)
         if hit:
             title_id, canonical, match_type, score = hit
@@ -2810,7 +2811,7 @@ def _harvest_identity_from_container(node, max_depth: int = 8) -> tuple[Optional
                     break
     except Exception:
         pass
-
+    
     # ---------- D) PHONES: tel: + fri tekst (anti-CVR) ----------
     phones: list[str] = []
     try:
@@ -3139,6 +3140,29 @@ def _extract_from_dom(url: str, html_or_tree) -> list[ContactCandidate]:
             continue
         container = a.parent or a
         text_blob = _near_text(container, 260)
+        # NYT: medtag nærmeste header for fuld kontekst (fx "Kundeservice / Salg")
+        try:
+            heading_txt = None
+            if hasattr(container, "css"):  # selectolax
+                # prøv først container, ellers gå op i forældre et par niveauer
+                h = container.css_first("h2,h3,h4")
+                if not h:
+                    p = container.parent
+                    for _ in range(3):
+                        if not p:
+                            break
+                        h = p.css_first("h2,h3,h4")
+                        if h:
+                            break
+                        p = p.parent
+                heading_txt = (h.text().strip() if h else None)
+            elif hasattr(container, "find_previous"):  # bs4
+                h = container.find_previous(["h2","h3","h4"])
+                heading_txt = (h.get_text(" ", strip=True) if h else None)
+            if heading_txt:
+                text_blob = (heading_txt + " / " + text_blob)[:260]
+        except Exception:
+            pass
 
         name_h, title_h, phones_h = _harvest_identity_from_container(a)
 
@@ -3174,6 +3198,29 @@ def _extract_from_dom(url: str, html_or_tree) -> list[ContactCandidate]:
             continue
         container = t.parent or t
         text_blob = _near_text(container, 260)
+        # NYT: medtag nærmeste header for fuld kontekst (fx "Kundeservice / Salg")
+        try:
+            heading_txt = None
+            if hasattr(container, "css"):  # selectolax
+                h = container.css_first("h2,h3,h4")
+                if not h:
+                    p = container.parent
+                    for _ in range(3):
+                        if not p:
+                            break
+                        h = p.css_first("h2,h3,h4")
+                        if h:
+                            break
+                        p = p.parent
+                heading_txt = (h.text().strip() if h else None)
+            elif hasattr(container, "find_previous"):  # bs4
+                h = container.find_previous(["h2","h3","h4"])
+                heading_txt = (h.get_text(" ", strip=True) if h else None)
+            if heading_txt:
+                text_blob = (heading_txt + " / " + text_blob)[:260]
+        except Exception:
+            pass
+
 
         name_h, title_h, phones_h = _harvest_identity_from_container(t)
         if pn and pn not in phones_h:

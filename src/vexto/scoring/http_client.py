@@ -190,7 +190,7 @@ def needs_rendering(html: str, url: str | None = None, content_type: str | None 
         return False
     if "xml" in ct or "text/plain" in ct:
         return False
-
+    
     # Kontakt-/formular-URL’er er ofte JS-drevne → eskalér
     if u and any(k in u for k in ("kontakt", "contact", "kontaktformular", "support", "kundeservice", "formular", "form")):
         log.info("Contact-like URL detected - rendering required.")
@@ -468,6 +468,7 @@ class _PlaywrightThreadFetcher:
                     headless=False,
                     args=launch_args,
                     ignore_default_args=['--enable-automation'],
+                    slow_mo=500,  # ← slå fra igen når det kører stabilt
                 )
                 self._is_ready = True
                 log.info(f"Playwright-browser ({self._browser_type}) startet succesfuldt.")
@@ -644,7 +645,13 @@ class _PlaywrightThreadFetcher:
             raise e
 
     def _handle_pwa_hydration_hybrid(self, page, url: str, hydration_requests: list) -> Optional[str]:
-        log.info(" Starting hybrid PWA hydration...")
+        log.info("🔄 Starting hybrid PWA hydration...")
+
+        is_contact_page = any(k in url.lower() for k in (
+            "/kontakt", "/contact", "/team", "/staff", 
+            "/medarbejder", "/people", "/ansatte"
+        ))        
+
         try:
             page.wait_for_function("""
                 () => window.Vue || window.$nuxt || window.__NUXT__ ||
@@ -655,9 +662,137 @@ class _PlaywrightThreadFetcher:
         except Exception:
             log.warning("⚠️ Framework not detected")
 
-        self._simulate_user_interaction_advanced(page)
+        # ← FORCED deep scroll for contact pages
+        if is_contact_page:
+            log.info("🔍 Contact page: POST-LOAD IO patch + aggressive flush + extended polling")
+            try:
+                # Re-apply IO-stub (med try-catch)
+                page.evaluate("""
+                (function(){
+                    try {
+                    if (!window.__VEXTO_IO_STUBBED__) {
+                        const ForcedIO = class {
+                        constructor(cb, options){ this._cb = cb || function(){}; this._opt = options || {}; }
+                        observe(t){
+                            if(!t) return;
+                            const r=t.getBoundingClientRect(), rb=document.documentElement.getBoundingClientRect();
+                            const now=(performance&&performance.now)?performance.now():Date.now();
+                            const e={time:now,target:t,isIntersecting:true,intersectionRatio:1,
+                                    boundingClientRect:r,rootBounds:rb,intersectionRect:r};
+                            try{ this._cb([e], this); }catch(_){}
+                        }
+                        unobserve(){ }
+                        disconnect(){ }
+                        takeRecords(){ return []; }
+                        };
+                        window.IntersectionObserver = ForcedIO;
+                        window.__VEXTO_IO_STUBBED__ = true;
+                        console.log('[VEXTO] IO stub re-applied POST-LOAD');
+                    }
+                    window.dispatchEvent(new Event('scroll'));
+                    window.dispatchEvent(new Event('resize'));
+                    if (window.$nuxt && window.$nuxt.$nextTick) {
+                        window.$nuxt.$nextTick(()=>console.log('[VEXTO] $nextTick after IO stub'));
+                    }
+                    } catch(e) { console.error('[VEXTO] Post-load error:', e); }
+                })();
+                """)
+
+                # Slow stepped scroll (20 steps)
+                total_steps = 20
+                log.info("⏳ Slow stepped scroll (20 × 2s)…")
+                for i in range(total_steps):
+                    page.evaluate(f"window.scrollTo(0, {i * 400})")
+                    page.wait_for_timeout(2000)
+
+                # Bund + vent + network idle
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                page.wait_for_timeout(8000)
+                try:
+                    page.wait_for_load_state("networkidle", timeout=15000)
+                except Exception:
+                    log.warning("Network idle timeout – continuing")
+
+                # Poll (bredere selectors)
+                max_polls = 20
+                prev_emp = -1
+                for p in range(max_polls):
+                    section_count = page.evaluate("() => document.querySelectorAll('section.cms-page__section').length") or 0
+
+                    # BREDERE heuristik for medarbejder-kort (Nuxt-scopede classes/data-v* varierer)
+                    employee_count = page.evaluate("""
+                    () => {
+                    const sels = [
+                        '.employee',
+                        '[class*="employee"]',
+                        '.employee-card',
+                        'div.flex.flex-col.overflow-hidden',
+                        '[data-component*="employee"]',
+                        '[data-v-] .flex.flex-col'
+                    ];
+                    const seen = new Set();
+                    let n = 0;
+                    for (const sel of sels) {
+                        document.querySelectorAll(sel).forEach(el => {
+                        // grov de-dupe for ikke at tælle samme card via flere selectors
+                        const key = (el.getAttribute('data-v') || '') + '|' + (el.className || '') + '|' + (el.textContent || '').slice(0,64);
+                        if (!seen.has(key)) { seen.add(key); n++; }
+                        });
+                    }
+                    return n;
+                    }
+                    """) or 0
+
+                    # Form: match også typiske felter
+                    has_form = page.evaluate("""
+                    () => !!document.querySelector(
+                    'form, [class*="form"], [id*="contact-form"], [name="name"], input[name="email"], input[type="email"], textarea[name*="message" i]'
+                    )
+                    """)
+
+                    log.info(f"📊 Poll {p+1}/{max_polls}: {section_count} sections, {employee_count} employees, form={has_form}")
+
+                    if employee_count >= 24 and has_form:
+                        log.info("✅ Full contact-page load detected – breaking poll")
+                        break
+
+                    if prev_emp == employee_count and p >= 5:
+                        log.info("🪄 Nudge: forcing Nuxt router re-mount")
+                        page.evaluate("""
+                        (function(){
+                            try {
+                            if (window.$nuxt && window.$nuxt.$router) {
+                                const curr = (window.$nuxt.$route && window.$nuxt.$route.fullPath) || window.location.pathname;
+                                window.$nuxt.$router.push('/').then(() => {
+                                setTimeout(() => { window.$nuxt.$router.push(curr); }, 500);
+                                });
+                            }
+                            } catch(e) { console.warn('router nudge failed', e); }
+                        })();
+                        """)
+                        page.wait_for_timeout(3000)
+                        page.evaluate("document.body.focus()")
+                        for _ in range(8):
+                            page.keyboard.press("PageDown")
+                            page.wait_for_timeout(1200)
+                        # fortsæt polling efter nudge (ingen break)
+                        prev_emp = employee_count
+                        continue
+
+                    prev_emp = employee_count
+                    page.wait_for_timeout(1500)
+                    if p % 5 == 0:
+                        page.screenshot(path=f"debug_poll_{p}.png", full_page=True)
+                        log.info(f"📷 Saved screenshot: debug_poll_{p}.png")
+
+            except Exception as e:
+                log.warning(f"Contact-page force flush failed: {e}")
+        else:
+            self._simulate_user_interaction_advanced(page)
+
+
         if hydration_requests:
-            log.info(f" Waiting for {len(hydration_requests)} API requests to complete...")
+            log.info(f"🔄 Waiting for {len(hydration_requests)} API requests...")
             try:
                 page.wait_for_function("() => document.readyState === 'complete'", timeout=10000)
             except Exception:
@@ -680,26 +815,36 @@ class _PlaywrightThreadFetcher:
 
         for i, strategy in enumerate(strategies, 1):
             if skip_2_3 and i in (2, 3):
-                log.info(f"⏭️ Skipping strategy {i} - already sufficient after Strategy 1")
+                log.info(f"⏭️ Skipping strategy {i}")
                 continue
 
             try:
-                log.info(f" Hydration strategy {i}/4...")
+                log.info(f"🔄 Hydration strategy {i}/4...")
                 strategy()
                 log.info(f"✅ Strategy {i} succeeded!")
                 successful_strategy = i
-                try:
-                    state_check = _verify_state_content(page)
-                    if state_check.get('hasState'):
-                        log.info(f" State verified: {state_check.get('size', 0)} chars, canonical: {state_check.get('hasCanonical', False)}")
-                        if state_check.get('hasCanonical'):
-                            try:
-                                page.wait_for_timeout(400)
-                            except Exception:
-                                pass
+                
+                state_check = _verify_state_content(page)
+                if state_check.get('hasState'):
+                    log.info(f"📊 State: {state_check.get('size', 0)} chars, canonical: {state_check.get('hasCanonical', False)}")
+                    
+                    if state_check.get('hasCanonical'):
+                        if is_contact_page:
+                            log.info("🔎 Contact page: ignoring canonical quick-return; continuing hydration.")
+                        else:
+                            page.wait_for_timeout(400)
                             return page.content()
+                    
                     if i == 1:
                         html_s1 = page.content()
+                        
+                        # ← NYT: Contact-pages ALDRIG early-return fra Strategy 1
+                        if is_contact_page:
+                            log.info("🚫 Contact page: forcing Strategy 4 (no early-return)")
+                            skip_2_3 = True
+                            continue  # ← Hop til Strategy 4
+                        
+                        # Normal early-return logik for ikke-contact pages
                         expect_product = _looks_like_product(url)
                         state_ok_by_size = state_check.get('size', 0) > 50000
                         state_ok_by_signals = state_check.get('hasCanonical') or sum([
@@ -708,36 +853,52 @@ class _PlaywrightThreadFetcher:
                             state_check.get('hasPrice', False),
                         ]) >= 2
                         dom_ok = _core_html_ok(html_s1, expect_product=expect_product)
+                        
+                        # forudsætter: is_contact_page er sat tidligere i funktionen
                         if state_ok_by_signals or state_ok_by_size or dom_ok:
                             if _missing_core_signals(page, html_s1):
-                                log.info("Hydration: Strategy 1 ok → skipping 2/3, checking Strategy 4 (missing core signals)")
-                                skip_2_3 = True
-                                # NEW: Early-return hvis vi allerede har canonical + nok indhold
-                                if state_check.get('hasCanonical') and state_check.get('size', 0) > 20000:
-                                    log.info("Early-return: canonical present and content size > 20000 → skipping Strategy 4.")
-                                    return html_s1
-                            else:
-                                log.info("Hydration: Strategy 1 ok → skipping Strategies 2/3 (core signals present)")
-                                return html_s1
-                except Exception as e:
-                    log.warning(f"State verification failed: {e}")
+                                log.info("Hydration: Strategy 1 → checking Strategy 4")
+                                skip_2_3 = True  # vi vil direkte mod S4
 
+                                if is_contact_page:
+                                    log.info("🚫 Contact page: early-return efter Strategy 1 er slået fra (fortsæt til Strategy 4)")
+                                    # INTET return her – lad løkken fortsætte til de senere strategier
+                                else:
+                                    if state_check.get('hasCanonical') and state_check.get('size', 0) > 20000:
+                                        log.info("Early-return: canonical + size OK")
+                                        return html_s1
+                            else:
+                                if is_contact_page:
+                                    log.info("🚫 Contact page: Strategy 1 ser OK ud, men vi tvinger videre strategier (ingen early-return)")
+                                    # sørg for at 2/3 også må køre (vi vil “force all strategies”)
+                                    skip_2_3 = False
+                                    # INTET return – fortsæt til næste strategier i løkken
+                                else:
+                                    log.info("Hydration: Strategy 1 OK → return")
+                                    return html_s1
+                                
             except Exception as e:
                 log.warning(f"❌ Strategy {i} failed: {e}")
                 continue
-        # Fallback: even if no early return happened we still want the HTML content.
+        
+        # Fallback - use raw DOM to bypass Playwright filter
         try:
-            fallback_html = page.content()
-            if successful_strategy:
-                log.info(
-                    "Hydration fallback returning page.content() after strategy %s",
-                    successful_strategy,
-                )
+            log.info(f"🔄 Fallback: fetching raw DOM (strategy {successful_strategy or 'none'})")
+            
+            # Extra wait for Vue mount
+            page.wait_for_timeout(2000)
+            
+            # Get HTML directly from DOM (not filtered by Playwright)
+            fallback_html = page.evaluate("() => document.documentElement.outerHTML")
+            
+            if fallback_html:
+                log.info(f"✅ Fallback HTML length: {len(fallback_html)}")
+                return fallback_html
             else:
-                log.info("Hydration fallback returning page.content() without successful strategy")
-            return fallback_html
+                log.warning("❌ Fallback returned empty HTML")
+                return None
         except Exception as e:
-            log.warning(f"Hydration fallback failed to fetch page content: {e}")
+            log.warning(f"Fallback failed: {e}")
             return None
 
     def _extract_canonical_hybrid(self, page, html_content: str, url: str) -> dict:
@@ -882,6 +1043,14 @@ class _PlaywrightThreadFetcher:
             ) as context:
                 page = context.new_page()
 
+                def _on_console(msg):
+                    try:
+                        log.info(f"📜 Browser console: {msg.type.upper()} {msg.text}")
+                    except Exception:
+                        log.info(f"📜 Browser console: {msg.text}")
+
+                page.on("console", _on_console)
+
                 # --- Call-time gate (log beslutningen)
                 _raw = _stealth_raw()
                 _enabled = _raw in ("1","true","yes","on")
@@ -890,11 +1059,22 @@ class _PlaywrightThreadFetcher:
                 # --- Stealth besluttet ved call-tid (override > env) ---
                 resolved_stealth = bool(stealth_flag)
                 log.info(f"[stealth] resolved={resolved_stealth} (override), env={os.getenv('VEXTO_STEALTH','?')!r}")
-                if STEALTH_AVAILABLE and resolved_stealth:
-                    stealth_sync(page)
-                    log.info("✅ playwright-stealth applied (resolved=ON)")
+
+                # Kontakt-lignende paths: slå stealth FRA for at undgå UA/opts-fejl
+                _is_contact_like = any(k in url.lower() for k in (
+                    "/kontakt", "/contact", "/team", "/staff", "/medarbejder", "/people", "/ansatte"
+                ))
+                resolved_stealth_effective = resolved_stealth and not _is_contact_like
+
+                if STEALTH_AVAILABLE and resolved_stealth_effective:
+                    try:
+                        stealth_sync(page)
+                        log.info("✅ playwright-stealth applied (resolved=ON)")
+                    except Exception as e:
+                        log.warning(f"playwright-stealth failed, skipping: {e}")
                 else:
-                    log.info("playwright-stealth skipped (resolved=OFF or not available)")
+                    reason = "contact-like" if _is_contact_like else "OFF or not available"
+                    log.info(f"playwright-stealth skipped ({reason})")
 
                 # Anti-bot init-script KUN når stealth er ON
                 if resolved_stealth:
@@ -917,6 +1097,37 @@ class _PlaywrightThreadFetcher:
                     window.outerHeight = screen.height;
                     window.outerWidth = screen.width;
                     """)
+
+                page.add_init_script("""
+                (() => {
+                try {
+                    const ForcedIO = class { /* samme som før */ 
+                    constructor(cb, options) {
+                        this._cb = typeof cb === 'function' ? cb : () => {};
+                        this._options = options || {};
+                        this._targets = new Set();
+                    }
+                    observe(target) {
+                        if (!target) return;
+                        this._targets.add(target);
+                        const rect = target.getBoundingClientRect();
+                        const rootBounds = document.documentElement.getBoundingClientRect();
+                        const now = (window.performance && performance.now) ? performance.now() : Date.now();
+                        const entry = { time: now, target, isIntersecting: true, intersectionRatio: 1,
+                                        boundingClientRect: rect, rootBounds, intersectionRect: rect };
+                        try { this._cb([entry], this); } catch (e) { console.warn('[VEXTO] IO cb error', e); }
+                    }
+                    unobserve(t) { this._targets.delete(t); }
+                    disconnect() { this._targets.clear(); }
+                    takeRecords() { return []; }
+                    };
+                    window.IntersectionObserver = ForcedIO;
+                    console.log('[VEXTO] IntersectionObserver stubbed (instant intersect)');
+                } catch (e) {
+                    console.error('[VEXTO] IO stub init failed', e);
+                }
+                })();
+                """)
 
                 hydration_requests: list[str] = []
                 if is_pwa_site:
@@ -1641,6 +1852,17 @@ class AsyncHtmlClient:
             log.warning(f"Max depth reached for {url}; stopping.")
             return None
 
+        u_low = url.lower()
+        if not force_playwright:  # Respekter eksplicit override
+            is_contact_page = any(k in u_low for k in (
+                "/kontakt", "/contact", "/kontaktformular", "/kontakt-os",
+                "/team", "/staff", "/medarbejder", "/medarbejdere",
+                "/people", "/ansatte", "/personale", "/ledelse"
+            ))
+            if is_contact_page:
+                log.info(f"Contact/team URL detected - forcing Playwright: {url}")
+                force_playwright = True
+                
         if urlparse(url).netloc in ALWAYS_HTTPX:
             try:
                 html = (await self.httpx_get(url)).text
