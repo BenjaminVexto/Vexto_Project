@@ -19,16 +19,30 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, Optional, Union, Any, List, Tuple, Iterable
 from urllib.parse import urlparse, urljoin
+from urllib.parse import urlsplit, urlunsplit
 from bs4 import BeautifulSoup
 from diskcache import Cache
 from fake_useragent import FakeUserAgentError, UserAgent
 from playwright.sync_api import (sync_playwright,Browser as PlaywrightBrowser)
 from tenacity import (AsyncRetrying,RetryError,retry_if_exception,stop_after_attempt,wait_exponential_jitter)
 from ipaddress import ip_address, ip_network
-from urllib.parse import urlsplit
 
 
 log = logging.getLogger(__name__)
+
+# --- URL normalization for fetch/cache/debug ---
+def _norm_url_for_fetch(u: str) -> str:
+    """Behold '/' for roden; fjern trailing slash for andre paths; drop fragment; bevar query."""
+    try:
+        s = urlsplit(u)
+        path = re.sub(r"/{2,}", "/", s.path or "/")
+        if path != "/" and path.endswith("/"):
+            path = path[:-1]
+        base = f"{s.scheme}://{s.netloc}{path}"
+        return base + (f"?{s.query}" if s.query else "")
+    except Exception:
+        return u
+
 
 # --- Optional stealth ---
 try:
@@ -62,8 +76,6 @@ def _is_private_ip_host(host: str) -> bool:
     except ValueError:
         # Ikke en IP-literal (domæne) – lad almindelig DNS/HTTP guard tage over
         return False
-
-
 
 # --- Cache setup ---
 CACHE_DIR = Path(".http_diskcache")
@@ -1620,6 +1632,8 @@ class AsyncHtmlClient:
          - Playwright-case: {"html": str, "canonical_data": dict}
          - Ellers: str (HTML) eller None
         """
+        url = _norm_url_for_fetch(url)
+        
         if self._is_closed:
             log.warning(f"Forsøg på at kalde get_raw_html på lukket klient: {url}")
             return None

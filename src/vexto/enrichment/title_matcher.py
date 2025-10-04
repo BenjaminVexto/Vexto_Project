@@ -57,7 +57,9 @@ class TitleMatcher:
         obj.overrides = {}
         if ovr_path.exists():
             try:
-                obj.overrides = _read_json_any(ovr_path)
+                raw_ovr = _read_json_any(ovr_path)
+                # [CHANGE] normalisér nøgler, så opslag matcher _norm()
+                obj.overrides = { _norm(k): v for k, v in (raw_ovr or {}).items() }
             except Exception:
                 obj.overrides = {}
 
@@ -73,10 +75,10 @@ class TitleMatcher:
         # 0) [NYT] Overrides (hurtig mapping uden at røre Excel)
         ovr = getattr(self, "overrides", {}) or {}
         if key in ovr:
-            canonical = ovr[key]               # fx "Kundeservicemedarbejder"
+            canonical = ovr[key]  # visningslabel vi vil fastholde
             tid = self.exact.get(_norm(canonical))
-            if tid:
-                return (tid, self._id2name.get(tid, canonical), "override", 1.0)
+            # Returnér altid override; brug "custom" som fallback id
+            return (tid or "custom", self._id2name.get(tid, canonical) if tid else canonical, "override", 1.0)
             # hvis canonical ikke findes i exact-index, falder vi bare videre til normal logik
 
         # 1) Exact/alias
@@ -101,8 +103,6 @@ class TitleMatcher:
         max_possible = sum(sorted(cand_scores.values(), reverse=True)[:3]) or 1
         ratio = min(1.0, best_score / max_possible)
 
-        if ratio >= 0.90:
-            return (best_tid, self._id2name.get(best_tid, raw), "fuzzy", round(ratio, 3))
-        if ratio >= 0.80:
+        if ratio >= 0.95:
             return (best_tid, self._id2name.get(best_tid, raw), "fuzzy", round(ratio, 3))
         return None
