@@ -3772,11 +3772,33 @@ def _extract_from_staff_grid(url: str, tree) -> list[ContactCandidate]:
             except Exception:
                 pass
 
+            # Tillad kort uden navn hvis de har telefon (staff-grid kontext er stærk nok)
             if not name:
-                continue
+                # Sidste chance: find telefon, og hvis ja, prøv at udlede navn fra tekstvindue
+                phones_fallback = []
+                try:
+                    text_all = _get_text(card)
+                    dk_phones = re.findall(r'\b(?:\+45\s*)?(\d{2}\s?\d{2}\s?\d{2}\s?\d{2})\b', text_all)
+                    for p in dk_phones:
+                        norm_p = _normalize_phone(p)
+                        if norm_p:
+                            phones_fallback.append(norm_p)
+                except Exception:
+                    pass
+                
+                # Hvis ingen telefon, så skip
+                if not phones_fallback:
+                    continue
+                
+                # Prøv at finde navn i tekst (hvis det bare blev overset)
+                n2, t2 = _extract_lines_from_block_txt(text_multiline if 'text_multiline' in locals() else raw)
+                if n2 and _is_plausible_name(n2):
+                    name = n2
+                if not title and t2:
+                    title = t2
 
             fingerprint = _fp_from_text(raw or "", prefix="card:")
-            key = (name.lower(), (title or "").lower(), fingerprint)
+            key = (name.lower() if name else "", (title or "").lower(), fingerprint)
             if key in seen:
                 continue
             seen.add(key)
@@ -4338,6 +4360,15 @@ class ContactFinder:
             log.error(f"http_client.get failed for {url}: {e!r}", exc_info=True)
             html = ""
 
+        # Tjek om http_client allerede renderede med Playwright
+        already_rendered = (
+            hasattr(self.http_client, 'last_fetch_method') 
+            and self.http_client.last_fetch_method == "playwright"
+        )
+        if already_rendered:
+            log.debug(f"Skipping secondary render - http_client already used Playwright for {url}")
+            should_render = False  # Force disable så vi ikke render igen
+
         html = html or ""
         stripped_html = html.strip()
 
@@ -4370,7 +4401,14 @@ class ContactFinder:
                 if status and 400 <= status < 500:
                     should_render = False
         
-        if should_render and key not in self._rendered_once:
+        if should_render and key not in self._rendered_once and not already_rendered:
+            try:
+                status, _ = self.http_client.get(url)
+                if status and 400 <= status < 500:
+                    log.warning(f"Skip PW for {url}: status={status}")
+                    should_render = False
+            except Exception:
+                pass            
             # Debounce + budget
             if key in self._pw_attempted or self._pw_budget <= 0:
                 self._html_cache_local[key] = html or ""
@@ -4378,12 +4416,7 @@ class ContactFinder:
             self._pw_attempted.add(key)
             self._pw_budget -= 1
             pre_status = 200 if stripped_html and not _looks_404(html) else None
-            rendered = _fetch_with_playwright_sync(
-                url,
-                pre_html=html or None,
-                pre_status=pre_status,
-                http_client=self.http_client,
-            )
+            rendered = _fetch_with_playwright_sync(url, html0=html or None)
             if rendered:
                 html = rendered
             self._rendered_once.add(key)
@@ -4676,12 +4709,7 @@ class ContactFinder:
 
         if _needs_js(root_html) and AsyncHtmlClient is not None and self._pw_budget > 0:
             try:
-                rendered = _fetch_with_playwright_sync(
-                    url,
-                    pre_html=root_html,
-                    pre_status=200 if root_html else None,
-                    http_client=self.http_client,
-                )
+                rendered = _fetch_with_playwright_sync(url, html0=html or None)
                 if rendered and not _looks_404(rendered):
                     htmls[url] = rendered
                     root_html = rendered
@@ -4858,28 +4886,56 @@ class ContactFinder:
                 log.debug("SEED (fallback): %d candidate urls -> %s", len(candidates), candidates[:5])
 
 
-        # hold det stramt – vi henter alligevel struktureret data per side nedenfor
-        candidates = candidates[:min(8, limit_pages)]
+        # Prioriter kontakt-URLs først i køen
+        contact_urls = [c for c in candidates if _is_contactish_url(c)]
+        other_urls = [c for c in candidates if not _is_contactish_url(c)]
+        candidates = (contact_urls + other_urls)[:min(8, limit_pages)]
+        
+        log.info(f"Candidate order: {len(contact_urls)} contact first, {len(other_urls)} others")
+        for i, cu in enumerate(candidates[:5], 1):
+            log.info(f"  {i}. {cu} {'[CONTACT]' if _is_contactish_url(cu) else ''}")
 
-        # 5) Hent kandidat-sider
+        normalized_candidates = []
+        seen_normalized = set()
         for cu in candidates:
-            if len(cands) >= 10:
-                break
-            if log.isEnabledFor(logging.DEBUG):
-                log.debug("Fetching candidate page: %s", cu)
+            norm_cu = _norm_url_for_fetch(cu)  # Fjerner trailing slash, bruger canonical host
+            if norm_cu not in seen_normalized:
+                seen_normalized.add(norm_cu)
+                normalized_candidates.append(norm_cu)
+        candidates = normalized_candidates
+
+        log.info(f"After dedup: {len(candidates)} unique candidates")
+
+        # 5) Hent kandidat-sider (NO EARLY EXIT for contact URLs)
+        if log.isEnabledFor(logging.DEBUG):
+            log.debug("Candidates after normalization:")
+            for i, cu in enumerate(candidates, 1):
+                log.debug(f"  {i}. {cu}")
+        
+        for cu in candidates:
+            log.info(f"Processing: {cu}")
             try:
                 html = self._fetch_text_smart(cu)
                 htmls[cu] = html
                 if not html or _looks_404(html):
+                    log.warning(f"Skip {cu}: empty/404")
                     continue
-                # Structured data på kandidatsider
+                
+                is_contact_url = _is_contactish_url(cu)
+                log.info(f"  is_contact={is_contact_url}, len={len(html)}")
+                
+                # Structured data
                 sd2 = _extract_from_jsonld(cu, html) + _extract_from_microformats(cu, _parse_html(html))
                 for c in sd2:
                     c.url = cu
                     cands.append(c)
-                if sd2:
+                log.info(f"  structured: {len(sd2)}")
+                
+                # Early-exit KUN hvis IKKE kontakt
+                if sd2 and not is_contact_url:
                     scored = self._score_sort(cands, directors=directors)
                     if scored and scored[0].score >= EARLY_EXIT_THRESHOLD:
+                        log.warning(f"EARLY-EXIT by {cu} (score={scored[0].score:.1f})")
                         cleaned = [
                             {
                                 "name": sc.candidate.name,
@@ -4900,24 +4956,22 @@ class ContactFinder:
                             if sc.score >= 0 and "GATE_FAIL" not in sc.reasons
                         ]
                         if cleaned:
-                            log.debug("EARLY_EXIT: Candidate page hit (score=%.1f, url=%s)", scored[0].score, cu)
                             return cleaned
-                # Eksisterende extractors
-                cands.extend(self._extract_all(cu, html))
-            except Exception:
-                log.debug(f"Fejl ved crawl af kandidat: {cu}")
+                
+                # KØR ALLE extractors
+                extracted = self._extract_all(cu, html)
+                log.info(f"  extracted: {len(extracted)}")
+                cands.extend(extracted)
+                
+            except Exception as e:
+                log.error(f"Error {cu}: {e}", exc_info=True)
                 continue
 
         # 6) Playwright kun hvis nødvendig
         root_blank = not (root_html or "").strip()
         if (root_blank or _needs_js(root_html)) and AsyncHtmlClient is not None and self._pw_budget > 0:
             try:
-                rendered = _fetch_with_playwright_sync(
-                    url,
-                    pre_html=root_html,
-                    pre_status=200 if root_html else None,
-                    http_client=self.http_client,
-                )
+                rendered = _fetch_with_playwright_sync(url, html0=html or None)
                 if rendered and not _looks_404(rendered):
                     htmls[url] = rendered
                     cands.extend(self._extract_all(url, rendered))

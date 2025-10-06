@@ -468,7 +468,7 @@ class _PlaywrightThreadFetcher:
                     headless=False,
                     args=launch_args,
                     ignore_default_args=['--enable-automation'],
-                    slow_mo=500,  # ← slå fra igen når det kører stabilt
+                    slow_mo=0,  # ← slå fra igen når det kører stabilt
                 )
                 self._is_ready = True
                 log.info(f"Playwright-browser ({self._browser_type}) startet succesfuldt.")
@@ -646,7 +646,7 @@ class _PlaywrightThreadFetcher:
 
     def _handle_pwa_hydration_hybrid(self, page, url: str, hydration_requests: list) -> Optional[str]:
         log.info("🔄 Starting hybrid PWA hydration...")
-
+        
         is_contact_page = any(k in url.lower() for k in (
             "/kontakt", "/contact", "/team", "/staff", 
             "/medarbejder", "/people", "/ansatte"
@@ -698,23 +698,23 @@ class _PlaywrightThreadFetcher:
                 })();
                 """)
 
-                # Slow stepped scroll (20 steps)
-                total_steps = 20
-                log.info("⏳ Slow stepped scroll (20 × 2s)…")
+                # Slow stepped scroll – trimmet
+                total_steps = 8
+                log.info("⏳ Slow stepped scroll (8 × 0.6s)…")
                 for i in range(total_steps):
-                    page.evaluate(f"window.scrollTo(0, {i * 400})")
-                    page.wait_for_timeout(2000)
+                    page.evaluate(f"window.scrollTo(0, {i * 600})")
+                    page.wait_for_timeout(600)
 
-                # Bund + vent + network idle
+                # Bund + kort vent + evt. network idle
                 page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                page.wait_for_timeout(8000)
+                page.wait_for_timeout(2500)
                 try:
-                    page.wait_for_load_state("networkidle", timeout=15000)
+                    page.wait_for_load_state("networkidle", timeout=6000)
                 except Exception:
-                    log.warning("Network idle timeout – continuing")
+                    log.debug("Network idle timeout – continuing")
 
-                # Poll (bredere selectors)
-                max_polls = 20
+                # Strammere polling
+                max_polls = 12
                 prev_emp = -1
                 for p in range(max_polls):
                     section_count = page.evaluate("() => document.querySelectorAll('section.cms-page__section').length") or 0
@@ -752,9 +752,29 @@ class _PlaywrightThreadFetcher:
 
                     log.info(f"📊 Poll {p+1}/{max_polls}: {section_count} sections, {employee_count} employees, form={has_form}")
 
+                    # NYT: Tidlig exit hvis siden er tom efter første polls
+                    if p == 0 and section_count == 0 and employee_count == 0:
+                        log.warning("🚫 Empty contact page detected on first poll - aborting")
+                        break
+                        
+                    if p >= 2 and section_count == 0 and employee_count == 0:
+                        log.warning(f"🚫 Still empty after {p+1} polls - likely 404/non-existent page")
+                        break
+
                     if employee_count >= 24 and has_form:
                         log.info("✅ Full contact-page load detected – breaking poll")
                         break
+                    
+                    pending = min(len(hydration_requests or []), 4)
+                    if pending:
+                        log.info(f"🔄 Waiting for {pending} API requests (bounded)…")
+                        try:
+                            page.wait_for_load_state("networkidle", timeout=6000)
+                        except Exception:
+                            log.debug("networkidle timeout – continuing")
+                    else:
+                        log.info("⏭️ No pending API requests – skipping wait")
+
 
                     if prev_emp == employee_count and p >= 5:
                         log.info("🪄 Nudge: forcing Nuxt router re-mount")
@@ -780,21 +800,45 @@ class _PlaywrightThreadFetcher:
                         continue
 
                     prev_emp = employee_count
-                    page.wait_for_timeout(1500)
-                    if p % 5 == 0:
+                    page.wait_for_timeout(1000)
+                    if p % 6 == 0:
                         page.screenshot(path=f"debug_poll_{p}.png", full_page=True)
                         log.info(f"📷 Saved screenshot: debug_poll_{p}.png")
 
             except Exception as e:
                 log.warning(f"Contact-page force flush failed: {e}")
         else:
+            # Let dynamisk scroll for PWA – stop når højde stabiliserer (2 gange) eller max 20 steps
+            log.info("⏳ Dynamic scroll for PWA (up to 20 steps)…")
+            last_h, stable = 0, 0
+            for i in range(20):
+                page.evaluate("window.scrollBy(0, Math.max(400, window.innerHeight*0.9))")
+                try:
+                    page.wait_for_load_state("networkidle", timeout=1200)
+                except Exception:
+                    page.wait_for_timeout(400)
+                h = page.evaluate("() => document.body.scrollHeight")
+                if h == last_h:
+                    stable += 1
+                else:
+                    stable, last_h = 0, h
+                if stable >= 2:
+                    log.info(f"✅ Page height stabilized after {i+1} scrolls")
+                    break
+            # afslut med et lille “user sim” + lazy-load nudge
             self._simulate_user_interaction_advanced(page)
 
+            # Ekstra fuldhedsvagt: hvis footer allerede er der, kan vi skippe dybere strategies
+            try:
+                if _wait_for_footer(page, timeout=3000):
+                    log.info("🧭 Footer present after dynamic scroll – page likely complete")
+            except Exception:
+                pass
 
-        if hydration_requests:
+        if hydration_requests and not is_contact_page:
             log.info(f"🔄 Waiting for {len(hydration_requests)} API requests...")
             try:
-                page.wait_for_function("() => document.readyState === 'complete'", timeout=10000)
+                page.wait_for_function("() => document.readyState === 'complete'", timeout=3000)
             except Exception:
                 pass
 
@@ -827,21 +871,23 @@ class _PlaywrightThreadFetcher:
                 state_check = _verify_state_content(page)
                 if state_check.get('hasState'):
                     log.info(f"📊 State: {state_check.get('size', 0)} chars, canonical: {state_check.get('hasCanonical', False)}")
-                    
+
                     if state_check.get('hasCanonical'):
                         if is_contact_page:
                             log.info("🔎 Contact page: ignoring canonical quick-return; continuing hydration.")
                         else:
-                            page.wait_for_timeout(400)
-                            return page.content()
+                            # Defer quick-return: lad post-S1 checks/Strategy 4 vurdere fuld DOM før vi evt. returnerer
+                            log.info("Canonical detected – deferring quick-return until post-S1 checks")
                     
                     if i == 1:
                         html_s1 = page.content()
                         
-                        # ← NYT: Contact-pages ALDRIG early-return fra Strategy 1
+                        # ← NYT: Contact-pages - gem Strategy 1 HTML til mulig brug senere
                         if is_contact_page:
                             log.info("🚫 Contact page: forcing Strategy 4 (no early-return)")
                             skip_2_3 = True
+                            # GEM html_s1 udenfor try-blokken så vi kan bruge den senere
+                            successful_strategy = 1
                             continue  # ← Hop til Strategy 4
                         
                         # Normal early-return logik for ikke-contact pages
@@ -881,12 +927,19 @@ class _PlaywrightThreadFetcher:
                 log.warning(f"❌ Strategy {i} failed: {e}")
                 continue
         
-        # Fallback - use raw DOM to bypass Playwright filter
+       # Fallback - for contact pages med succesfuld polling, brug Strategy 1's HTML
+        if is_contact_page and 'html_s1' in locals() and html_s1:
+            # Hvis polling så >= 20 employees, er Strategy 1's content faktisk bedst
+            log.info(f"🎯 Contact page: returning Strategy 1 HTML (len={len(html_s1)}, polling saw {prev_emp} employees)")
+            return html_s1
+        
+        # Standard fallback for andre cases
         try:
             log.info(f"🔄 Fallback: fetching raw DOM (strategy {successful_strategy or 'none'})")
             
-            # Extra wait for Vue mount
-            page.wait_for_timeout(2000)
+            # Longer wait for Vue mount (especially for contact pages)
+            wait_ms = 5000 if is_contact_page else 2000
+            page.wait_for_timeout(wait_ms)
             
             # Get HTML directly from DOM (not filtered by Playwright)
             fallback_html = page.evaluate("() => document.documentElement.outerHTML")
@@ -899,6 +952,10 @@ class _PlaywrightThreadFetcher:
                 return None
         except Exception as e:
             log.warning(f"Fallback failed: {e}")
+            # Last resort: hvis vi har html_s1, brug den
+            if 'html_s1' in locals() and html_s1:
+                log.info("🆘 Using Strategy 1 HTML as ultimate fallback")
+                return html_s1
             return None
 
     def _extract_canonical_hybrid(self, page, html_content: str, url: str) -> dict:
@@ -1066,19 +1123,17 @@ class _PlaywrightThreadFetcher:
                 ))
                 resolved_stealth_effective = resolved_stealth and not _is_contact_like
 
+                # Policy: vi kalder ikke playwright-stealth (UA-getter kan fejle på visse sites)
                 if STEALTH_AVAILABLE and resolved_stealth_effective:
-                    try:
-                        stealth_sync(page)
-                        log.info("✅ playwright-stealth applied (resolved=ON)")
-                    except Exception as e:
-                        log.warning(f"playwright-stealth failed, skipping: {e}")
+                    log.info("playwright-stealth skipped (policy=OFF; using manual init-script)")
                 else:
                     reason = "contact-like" if _is_contact_like else "OFF or not available"
                     log.info(f"playwright-stealth skipped ({reason})")
 
-                # Anti-bot init-script KUN når stealth er ON
-                if resolved_stealth:
+                # Anti-bot init-script KUN når stealth er effektivt (ikke contact-like)
+                if resolved_stealth_effective:
                     page.add_init_script("""
+                    try {
                     Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
                     delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
                     delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
@@ -1086,16 +1141,31 @@ class _PlaywrightThreadFetcher:
                     window.chrome = { runtime: {}, loadTimes: function() {}, csi: function() {}, app: {} };
                     const originalQuery = window.navigator.permissions.query;
                     if (originalQuery) {
-                    window.navigator.permissions.query = (parameters) => (
-                        parameters.name === 'notifications' ?
-                        Promise.resolve({ state: 'default' }) :
-                        originalQuery(parameters)
-                    );
+                        window.navigator.permissions.query = (parameters) => (
+                        parameters.name === 'notifications' ? Promise.resolve({ state: 'default' }) : originalQuery(parameters)
+                        );
                     }
-                    Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5], });
-                    Object.defineProperty(navigator, 'languages', { get: () => ['da-DK', 'da', 'en-US', 'en'], });
+                    Object.defineProperty(navigator, 'plugins',   { get: () => [1,2,3,4,5] });
+                    Object.defineProperty(navigator, 'languages', { get: () => ['da-DK','da','en-US','en'] });
                     window.outerHeight = screen.height;
-                    window.outerWidth = screen.width;
+                    window.outerWidth  = screen.width;
+
+                    // UA-shim kun hvis eksisterende getter kaster (fikser 'opts is not defined')
+                    (function hardenUA(){
+                        try {
+                        const d = Object.getOwnPropertyDescriptor(Navigator.prototype, 'userAgent');
+                        if (d && typeof d.get === 'function') {
+                            try { void navigator.userAgent; } catch (e) {
+                            const ua = window._VEXTO_UA || navigator.appVersion || 'Mozilla/5.0';
+                            Object.defineProperty(Navigator.prototype, 'userAgent', {
+                                get() { return ua; }, configurable: true
+                            });
+                            console.log('[VEXTO] UA shim applied');
+                            }
+                        }
+                        } catch(e) { console.warn('[VEXTO] UA shim failed', e); }
+                    })();
+                    } catch(e) { console.error('[VEXTO] stealth init failed', e); }
                     """)
 
                 page.add_init_script("""
